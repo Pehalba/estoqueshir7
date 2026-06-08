@@ -1,0 +1,10 @@
+# Credenciais Firebase (cada dev usa o seu)
+src/js/config/firebase.credentials.js
+
+# Firebase CLI
+.firebase/
+.firebaserc
+
+# Sistema
+.DS_Store
+Thumbs.db

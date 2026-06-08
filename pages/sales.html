@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendas — SHIR7</title>
+  <link rel="stylesheet" href="../src/css/main.css">
+</head>
+<body data-page="sales">
+  <div class="app-layout">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar__brand">
+        <img class="sidebar__logo" src="../src/assets/logo-shir7.png" alt="SHIR7" width="36" height="36">
+        <span class="sidebar__brand-name">SHIR7</span>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="dashboard.html" class="sidebar__link" data-nav="dashboard">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>
+          Dashboard
+        </a>
+        <a href="inventory.html" class="sidebar__link" data-nav="inventory">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+          Estoque
+        </a>
+        <a href="sales.html" class="sidebar__link sidebar__link--active" data-nav="sales">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
+          Vendas
+        </a>
+        <a href="investors.html" class="sidebar__link" data-nav="investors">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          Investidores
+        </a>
+        <a href="reports.html" class="sidebar__link" data-nav="reports">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+          Relatórios
+        </a>
+      </nav>
+    </aside>
+
+    <div id="sidebar-overlay" class="sidebar__overlay"></div>
+
+    <div class="app-layout__main">
+      <header class="header">
+        <div class="header__left">
+          <button type="button" id="menu-btn" class="header__menu-btn" aria-label="Abrir menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <h1 class="header__title">Vendas</h1>
+        </div>
+        <div class="header__right">
+          <div class="header__user">
+            <span class="header__user-email" id="user-email"></span>
+          </div>
+          <button type="button" id="logout-btn" class="btn btn--ghost btn--sm">Sair</button>
+        </div>
+      </header>
+
+      <main class="app-layout__content">
+        <div class="page-header">
+          <h2 class="page-header__title">Registro de Vendas</h2>
+          <p class="page-header__subtitle">Baixa automática de estoque e cálculo financeiro</p>
+        </div>
+
+        <div class="sales-summary grid grid--4">
+          <div class="card sales-summary__card">
+            <div class="card__body">
+              <p class="sales-summary__label">Pedidos</p>
+              <p class="sales-summary__value" id="summary-orders">0</p>
+            </div>
+          </div>
+          <div class="card sales-summary__card sales-summary__card--revenue">
+            <div class="card__body">
+              <p class="sales-summary__label">Faturamento</p>
+              <p class="sales-summary__value" id="summary-revenue">R$ 0,00</p>
+            </div>
+          </div>
+          <div class="card sales-summary__card sales-summary__card--profit">
+            <div class="card__body">
+              <p class="sales-summary__label">Lucro líquido</p>
+              <p class="sales-summary__value" id="summary-profit">R$ 0,00</p>
+            </div>
+          </div>
+          <div class="card sales-summary__card">
+            <div class="card__body">
+              <p class="sales-summary__label">Ticket médio</p>
+              <p class="sales-summary__value" id="summary-ticket">R$ 0,00</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="sales-layout">
+          <div class="card sales-form-card">
+            <div class="card__header">
+              <h3 class="card__title">Nova venda</h3>
+            </div>
+            <div class="card__body">
+              <div id="form-errors" class="form-errors"></div>
+              <form id="sale-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-group__label form-group__label--required" for="field-orderId">Nº do pedido</label>
+                    <input class="form-input" type="text" id="field-orderId" required placeholder="Ex.: PED-001">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label" for="field-customer">Cliente</label>
+                    <input class="form-input" type="text" id="field-customer" placeholder="Opcional">
+                  </div>
+                </div>
+
+                <div class="form-row form-row--3">
+                  <div class="form-group">
+                    <label class="form-group__label form-group__label--required" for="field-product">Produto</label>
+                    <select class="form-input form-select" id="field-product" required>
+                      <option value="">Selecione</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label form-group__label--required" for="field-size">Tamanho</label>
+                    <select class="form-input form-select" id="field-size" required>
+                      <option value="">Selecione o produto</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label form-group__label--required" for="field-quantity">Quantidade</label>
+                    <input class="form-input" type="number" id="field-quantity" min="1" value="1" required>
+                  </div>
+                </div>
+
+                <p id="product-info" class="sales-product-info"></p>
+
+                <div class="form-row form-row--3">
+                  <div class="form-group">
+                    <label class="form-group__label form-group__label--required" for="field-unitPrice">Preço unitário (R$)</label>
+                    <input class="form-input" type="number" id="field-unitPrice" min="0" step="0.01" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label" for="field-discount">Desconto total (R$)</label>
+                    <input class="form-input" type="number" id="field-discount" min="0" step="0.01" value="0">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label" for="field-fees">Taxas / custos (R$)</label>
+                    <input class="form-input" type="number" id="field-fees" min="0" step="0.01" value="0">
+                    <p class="form-group__hint">Marketplace, embalagem, etc.</p>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-group__label" for="field-channel">Canal</label>
+                    <select class="form-input form-select" id="field-channel">
+                      <option value="instagram">Instagram</option>
+                      <option value="whatsapp">WhatsApp</option>
+                      <option value="presencial">Presencial</option>
+                      <option value="site">Site</option>
+                      <option value="outro">Outro</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label" for="field-payment">Pagamento</label>
+                    <select class="form-input form-select" id="field-payment">
+                      <option value="pix">PIX</option>
+                      <option value="cartao">Cartão</option>
+                      <option value="dinheiro">Dinheiro</option>
+                      <option value="transferencia">Transferência</option>
+                      <option value="outro">Outro</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label" for="field-trafficCost">Tráfego pago (R$)</label>
+                    <input class="form-input" type="number" id="field-trafficCost" min="0" step="0.01" value="0">
+                    <p class="form-group__hint">Opcional — usado no ROI</p>
+                  </div>
+                </div>
+
+                <div id="finance-preview" class="sales-finance-preview"></div>
+
+                <button type="submit" class="btn btn--primary btn--block" id="btn-save-sale">Registrar venda</button>
+              </form>
+            </div>
+          </div>
+
+          <div class="sales-list">
+            <div class="sales-toolbar">
+              <input type="search" id="search-input" class="form-input sales-toolbar__search" placeholder="Buscar pedido, produto ou cliente...">
+              <select id="filter-channel" class="form-input form-select sales-toolbar__filter">
+                <option value="">Todos os canais</option>
+                <option value="instagram">Instagram</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="presencial">Presencial</option>
+                <option value="site">Site</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+
+            <p id="sales-count" class="sales-stats">Carregando vendas...</p>
+
+            <div class="table-wrapper">
+              <table class="table" id="sales-table">
+                <thead>
+                  <tr>
+                    <th>Pedido</th>
+                    <th>Produto</th>
+                    <th>Qtd</th>
+                    <th>Total</th>
+                    <th>Lucro</th>
+                    <th>Repasse</th>
+                    <th>Data</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="sales-tbody">
+                  <tr><td colspan="8" class="table__empty">Carregando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="view-modal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog modal__dialog--lg">
+      <div class="modal__header">
+        <h3 class="modal__title" id="view-modal-title">Detalhes da venda</h3>
+        <button type="button" class="modal__close" data-modal-close aria-label="Fechar">&times;</button>
+      </div>
+      <div class="modal__body" id="view-modal-body"></div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--secondary" data-modal-close>Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script type="module" src="../src/js/app.js"></script>
+  <script type="module" src="../src/js/pages/sales.js"></script>
+</body>
+</html>

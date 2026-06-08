@@ -1,0 +1,70 @@
+:root {
+  /* SHIR7 — identidade visual */
+  --color-primary: #5e17eb;
+  --color-primary-dark: #4a11bc;
+  --color-primary-light: #8b5cf6;
+  --color-primary-rgb: 94, 23, 235;
+  --color-secondary: #1f0647;
+  --color-accent: #a78bfa;
+
+  --color-bg: #f5f3ff;
+  --color-surface: #ffffff;
+  --color-border: #e4deff;
+  --color-border-strong: #c4b5fd;
+
+  --color-text: #1a0a3e;
+  --color-text-muted: #6b5b8a;
+  --color-text-inverse: #ffffff;
+
+  --color-success: #059669;
+  --color-success-rgb: 5, 150, 105;
+  --color-error: #dc2626;
+  --color-error-rgb: 220, 38, 38;
+  --color-warning: #d97706;
+  --color-warning-rgb: 217, 119, 6;
+  --color-info: #7c3aed;
+  --color-info-rgb: 124, 58, 237;
+
+  --sidebar-width: 260px;
+  --sidebar-bg: #1f0647;
+  --sidebar-text: rgba(255, 255, 255, 0.65);
+  --sidebar-text-active: #ffffff;
+  --sidebar-active-bg: rgba(94, 23, 235, 0.25);
+
+  --header-height: 64px;
+
+  --font-family: 'Montserrat', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  --shadow-sm: 0 1px 3px rgba(31, 6, 71, 0.08);
+  --shadow-md: 0 4px 12px rgba(31, 6, 71, 0.12);
+  --shadow-lg: 0 8px 24px rgba(31, 6, 71, 0.18);
+  --shadow-brand: 0 4px 14px rgba(94, 23, 235, 0.35);
+
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+
+  --z-sidebar: 100;
+  --z-header: 90;
+  --z-overlay: 110;
+  --z-modal: 200;
+  --z-toast: 300;
+}

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estoque — SHIR7</title>
+  <link rel="stylesheet" href="../src/css/main.css">
+</head>
+<body data-page="inventory">
+  <div class="app-layout">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar__brand">
+        <img class="sidebar__logo" src="../src/assets/logo-shir7.png" alt="SHIR7" width="36" height="36">
+        <span class="sidebar__brand-name">SHIR7</span>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="dashboard.html" class="sidebar__link" data-nav="dashboard">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>
+          Dashboard
+        </a>
+        <a href="inventory.html" class="sidebar__link sidebar__link--active" data-nav="inventory">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+          Estoque
+        </a>
+        <a href="sales.html" class="sidebar__link" data-nav="sales">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
+          Vendas
+        </a>
+        <a href="investors.html" class="sidebar__link" data-nav="investors">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          Investidores
+        </a>
+        <a href="reports.html" class="sidebar__link" data-nav="reports">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+          Relatórios
+        </a>
+      </nav>
+    </aside>
+
+    <div id="sidebar-overlay" class="sidebar__overlay"></div>
+
+    <div class="app-layout__main">
+      <header class="header">
+        <div class="header__left">
+          <button type="button" id="menu-btn" class="header__menu-btn" aria-label="Abrir menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <h1 class="header__title">Estoque</h1>
+        </div>
+        <div class="header__right">
+          <div class="header__user">
+            <span class="header__user-email" id="user-email"></span>
+          </div>
+          <button type="button" id="logout-btn" class="btn btn--ghost btn--sm">Sair</button>
+        </div>
+      </header>
+
+      <main class="app-layout__content">
+        <div class="page-header">
+          <h2 class="page-header__title">Estoque</h2>
+          <p class="page-header__subtitle">Produtos e movimentações</p>
+        </div>
+
+        <nav class="inventory-tabs">
+          <button type="button" class="inventory-tabs__btn inventory-tabs__btn--active" data-tab="products">Produtos</button>
+          <button type="button" class="inventory-tabs__btn" data-tab="stock">Movimentações</button>
+        </nav>
+
+        <section id="tab-products" class="inventory-tab-panel">
+        <div class="inventory-toolbar">
+          <input type="search" id="search-input" class="form-input inventory-toolbar__search" placeholder="Buscar por nome...">
+          <button type="button" id="btn-new-product" class="btn btn--primary">+ Novo produto</button>
+        </div>
+
+        <div class="inventory-filters">
+          <div class="inventory-filters__group">
+            <label class="inventory-filters__label" for="filter-size">Tamanho</label>
+            <select id="filter-size" class="inventory-filters__select form-select">
+              <option value="">Todos</option>
+              <option value="P">P</option>
+              <option value="M">M</option>
+              <option value="G">G</option>
+              <option value="GG">GG</option>
+              <option value="XG">XG</option>
+            </select>
+          </div>
+          <div class="inventory-filters__group">
+            <label class="inventory-filters__label" for="filter-origin">Origem</label>
+            <select id="filter-origin" class="inventory-filters__select form-select">
+              <option value="">Todas</option>
+              <option value="proprio">Próprio</option>
+              <option value="investidor">Investidor</option>
+            </select>
+          </div>
+          <div class="inventory-filters__group">
+            <label class="inventory-filters__label" for="filter-investor">Investidor</label>
+            <select id="filter-investor" class="inventory-filters__select form-select">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="inventory-filters__group">
+            <label class="inventory-filters__label" for="filter-status">Status</label>
+            <select id="filter-status" class="inventory-filters__select form-select">
+              <option value="">Todos</option>
+              <option value="ativo">Ativo</option>
+              <option value="inativo">Inativo</option>
+              <option value="esgotado">Esgotado</option>
+            </select>
+          </div>
+          <div class="inventory-filters__actions">
+            <button type="button" id="btn-clear-filters" class="btn btn--secondary btn--sm">Limpar</button>
+          </div>
+        </div>
+
+        <p id="products-count" class="inventory-stats">Carregando produtos...</p>
+
+        <div class="table-wrapper">
+          <table class="table" id="products-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Tamanhos</th>
+                <th>Qtd total</th>
+                <th>Custo/peça</th>
+                <th>Preço</th>
+                <th>Origem</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="products-tbody"></tbody>
+          </table>
+        </div>
+        </section>
+
+        <section id="tab-stock" class="inventory-tab-panel" hidden>
+          <div class="stock-summary grid grid--2">
+            <div class="card stock-summary__card stock-summary__card--proprio">
+              <div class="card__body">
+                <p class="stock-summary__label">Estoque próprio</p>
+                <p class="stock-summary__value" id="summary-proprio-pieces">0 peças</p>
+                <p class="stock-summary__detail" id="summary-proprio-products">0 produtos</p>
+              </div>
+            </div>
+            <div class="card stock-summary__card stock-summary__card--investidor">
+              <div class="card__body">
+                <p class="stock-summary__label">Estoque investidor</p>
+                <p class="stock-summary__value" id="summary-investidor-pieces">0 peças</p>
+                <p class="stock-summary__detail" id="summary-investidor-products">0 produtos</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card stock-alerts" id="low-stock-card">
+            <div class="card__header">
+              <h3 class="card__title">Alertas de estoque baixo</h3>
+            </div>
+            <div class="card__body" id="low-stock-list">
+              <p class="text-muted text-sm">Nenhum alerta no momento.</p>
+            </div>
+          </div>
+
+          <div class="card stock-movement-form">
+            <div class="card__header">
+              <h3 class="card__title">Registrar movimentação</h3>
+            </div>
+            <div class="card__body">
+              <form id="movement-form">
+                <div class="form-row form-row--3">
+                  <div class="form-group">
+                    <label class="form-group__label form-group__label--required" for="mov-product">Produto</label>
+                    <select class="form-input form-select" id="mov-product" required>
+                      <option value="">Selecione</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label form-group__label--required" for="mov-size">Tamanho</label>
+                    <select class="form-input form-select" id="mov-size" required>
+                      <option value="">Selecione o produto</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label form-group__label--required" for="mov-type">Tipo</label>
+                    <select class="form-input form-select" id="mov-type" required>
+                      <option value="entrada">Entrada</option>
+                      <option value="saida">Saída</option>
+                      <option value="ajuste">Ajuste</option>
+                      <option value="reserva">Reserva</option>
+                      <option value="devolucao">Devolução</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group" id="mov-qty-group">
+                    <label class="form-group__label form-group__label--required" for="mov-quantity">Quantidade</label>
+                    <input class="form-input" type="number" id="mov-quantity" min="1" value="1">
+                  </div>
+                  <div class="form-group" id="mov-adjust-group" hidden>
+                    <label class="form-group__label form-group__label--required" for="mov-adjust">Nova quantidade (ajuste)</label>
+                    <input class="form-input" type="number" id="mov-adjust" min="0" value="0">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label" for="mov-observation">Observação</label>
+                    <input class="form-input" type="text" id="mov-observation" placeholder="Opcional">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn--primary" id="btn-register-movement">Registrar</button>
+              </form>
+            </div>
+          </div>
+
+          <div class="inventory-filters stock-filters">
+            <div class="inventory-filters__group">
+              <label class="inventory-filters__label" for="hist-filter-product">Produto</label>
+              <select id="hist-filter-product" class="inventory-filters__select form-select">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div class="inventory-filters__group">
+              <label class="inventory-filters__label" for="hist-filter-type">Tipo</label>
+              <select id="hist-filter-type" class="inventory-filters__select form-select">
+                <option value="">Todos</option>
+                <option value="entrada">Entrada</option>
+                <option value="saida">Saída</option>
+                <option value="ajuste">Ajuste</option>
+                <option value="reserva">Reserva</option>
+                <option value="devolucao">Devolução</option>
+              </select>
+            </div>
+            <div class="inventory-filters__group">
+              <label class="inventory-filters__label" for="hist-filter-size">Tamanho</label>
+              <select id="hist-filter-size" class="inventory-filters__select form-select">
+                <option value="">Todos</option>
+                <option value="P">P</option>
+                <option value="M">M</option>
+                <option value="G">G</option>
+                <option value="GG">GG</option>
+                <option value="XG">XG</option>
+              </select>
+            </div>
+            <div class="inventory-filters__group">
+              <label class="inventory-filters__label" for="hist-filter-origin">Origem</label>
+              <select id="hist-filter-origin" class="inventory-filters__select form-select">
+                <option value="">Todas</option>
+                <option value="proprio">Próprio</option>
+                <option value="investidor">Investidor</option>
+              </select>
+            </div>
+            <div class="inventory-filters__group">
+              <label class="inventory-filters__label" for="hist-filter-investor">Investidor</label>
+              <select id="hist-filter-investor" class="inventory-filters__select form-select">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div class="inventory-filters__actions">
+              <button type="button" id="btn-clear-hist-filters" class="btn btn--secondary btn--sm">Limpar</button>
+            </div>
+          </div>
+
+          <p id="movements-count" class="inventory-stats">Carregando histórico...</p>
+
+          <div class="table-wrapper">
+            <table class="table" id="movements-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Produto</th>
+                  <th>Tam.</th>
+                  <th>Tipo</th>
+                  <th>Qtd</th>
+                  <th>Antes → Depois</th>
+                  <th>Origem</th>
+                  <th>Usuário</th>
+                  <th>Obs.</th>
+                </tr>
+              </thead>
+              <tbody id="movements-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal criar/editar -->
+  <div id="product-modal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog modal__dialog--lg">
+      <div class="modal__header">
+        <h3 class="modal__title" id="product-modal-title">Novo produto</h3>
+        <button type="button" class="modal__close-btn" data-modal-close aria-label="Fechar">&times;</button>
+      </div>
+      <form id="product-form">
+        <div class="modal__body">
+          <div id="form-errors" class="form-errors"></div>
+
+          <div class="form-group">
+            <label class="form-group__label form-group__label--required" for="field-name">Nome do produto</label>
+            <input class="form-input" type="text" id="field-name" name="name" placeholder="Ex: Camisa Flamengo 2024" required>
+          </div>
+
+          <div class="sizes-editor">
+            <p class="sizes-editor__title form-group__label--required">Tamanhos e quantidades</p>
+            <div class="sizes-editor__quick">
+              <input class="form-input" type="text" id="sizes-quick-input" placeholder="Ex: 10 M, 30 G, 5 GG">
+              <button type="button" class="btn btn--secondary btn--sm" id="btn-parse-sizes">Aplicar</button>
+            </div>
+            <p class="form-group__hint">Digite vários tamanhos de uma vez ou adicione linha por linha abaixo.</p>
+            <div id="sizes-rows" class="sizes-editor__rows"></div>
+            <button type="button" class="btn btn--ghost btn--sm" id="btn-add-size" style="margin-top:0.5rem">+ Adicionar tamanho</button>
+            <p class="sizes-editor__total" id="sizes-total">Total: 0 peças</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-group__label form-group__label--required" for="field-status">Status</label>
+            <select class="form-input form-select" id="field-status" name="status" required>
+              <option value="ativo">Ativo</option>
+              <option value="inativo">Inativo</option>
+              <option value="esgotado">Esgotado</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-group__label form-group__label--required" for="field-supplier">Fornecedor</label>
+              <input class="form-input" type="text" id="field-supplier" name="supplier" required>
+            </div>
+            <div class="form-group">
+              <label class="form-group__label form-group__label--required" for="field-stockOrigin">Origem do estoque</label>
+              <select class="form-input form-select" id="field-stockOrigin" name="stockOrigin" required>
+                <option value="proprio">Próprio</option>
+                <option value="investidor">Investidor</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" id="investor-group" style="display:none">
+            <label class="form-group__label form-group__label--required" for="field-investorId">Investidor</label>
+            <select class="form-input form-select" id="field-investorId" name="investorId">
+              <option value="">Selecione</option>
+            </select>
+            <p class="form-group__hint">Cadastre investidores em <a href="investors.html">Investidores</a> antes de vincular.</p>
+          </div>
+
+          <div class="form-row form-row--3">
+            <div class="form-group">
+              <label class="form-group__label form-group__label--required" for="field-costPrice">Custo por peça (R$)</label>
+              <input class="form-input" type="number" id="field-costPrice" name="costPrice" min="0" step="0.01" required>
+              <p class="form-group__hint">Valor de compra de cada camisa, sem impostos.</p>
+            </div>
+            <div class="form-group">
+              <label class="form-group__label form-group__label--required" for="field-suggestedSalePrice">Preço sugerido (R$)</label>
+              <input class="form-input" type="number" id="field-suggestedSalePrice" name="suggestedSalePrice" min="0" step="0.01" required>
+            </div>
+            <div class="form-group">
+              <label class="form-group__label form-group__label--required" for="field-minimumSalePrice">Preço mínimo (R$)</label>
+              <input class="form-input" type="number" id="field-minimumSalePrice" name="minimumSalePrice" min="0" step="0.01" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-group__label" for="field-importTaxes">Impostos de importação total (R$)</label>
+              <input class="form-input" type="number" id="field-importTaxes" name="importTaxes" min="0" step="0.01" placeholder="Pode preencher depois">
+              <p class="form-group__hint">Total pago na entrada no Brasil. Divide pela qtd. de peças e soma ao custo.</p>
+            </div>
+            <div class="form-group">
+              <label class="form-group__label" for="field-importTaxesPaidAt">Data pagamento impostos</label>
+              <input class="form-input" type="date" id="field-importTaxesPaidAt" name="importTaxesPaidAt">
+            </div>
+          </div>
+          <p id="import-cost-preview" class="form-group__hint import-cost-preview"></p>
+
+          <div class="form-group">
+            <label class="form-group__label" for="field-notes">Observações</label>
+            <textarea class="form-input" id="field-notes" name="notes" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="btn-save-product">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal visualizar -->
+  <div id="view-modal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog modal__dialog--lg">
+      <div class="modal__header">
+        <h3 class="modal__title">Detalhes do produto</h3>
+        <button type="button" class="modal__close-btn" data-modal-close aria-label="Fechar">&times;</button>
+      </div>
+      <div class="modal__body" id="view-modal-body"></div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--secondary" data-modal-close>Fechar</button>
+        <button type="button" class="btn btn--primary" id="btn-edit-from-view">Editar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal excluir -->
+  <div id="delete-modal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog">
+      <div class="modal__header">
+        <h3 class="modal__title">Confirmar exclusão</h3>
+        <button type="button" class="modal__close-btn" data-modal-close aria-label="Fechar">&times;</button>
+      </div>
+      <div class="modal__body">
+        <p>Tem certeza que deseja excluir o produto <strong id="delete-product-name"></strong>?</p>
+        <p class="text-sm text-muted">Esta ação não pode ser desfeita.</p>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
+        <button type="button" class="btn btn--danger" id="btn-confirm-delete">Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script type="module" src="../src/js/app.js"></script>
+  <script type="module" src="../src/js/pages/inventory.js"></script>
+</body>
+</html>

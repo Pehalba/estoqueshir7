@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — SHIR7</title>
+  <link rel="stylesheet" href="../src/css/main.css">
+</head>
+<body class="login-page">
+  <div class="login-page__container">
+    <div class="login-page__brand">
+      <img class="login-page__logo" src="../src/assets/logo-shir7.png" alt="SHIR7">
+      <h1 class="login-page__title">SHIR7</h1>
+      <p class="login-page__subtitle">Gerenciador de Estoque de Camisetas</p>
+    </div>
+
+    <div class="login-card">
+      <h2 class="login-card__title">Entrar</h2>
+      <p class="login-card__desc">Acesse com seu e-mail e senha</p>
+
+      <div id="login-alert" class="login-card__alert" role="alert"></div>
+
+      <form id="login-form" class="login-card__form" novalidate>
+        <div class="form-group">
+          <label class="form-group__label form-group__label--required" for="email">E-mail</label>
+          <input class="form-input" type="email" id="email" name="email" placeholder="seu@email.com" autocomplete="email" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-group__label form-group__label--required" for="password">Senha</label>
+          <input class="form-input" type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block" id="login-btn">Entrar</button>
+      </form>
+
+      <p class="login-card__footer">Primeira vez? Siga o guia <code>docs/FIREBASE-SETUP.md</code> e preencha <code>firebase.credentials.js</code></p>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script type="module" src="../src/js/pages/login.js"></script>
+</body>
+</html>
