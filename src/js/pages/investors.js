@@ -29,7 +29,7 @@ import {
 } from '../utils/domHelpers.js';
 
 const REPASSE_HINTS = {
-  capital_mais_lucro: 'Padrão SHIR7: investidor recebe o custo das peças vendidas + o % informado do lucro líquido (ex.: 40).',
+  capital_mais_lucro: 'Padrão SHIR7: custo das peças + % do lucro líquido (ex.: 40). Lucro de personalização fica 100% com a loja.',
   percent_lucro: 'Ex.: 50 = investidor recebe 50% do lucro de cada venda.',
   percent_faturamento: 'Ex.: 30 = investidor recebe 30% do valor da venda.',
   fixo_peca: 'Ex.: 25 = investidor recebe R$ 25,00 por peça vendida.',
@@ -299,7 +299,7 @@ function renderViewPanel(investor) {
     ${repasseExample}
     <p class="investor-panel__note">
       ${salesStats.saleCount} venda(s) registrada(s).
-      Lucro líquido na venda desconta taxas e custos variáveis além do custo da peça.
+      Repasse não inclui lucro de personalização — esse valor fica integralmente com a SHIR7.
     </p>
   `;
 }

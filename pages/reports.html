@@ -57,14 +57,154 @@
 
       <main class="app-layout__content">
         <div class="page-header">
-          <h2 class="page-header__title">Relatórios e Exportação</h2>
-          <p class="page-header__subtitle">Filtros e CSV — disponível na Fase 7</p>
+          <h2 class="page-header__title">Relatórios e Configurações</h2>
+          <p class="page-header__subtitle">Filtros, exportação CSV e parâmetros globais do sistema</p>
         </div>
 
-        <div class="card card--placeholder">
-          <svg class="card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <p>Relatórios serão implementados na Fase 7</p>
-        </div>
+        <nav class="reports-tabs">
+          <button type="button" class="reports-tabs__btn reports-tabs__btn--active" data-tab="reports">Relatórios</button>
+          <button type="button" class="reports-tabs__btn" data-tab="settings">Configurações</button>
+          <button type="button" class="reports-tabs__btn" data-tab="expenses">Despesas</button>
+        </nav>
+
+        <section id="tab-reports" class="reports-tab-panel">
+          <div class="card">
+            <div class="card__header"><h3 class="card__title">Gerar relatório</h3></div>
+            <div class="card__body">
+              <form id="report-form" class="reports-filters">
+                <div class="form-group">
+                  <label class="form-group__label" for="report-type">Tipo</label>
+                  <select class="form-input form-select" id="report-type" required></select>
+                </div>
+                <div class="form-group">
+                  <label class="form-group__label" for="filter-date-from">De</label>
+                  <input class="form-input" type="date" id="filter-date-from">
+                </div>
+                <div class="form-group">
+                  <label class="form-group__label" for="filter-date-to">Até</label>
+                  <input class="form-input" type="date" id="filter-date-to">
+                </div>
+                <div class="form-group">
+                  <label class="form-group__label" for="filter-product">Produto</label>
+                  <select class="form-input form-select" id="filter-product">
+                    <option value="">Todos</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-group__label" for="filter-investor">Investidor</label>
+                  <select class="form-input form-select" id="filter-investor">
+                    <option value="">Todos</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-group__label" for="filter-origin">Origem</label>
+                  <select class="form-input form-select" id="filter-origin">
+                    <option value="">Todas</option>
+                    <option value="proprio">Próprio</option>
+                    <option value="investidor">Investidor</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-group__label" for="filter-status">Status venda</label>
+                  <select class="form-input form-select" id="filter-status">
+                    <option value="">Todos</option>
+                    <option value="concluida">Concluída</option>
+                    <option value="cancelada">Cancelada</option>
+                  </select>
+                </div>
+                <div class="reports-filters__actions">
+                  <button type="submit" class="btn btn--primary" id="btn-generate">Gerar</button>
+                  <button type="button" class="btn btn--secondary" id="btn-export" disabled>Exportar CSV</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div class="card reports-result-card">
+            <div class="card__header">
+              <h3 class="card__title">Resultado</h3>
+              <p id="report-meta" class="reports-meta text-sm text-muted">Selecione os filtros e clique em Gerar.</p>
+            </div>
+            <div class="card__body">
+              <div class="table-wrapper reports-table">
+                <table class="table" id="report-table">
+                  <thead id="report-thead"></thead>
+                  <tbody id="report-tbody">
+                    <tr><td class="table__empty">Nenhum relatório gerado.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-settings" class="reports-tab-panel" hidden>
+          <div class="card">
+            <div class="card__header"><h3 class="card__title">Parâmetros globais</h3></div>
+            <div class="card__body">
+              <form id="settings-form">
+                <div class="grid grid--2">
+                  <div class="form-group">
+                    <label class="form-group__label" for="cfg-low-stock">Alerta estoque baixo (peças)</label>
+                    <input class="form-input" type="number" id="cfg-low-stock" min="0" step="1" value="5">
+                    <p class="form-group__hint">Usado no estoque e no dashboard.</p>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label" for="cfg-min-margin">Margem mínima (%)</label>
+                    <input class="form-input" type="number" id="cfg-min-margin" min="0" max="100" step="0.1" value="10">
+                    <p class="form-group__hint">Referência para validação de vendas.</p>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label" for="cfg-default-fees">Taxas padrão (R$)</label>
+                    <input class="form-input" type="number" id="cfg-default-fees" min="0" step="0.01" value="0">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn--primary">Salvar configurações</button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-expenses" class="reports-tab-panel" hidden>
+          <div class="grid grid--2">
+            <div class="card">
+              <div class="card__header"><h3 class="card__title">Nova despesa</h3></div>
+              <div class="card__body">
+                <form id="expense-form">
+                  <div class="form-group">
+                    <label class="form-group__label form-group__label--required" for="exp-description">Descrição</label>
+                    <input class="form-input" type="text" id="exp-description" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label form-group__label--required" for="exp-amount">Valor (R$)</label>
+                    <input class="form-input" type="number" id="exp-amount" min="0.01" step="0.01" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label" for="exp-category">Categoria</label>
+                    <select class="form-input form-select" id="exp-category">
+                      <option value="geral">Geral</option>
+                      <option value="embalagem">Embalagem</option>
+                      <option value="marketing">Marketing</option>
+                      <option value="operacional">Operacional</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label" for="exp-date">Data</label>
+                    <input class="form-input" type="date" id="exp-date">
+                  </div>
+                  <button type="submit" class="btn btn--primary">Registrar despesa</button>
+                </form>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card__header"><h3 class="card__title">Despesas registradas</h3></div>
+              <div class="card__body">
+                <p id="expenses-count" class="reports-meta text-sm text-muted">Carregando...</p>
+                <div id="expenses-list" class="expenses-list"></div>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   </div>

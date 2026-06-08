@@ -1,5 +1,6 @@
 .inventory-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-xs);
   margin-bottom: var(--space-lg);
   padding: var(--space-xs);
@@ -7,6 +8,29 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   width: fit-content;
+  max-width: 100%;
+}
+
+.card__header--between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.btn--link {
+  padding: 0;
+  min-height: auto;
+  color: var(--color-primary);
+  text-decoration: underline;
+  background: none;
+  border: none;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.btn--link:hover {
+  color: var(--color-primary-dark);
 }
 
 .inventory-tabs__btn {
@@ -111,6 +135,20 @@
   flex: 1;
   min-width: 200px;
   max-width: 320px;
+}
+
+.stock-product-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.stock-product-picker__select {
+  flex: 1;
+  min-width: 220px;
+  margin-bottom: 0;
 }
 
 .inventory-filters {

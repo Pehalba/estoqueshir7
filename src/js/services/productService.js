@@ -49,6 +49,7 @@ function buildPayload(data) {
     importTaxesPaidAt: data.importTaxesPaidAt || '',
     suggestedSalePrice: Number(data.suggestedSalePrice) || 0,
     minimumSalePrice: Number(data.minimumSalePrice) || 0,
+    // Precificação ativa é definida nas entradas de estoque (registerStockEntry).
     status: data.status,
     notes: data.notes || '',
   };

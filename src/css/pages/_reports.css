@@ -1,1 +1,102 @@
-/* Stub — implementação completa na Fase 7 */
+.reports-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-xs);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.reports-tabs__btn {
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.reports-tabs__btn:hover {
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+
+.reports-tabs__btn--active {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.reports-tab-panel {
+  animation: fadeIn 0.2s ease;
+}
+
+.reports-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-md);
+  align-items: end;
+}
+
+.reports-filters__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  grid-column: 1 / -1;
+}
+
+.reports-meta {
+  margin-top: var(--space-xs);
+}
+
+.reports-result-card {
+  margin-top: var(--space-lg);
+}
+
+.reports-table {
+  overflow-x: auto;
+}
+
+.expenses-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.expenses-list__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.expenses-list__info {
+  min-width: 0;
+}
+
+.expenses-list__desc {
+  font-weight: 500;
+}
+
+.expenses-list__meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.expenses-list__amount {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

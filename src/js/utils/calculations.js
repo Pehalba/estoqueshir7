@@ -75,7 +75,7 @@ export function applyMovement(sizeEntry, type, qty, adjustTo = null) {
 }
 
 const REPASSE_LABELS = {
-  capital_mais_lucro: (v) => `Capital de volta + ${v}% do lucro líquido`,
+  capital_mais_lucro: (v) => `Capital de volta + ${v}% do lucro (sem personalização)`,
   percent_lucro: (v) => `${v}% do lucro`,
   percent_faturamento: (v) => `${v}% do faturamento`,
   fixo_peca: (v) => `R$ ${v} por peça vendida`,
@@ -85,10 +85,74 @@ const REPASSE_LABELS = {
 
 export const DEFAULT_REPASSE_TYPE = 'capital_mais_lucro';
 export const DEFAULT_REPASSE_VALUE = 40;
+export const DEFAULT_SALE_PRICE = 229.9;
+
+/**
+ * REGRA SHIR7: lucro de personalização é 100% da loja — não entra no repasse do investidor.
+ * O desconto de cupom e os custos variáveis são rateados proporcionalmente entre
+ * venda de peças e personalização.
+ */
+export function investorProfitExcludingPersonalization(financials) {
+  const {
+    itemsSubtotal = 0,
+    personalizationTotal = 0,
+    grossRevenue = 0,
+    totalRevenue = 0,
+    productCost = 0,
+    variableCosts = 0,
+    netProfit = 0,
+  } = financials;
+
+  if (!personalizationTotal || personalizationTotal <= 0) {
+    return netProfit;
+  }
+
+  if (!grossRevenue) {
+    return Math.max(0, netProfit);
+  }
+
+  const itemShare = itemsSubtotal / grossRevenue;
+  const itemRevenue = totalRevenue * itemShare;
+  const costShare = totalRevenue > 0 ? itemRevenue / totalRevenue : itemShare;
+  const itemVariableCosts = variableCosts * costShare;
+  const itemNetProfit = itemRevenue - productCost - itemVariableCosts;
+
+  return Math.max(0, itemNetProfit);
+}
+
+export function investorRevenueExcludingPersonalization(financials) {
+  const {
+    itemsSubtotal = 0,
+    personalizationTotal = 0,
+    grossRevenue = 0,
+    totalRevenue = 0,
+  } = financials;
+
+  if (!personalizationTotal || personalizationTotal <= 0 || !grossRevenue) {
+    return totalRevenue;
+  }
+
+  return totalRevenue * (itemsSubtotal / grossRevenue);
+}
+
+/**
+ * Repasse ao investidor com regra de personalização aplicada (vendas rápidas).
+ */
+export function calculateInvestorRepasseForSale(investor, { unitCost, quantity, financials }) {
+  const profitBase = investorProfitExcludingPersonalization(financials);
+  const revenueBase = investorRevenueExcludingPersonalization(financials);
+
+  return calculateInvestorRepasse(investor, {
+    unitCost,
+    quantity,
+    netProfit: profitBase,
+    grossRevenue: revenueBase,
+  });
+}
 
 /**
  * Repasse ao investidor por venda.
- * capital_mais_lucro: custo das peças vendidas + % do lucro líquido total da venda.
+ * capital_mais_lucro: custo das peças vendidas + % do lucro (sem personalização).
  */
 export function calculateInvestorRepasse(investor, { unitCost, quantity, netProfit, grossRevenue }) {
   const qty = Number(quantity) || 0;
@@ -183,6 +247,126 @@ export function calculateSaleFinancials({
     margin,
     roi,
   };
+}
+
+/** Soma quantidade de linhas de venda rápida. */
+export function totalSaleLinesQuantity(lines) {
+  return (lines || []).reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
+}
+
+/**
+ * Venda rápida: vários tamanhos, cupom % e personalização por peça.
+ */
+/** Custo diluído da piscina (ADS + outros) por peça no período. */
+export function calculatePoolCostPerPiece({ adsPool = 0, otherPoolCosts = 0, piecesInPeriod = 0 }) {
+  const pool = (Number(adsPool) || 0) + (Number(otherPoolCosts) || 0);
+  const pieces = Math.max(1, Number(piecesInPeriod) || 0);
+  return pool / pieces;
+}
+
+export function calculateQuickSaleFinancials({
+  lines,
+  unitCost,
+  defaultPersonalizationCostPerPiece = 0,
+}) {
+  const defaultPersCost = Number(defaultPersonalizationCostPerPiece) || 0;
+  const safeLines = (lines || []).map((l) => ({
+    quantity: Number(l.quantity) || 0,
+    unitPrice: Number(l.unitPrice) || 0,
+    freight: Number(l.freight) || 0,
+    ads: Number(l.ads) || 0,
+    otherCosts: Number(l.otherCosts) || 0,
+    isPersonalized: !!l.isPersonalized,
+    personalizationPerPiece: Number(l.personalizationPerPiece) || 0,
+    personalizationCostPerPiece: l.isPersonalized
+      ? Number(l.personalizationCostPerPiece ?? defaultPersCost) || 0
+      : 0,
+    couponPercent: Math.min(100, Math.max(0, Number(l.couponPercent) || 0)),
+  }));
+
+  const lineTotals = safeLines.map((l) => {
+    const itemsSubtotal = l.quantity * l.unitPrice;
+    const personalization = l.isPersonalized ? l.quantity * l.personalizationPerPiece : 0;
+    const lineGross = itemsSubtotal + personalization;
+    const lineDiscount = lineGross * (l.couponPercent / 100);
+    const lineRevenue = Math.max(0, lineGross - lineDiscount);
+    return { itemsSubtotal, personalization, lineGross, lineDiscount, lineRevenue };
+  });
+
+  const totalQty = totalSaleLinesQuantity(safeLines);
+  const itemsSubtotal = lineTotals.reduce((sum, l) => sum + l.itemsSubtotal, 0);
+  const personalizedQty = safeLines.reduce(
+    (sum, l) => sum + (l.isPersonalized ? l.quantity : 0),
+    0
+  );
+  const personalizationTotal = lineTotals.reduce((sum, l) => sum + l.personalization, 0);
+  const personalizationCostTotal = safeLines.reduce((sum, l) => {
+    if (!l.isPersonalized) return sum;
+    return sum + l.quantity * l.personalizationCostPerPiece;
+  }, 0);
+  const grossRevenue = itemsSubtotal + personalizationTotal;
+  const discount = lineTotals.reduce((sum, l) => sum + l.lineDiscount, 0);
+  const totalRevenue = lineTotals.reduce((sum, l) => sum + l.lineRevenue, 0);
+  const couponPercents = [...new Set(
+    safeLines.filter((l) => l.couponPercent > 0).map((l) => l.couponPercent)
+  )];
+  const cost = Number(unitCost) || 0;
+  const productCost = cost * totalQty;
+  const freightCost = safeLines.reduce((sum, l) => sum + l.freight, 0);
+  const adsCostTotal = safeLines.reduce((sum, l) => sum + l.ads, 0);
+  const extraFees = safeLines.reduce((sum, l) => sum + l.otherCosts, 0);
+  const variableCosts = freightCost + adsCostTotal + extraFees;
+  const grossProfit = totalRevenue - productCost;
+  const netProfit = grossProfit - variableCosts - personalizationCostTotal;
+  const margin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+
+  return {
+    itemsSubtotal,
+    personalizationTotal,
+    personalizedQty,
+    personalizationCostTotal,
+    grossRevenue,
+    discount,
+    couponPercent: couponPercents.length === 1 ? couponPercents[0] : 0,
+    totalRevenue,
+    productCost,
+    freightCost,
+    adsCostTotal,
+    poolCostTotal: adsCostTotal,
+    extraFees,
+    variableCosts,
+    grossProfit,
+    netProfit,
+    margin,
+    totalQty,
+  };
+}
+
+/** Peças vendidas no mês corrente (para diluir piscina de custos). */
+export function piecesSoldInCurrentMonth(sales, extraQty = 0) {
+  const now = new Date();
+  const month = now.getMonth();
+  const year = now.getFullYear();
+
+  const monthPieces = (sales || [])
+    .filter((s) => {
+      if (s.status === 'cancelada' || !s.createdAt?.seconds) return false;
+      const d = new Date(s.createdAt.seconds * 1000);
+      return d.getMonth() === month && d.getFullYear() === year;
+    })
+    .reduce((sum, s) => sum + (Number(s.quantity) || 0), 0);
+
+  return monthPieces + (Number(extraQty) || 0);
+}
+
+export function formatSaleLinesSummary(sale) {
+  if (sale?.lines?.length) {
+    return sale.lines.map((l) => `${l.quantity} ${l.size}`).join(', ');
+  }
+  if (sale?.size) {
+    return `${sale.quantity || 0} ${sale.size}`;
+  }
+  return '—';
 }
 
 export function calculateTicketMedio(sales) {

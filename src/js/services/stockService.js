@@ -13,7 +13,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { db } from '../config/firebase.js';
 import { getCurrentUser } from './authService.js';
-import { applyMovement, totalQuantity } from '../utils/calculations.js';
+import { applyMovement, totalQuantity, unitCostWithImportTax } from '../utils/calculations.js';
 
 const MOVEMENTS = 'stockMovements';
 const PRODUCTS = 'products';
@@ -46,6 +46,7 @@ export async function registerMovement({
   quantity,
   adjustTo,
   observation,
+  stockEntryName,
   relatedSaleId,
 }) {
   const user = getCurrentUser();
@@ -120,6 +121,7 @@ export async function registerMovement({
         previousReserved,
         newReserved: applied.reserved,
         observation: observation || '',
+        stockEntryName: stockEntryName || '',
         stockOrigin: product.stockOrigin || 'proprio',
         investorId: product.investorId || '',
         userId: user.uid,
@@ -132,6 +134,145 @@ export async function registerMovement({
         previousQty,
         newQty: applied.quantity,
         movementId: movementRef.id,
+      };
+    });
+
+    return { success: true, data: result };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Entrada de estoque com precificação do lote.
+ * Atualiza custo médio ponderado e preços ativos no produto.
+ */
+export async function registerStockEntry({
+  productId,
+  stockEntryName,
+  lines,
+  observation,
+  pricing = {},
+}) {
+  const user = getCurrentUser();
+  if (!user) {
+    return { success: false, error: 'Usuário não autenticado.' };
+  }
+
+  const safeLines = (lines || [])
+    .filter((l) => l.size && Number(l.quantity) > 0)
+    .map((l) => ({ size: l.size, quantity: Number(l.quantity) }));
+
+  if (!productId || !safeLines.length) {
+    return { success: false, error: 'Produto e peças são obrigatórios.' };
+  }
+
+  const costPrice = Number(pricing.costPrice) || 0;
+  const suggestedSalePrice = Number(pricing.suggestedSalePrice) || 0;
+  const minimumSalePrice = Number(pricing.minimumSalePrice) || 0;
+  const importTaxes = Number(pricing.importTaxes) || 0;
+  const importTaxesPaidAt = pricing.importTaxesPaidAt || '';
+
+  try {
+    const productRef = doc(db, PRODUCTS, productId);
+    const entryPieces = safeLines.reduce((sum, l) => sum + l.quantity, 0);
+    const entryUnitFinal = unitCostWithImportTax(costPrice, importTaxes, safeLines);
+    const movementIds = [];
+
+    const result = await runTransaction(db, async (transaction) => {
+      const productSnap = await transaction.get(productRef);
+      if (!productSnap.exists()) {
+        throw new Error('Produto não encontrado.');
+      }
+
+      const product = productSnap.data();
+      const sizes = (product.sizes || []).map((s) => ({
+        size: s.size,
+        quantity: Number(s.quantity) || 0,
+        reserved: Number(s.reserved) || 0,
+      }));
+
+      const prevTotalQty = totalQuantity(sizes);
+      const prevUnitFinal = unitCostWithImportTax(
+        product.costPrice,
+        product.importTaxes,
+        sizes
+      );
+
+      for (const line of safeLines) {
+        const movementRef = doc(collection(db, MOVEMENTS));
+        let sizeIndex = findSizeIndex(sizes, line.size);
+
+        if (sizeIndex === -1) {
+          sizes.push({ size: line.size, quantity: 0, reserved: 0 });
+          sizeIndex = sizes.length - 1;
+        }
+
+        const current = sizes[sizeIndex];
+        const previousQty = current.quantity;
+        const previousReserved = current.reserved;
+        const applied = applyMovement(current, 'entrada', line.quantity);
+
+        if (applied.error) {
+          throw new Error(applied.error);
+        }
+
+        sizes[sizeIndex] = {
+          size: line.size,
+          quantity: applied.quantity,
+          reserved: applied.reserved,
+        };
+
+        transaction.set(movementRef, {
+          productId,
+          productName: product.name || '',
+          size: line.size,
+          type: 'entrada',
+          quantity: line.quantity,
+          previousQty,
+          newQty: applied.quantity,
+          previousReserved,
+          newReserved: applied.reserved,
+          observation: observation || 'Entrada de estoque',
+          stockEntryName: stockEntryName || '',
+          stockOrigin: product.stockOrigin || 'proprio',
+          investorId: product.investorId || '',
+          costPrice,
+          suggestedSalePrice,
+          minimumSalePrice,
+          importTaxes,
+          importTaxesPaidAt,
+          entryUnitFinal,
+          userId: user.uid,
+          userEmail: user.email || '',
+          relatedSaleId: '',
+          createdAt: serverTimestamp(),
+        });
+
+        movementIds.push(movementRef.id);
+      }
+
+      const newTotalQty = totalQuantity(sizes);
+      const blendedUnitFinal = newTotalQty > 0
+        ? (prevTotalQty * prevUnitFinal + entryPieces * entryUnitFinal) / newTotalQty
+        : entryUnitFinal;
+
+      transaction.update(productRef, {
+        sizes,
+        quantity: newTotalQty,
+        costPrice: blendedUnitFinal,
+        importTaxes: 0,
+        importTaxesPaidAt,
+        suggestedSalePrice,
+        minimumSalePrice,
+        updatedAt: serverTimestamp(),
+        status: newTotalQty === 0 ? 'esgotado' : product.status === 'esgotado' ? 'ativo' : product.status,
+      });
+
+      return {
+        movementIds,
+        entryPieces,
+        blendedUnitFinal,
       };
     });
 

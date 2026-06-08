@@ -9,17 +9,13 @@ export function isValidEmail(email) {
 }
 
 const PRODUCT_REQUIRED = [
-  'name', 'supplier', 'stockOrigin', 'costPrice',
-  'suggestedSalePrice', 'minimumSalePrice', 'status',
+  'name', 'supplier', 'stockOrigin', 'status',
 ];
 
 const PRODUCT_LABELS = {
   name: 'Nome',
   supplier: 'Fornecedor',
   stockOrigin: 'Origem',
-  costPrice: 'Preço de custo',
-  suggestedSalePrice: 'Preço sugerido',
-  minimumSalePrice: 'Preço mínimo',
   status: 'Status',
   investorId: 'ID do investidor',
 };
@@ -41,17 +37,19 @@ export function parseSizesQuickInput(text) {
   return results;
 }
 
-export function validateSizes(sizes) {
+export function validateSizes(sizes, { allowEmpty = false } = {}) {
   const errors = [];
+  const list = (sizes || []).filter((s) => s.size);
 
-  if (!sizes?.length) {
+  if (!list.length) {
+    if (allowEmpty) return errors;
     errors.push('Informe pelo menos um tamanho com quantidade.');
     return errors;
   }
 
   const seen = new Set();
 
-  for (const item of sizes) {
+  for (const item of list) {
     if (!isRequired(item.size)) {
       errors.push('Selecione o tamanho em todas as linhas.');
       continue;
@@ -82,10 +80,49 @@ export function validateProduct(data) {
     errors.push('Investidor é obrigatório quando a origem é investidor.');
   }
 
-  errors.push(...validateSizes(data.sizes));
+  errors.push(...validateSizes((data.sizes || []).filter((s) => s.size), { allowEmpty: true }));
+
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateStockEntry(data) {
+  const errors = [];
+
+  if (!isRequired(data.stockEntryName)) {
+    errors.push('Nome do estoque é obrigatório.');
+  }
+  if (!isRequired(data.productId)) {
+    errors.push('Selecione o produto.');
+  }
+
+  const lines = (data.lines || []).filter((l) => l.size && Number(l.quantity) > 0);
+  if (!lines.length) {
+    errors.push('Informe pelo menos um tamanho com quantidade.');
+  }
+
+  const seen = new Set();
+  lines.forEach((line) => {
+    if (seen.has(line.size)) {
+      errors.push(`Tamanho ${line.size} duplicado.`);
+    }
+    seen.add(line.size);
+  });
+
+  if (!isRequired(data.costPrice)) {
+    errors.push('Custo por peça é obrigatório.');
+  }
+
+  if (!isRequired(data.suggestedSalePrice)) {
+    errors.push('Preço sugerido é obrigatório.');
+  }
+
+  if (!isRequired(data.minimumSalePrice)) {
+    errors.push('Preço mínimo é obrigatório.');
+  }
 
   const cost = Number(data.costPrice);
-  const finalUnitCost = cost + importTaxPerUnit(data.importTaxes, data.sizes || []);
+  const entryPieces = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
+  const finalUnitCost = cost + importTaxPerUnit(data.importTaxes, lines);
   const suggested = Number(data.suggestedSalePrice);
   const minimum = Number(data.minimumSalePrice);
 
@@ -93,7 +130,7 @@ export function validateProduct(data) {
     errors.push('Preço mínimo não pode ser maior que o preço sugerido.');
   }
 
-  if (!isNaN(minimum) && minimum < finalUnitCost) {
+  if (!isNaN(minimum) && entryPieces > 0 && minimum < finalUnitCost) {
     errors.push('Preço mínimo não pode ser menor que o custo final por peça (com impostos).');
   }
 
@@ -194,6 +231,82 @@ export function validateSale(data, context = {}) {
 
   if (financials?.netProfit < 0) {
     errors.push('Margem negativa: lucro líquido menor que zero.');
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateQuickSale(data, context = {}) {
+  const errors = [];
+  const { product, lines, financials } = context;
+
+  if (!isRequired(data.productId)) {
+    errors.push('Selecione o estoque.');
+  }
+
+  if (!lines?.length) {
+    errors.push('Informe pelo menos um tamanho com quantidade.');
+  } else {
+    const seen = new Set();
+    for (const line of lines) {
+      if (!isRequired(line.size)) {
+        errors.push('Tamanho inválido na lista.');
+        continue;
+      }
+      const qty = Number(line.quantity);
+      if (!qty || qty < 1) {
+        errors.push(`Quantidade inválida para ${line.size}.`);
+      }
+      const price = Number(line.unitPrice);
+      if (!price || price <= 0) {
+        errors.push(`Preço inválido para ${line.size}.`);
+      } else if (product && price < Number(product.minimumSalePrice)) {
+        errors.push(`${line.size}: preço abaixo do mínimo (${product.minimumSalePrice}).`);
+      }
+      if (line.available != null && qty > line.available) {
+        errors.push(`${line.size}: só há ${line.available} disponível(is).`);
+      }
+      if (seen.has(line.size)) {
+        errors.push(`Tamanho ${line.size} duplicado.`);
+      }
+      seen.add(line.size);
+
+      const freight = Number(line.freight);
+      if (isNaN(freight) || freight < 0) {
+        errors.push(`${line.size}: frete inválido.`);
+      }
+      const ads = Number(line.ads);
+      if (isNaN(ads) || ads < 0) {
+        errors.push(`${line.size}: ADS inválido.`);
+      }
+      const otherCosts = Number(line.otherCosts);
+      if (isNaN(otherCosts) || otherCosts < 0) {
+        errors.push(`${line.size}: outros gastos inválidos.`);
+      }
+      if (line.isPersonalized) {
+        const extra = Number(line.personalizationPerPiece);
+        if (isNaN(extra) || extra < 0) {
+          errors.push(`${line.size}: valor de venda da personalização inválido.`);
+        }
+        const persCost = Number(line.personalizationCostPerPiece);
+        if (isNaN(persCost) || persCost < 0) {
+          errors.push(`${line.size}: custo de personalização inválido.`);
+        }
+      }
+      const couponPct = Number(line.couponPercent);
+      if (line.couponId && (isNaN(couponPct) || couponPct < 0 || couponPct > 100)) {
+        errors.push(`${line.size}: cupom inválido.`);
+      }
+    }
+  }
+
+  const unitCost = Number(data.unitCost);
+  if (!unitCost || unitCost <= 0) {
+    errors.push('Custo do produto ausente ou inválido.');
+  }
+
+  if (financials?.netProfit < 0) {
+    errors.push('Lucro líquido negativo — ajuste preços ou desconto.');
   }
 
   return { valid: errors.length === 0, errors };

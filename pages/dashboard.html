@@ -58,12 +58,66 @@
       <main class="app-layout__content">
         <div class="page-header">
           <h2 class="page-header__title">Visão Geral</h2>
-          <p class="page-header__subtitle">Resumo do seu negócio — disponível na Fase 6</p>
+          <p class="page-header__subtitle">Resumo do estoque, vendas e lucro em tempo real</p>
         </div>
 
-        <div class="card card--placeholder">
-          <svg class="card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-          <p>Cards e gráficos serão implementados na Fase 6</p>
+        <div id="dashboard-loading" class="dashboard-loading">Carregando dados...</div>
+
+        <div id="dashboard-content" hidden>
+          <section class="dashboard-kpis grid grid--4" id="dashboard-kpis"></section>
+
+          <section class="dashboard-charts grid grid--2">
+            <div class="card dashboard-chart-card">
+              <div class="card__header"><h3 class="card__title">Faturamento por mês</h3></div>
+              <div class="card__body"><canvas id="chart-revenue" class="dashboard-chart" height="220"></canvas></div>
+            </div>
+            <div class="card dashboard-chart-card">
+              <div class="card__header"><h3 class="card__title">Lucro por mês</h3></div>
+              <div class="card__body"><canvas id="chart-profit" class="dashboard-chart" height="220"></canvas></div>
+            </div>
+            <div class="card dashboard-chart-card">
+              <div class="card__header"><h3 class="card__title">Estoque: próprio vs investidor</h3></div>
+              <div class="card__body"><canvas id="chart-origin" class="dashboard-chart" height="220"></canvas></div>
+            </div>
+            <div class="card dashboard-chart-card">
+              <div class="card__header"><h3 class="card__title">Mais vendidos (peças)</h3></div>
+              <div class="card__body"><canvas id="chart-top" class="dashboard-chart" height="220"></canvas></div>
+            </div>
+          </section>
+
+          <section class="dashboard-lists grid grid--2">
+            <div class="card">
+              <div class="card__header"><h3 class="card__title">Estoque baixo</h3></div>
+              <div class="card__body dashboard-list" id="list-low-stock"></div>
+            </div>
+            <div class="card">
+              <div class="card__header"><h3 class="card__title">Mais vendidos</h3></div>
+              <div class="card__body dashboard-list" id="list-top-selling"></div>
+            </div>
+            <div class="card">
+              <div class="card__header"><h3 class="card__title">Maior lucro</h3></div>
+              <div class="card__body dashboard-list" id="list-top-profit"></div>
+            </div>
+            <div class="card">
+              <div class="card__header"><h3 class="card__title">Vendas com prejuízo</h3></div>
+              <div class="card__body dashboard-list" id="list-losses"></div>
+            </div>
+          </section>
+
+          <section class="card dashboard-ai">
+            <div class="card__header">
+              <h3 class="card__title">Assistente SHIR7</h3>
+              <p class="dashboard-ai__subtitle text-sm text-muted">Análises rápidas com base nos seus dados (sem API externa)</p>
+            </div>
+            <div class="card__body">
+              <div class="dashboard-ai__chips" id="ai-chips"></div>
+              <form id="ai-form" class="dashboard-ai__form">
+                <input class="form-input" type="text" id="ai-input" placeholder="Ex.: quais produtos estão parados?" autocomplete="off">
+                <button type="submit" class="btn btn--primary">Perguntar</button>
+              </form>
+              <div id="ai-response" class="dashboard-ai__response" hidden></div>
+            </div>
+          </section>
         </div>
       </main>
     </div>

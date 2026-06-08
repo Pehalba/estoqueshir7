@@ -19,13 +19,13 @@ todos:
     status: completed
   - id: fase-6-dashboard
     content: "Fase 6: dashboard cards, listas, gráficos JS puro com dados reais Firestore"
-    status: pending
+    status: completed
   - id: fase-7-relatorios-config
     content: "Fase 7: reportService, expenseService, settings, relatórios filtrados, export CSV"
-    status: pending
+    status: completed
   - id: fase-8-ia-seguranca-polish
     content: "Fase 8: aiService regras, firestore.rules, UX polish, README setup Firebase"
-    status: pending
+    status: completed
 ---
 
 # Plano SHIR7 — 8 Fases (Prompts Oficiais)

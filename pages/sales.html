@@ -57,17 +57,18 @@
 
       <main class="app-layout__content">
         <div class="page-header">
-          <h2 class="page-header__title">Registro de Vendas</h2>
-          <p class="page-header__subtitle">Baixa automática de estoque e cálculo financeiro</p>
+          <h2 class="page-header__title">Vendas</h2>
+          <p class="page-header__subtitle">Saída rápida de estoque com cupons e custos diluídos</p>
         </div>
 
-        <div class="sales-summary grid grid--4">
-          <div class="card sales-summary__card">
-            <div class="card__body">
-              <p class="sales-summary__label">Pedidos</p>
-              <p class="sales-summary__value" id="summary-orders">0</p>
-            </div>
-          </div>
+        <nav class="sales-tabs">
+          <button type="button" class="sales-tabs__btn sales-tabs__btn--active" data-tab="quick">Saída rápida</button>
+          <button type="button" class="sales-tabs__btn" data-tab="history">Saídas recentes</button>
+          <button type="button" class="sales-tabs__btn" data-tab="costs">Cupons &amp; Custos</button>
+          <button type="button" class="sales-tabs__btn" data-tab="personalization">Custos de Personalização</button>
+        </nav>
+
+        <div class="sales-summary grid grid--3">
           <div class="card sales-summary__card sales-summary__card--revenue">
             <div class="card__body">
               <p class="sales-summary__label">Faturamento</p>
@@ -82,154 +83,212 @@
           </div>
           <div class="card sales-summary__card">
             <div class="card__body">
-              <p class="sales-summary__label">Ticket médio</p>
-              <p class="sales-summary__value" id="summary-ticket">R$ 0,00</p>
+              <p class="sales-summary__label">Peças vendidas</p>
+              <p class="sales-summary__value" id="summary-pieces">0</p>
             </div>
           </div>
         </div>
 
-        <div class="sales-layout">
+        <section id="tab-quick" class="sales-tab-panel">
           <div class="card sales-form-card">
             <div class="card__header">
-              <h3 class="card__title">Nova venda</h3>
+              <h3 class="card__title">Nova saída</h3>
             </div>
             <div class="card__body">
               <div id="form-errors" class="form-errors"></div>
               <form id="sale-form">
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-group__label form-group__label--required" for="field-orderId">Nº do pedido</label>
-                    <input class="form-input" type="text" id="field-orderId" required placeholder="Ex.: PED-001">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-group__label" for="field-customer">Cliente</label>
-                    <input class="form-input" type="text" id="field-customer" placeholder="Opcional">
-                  </div>
-                </div>
-
-                <div class="form-row form-row--3">
-                  <div class="form-group">
-                    <label class="form-group__label form-group__label--required" for="field-product">Produto</label>
-                    <select class="form-input form-select" id="field-product" required>
-                      <option value="">Selecione</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-group__label form-group__label--required" for="field-size">Tamanho</label>
-                    <select class="form-input form-select" id="field-size" required>
-                      <option value="">Selecione o produto</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-group__label form-group__label--required" for="field-quantity">Quantidade</label>
-                    <input class="form-input" type="number" id="field-quantity" min="1" value="1" required>
-                  </div>
+                <div class="form-group">
+                  <label class="form-group__label form-group__label--required" for="field-product">Estoque</label>
+                  <select class="form-input form-select" id="field-product" required>
+                    <option value="">Selecione o estoque</option>
+                  </select>
                 </div>
 
                 <p id="product-info" class="sales-product-info"></p>
 
-                <div class="form-row form-row--3">
-                  <div class="form-group">
-                    <label class="form-group__label form-group__label--required" for="field-unitPrice">Preço unitário (R$)</label>
-                    <input class="form-input" type="number" id="field-unitPrice" min="0" step="0.01" required>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-group__label" for="field-discount">Desconto total (R$)</label>
-                    <input class="form-input" type="number" id="field-discount" min="0" step="0.01" value="0">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-group__label" for="field-fees">Taxas / custos (R$)</label>
-                    <input class="form-input" type="number" id="field-fees" min="0" step="0.01" value="0">
-                    <p class="form-group__hint">Marketplace, embalagem, etc.</p>
-                  </div>
+                <div class="form-group">
+                  <label class="form-group__label" for="field-base-price">Preço de venda (R$)</label>
+                  <input class="form-input" type="number" id="field-base-price" min="0" step="0.01" value="229.90" readonly>
+                  <p class="form-group__hint">Preço fixo SHIR7. Pode ajustar por linha se necessário.</p>
                 </div>
 
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-group__label" for="field-channel">Canal</label>
-                    <select class="form-input form-select" id="field-channel">
-                      <option value="instagram">Instagram</option>
-                      <option value="whatsapp">WhatsApp</option>
-                      <option value="presencial">Presencial</option>
-                      <option value="site">Site</option>
-                      <option value="outro">Outro</option>
-                    </select>
+                <div class="form-group">
+                  <label class="form-group__label form-group__label--required">Peças vendidas</label>
+                  <div class="sales-quick-input">
+                    <input class="form-input" type="text" id="sizes-quick-input" placeholder="Ex.: 5 G, 10 M">
+                    <button type="button" class="btn btn--secondary btn--sm" id="btn-parse-sizes">Aplicar</button>
                   </div>
-                  <div class="form-group">
-                    <label class="form-group__label" for="field-payment">Pagamento</label>
-                    <select class="form-input form-select" id="field-payment">
-                      <option value="pix">PIX</option>
-                      <option value="cartao">Cartão</option>
-                      <option value="dinheiro">Dinheiro</option>
-                      <option value="transferencia">Transferência</option>
-                      <option value="outro">Outro</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-group__label" for="field-trafficCost">Tráfego pago (R$)</label>
-                    <input class="form-input" type="number" id="field-trafficCost" min="0" step="0.01" value="0">
-                    <p class="form-group__hint">Opcional — usado no ROI</p>
-                  </div>
+                  <p class="form-group__hint">Digite quantidade + tamanho e pressione Enter ou Aplicar.</p>
                 </div>
 
-                <div id="finance-preview" class="sales-finance-preview"></div>
+                <div class="sale-lines-scroll">
+                  <div id="sale-lines" class="sale-lines">
+                    <div class="sale-lines__header">
+                      <span>Tam.</span>
+                      <span>Qtd</span>
+                      <span>Preço</span>
+                      <span>Cupom</span>
+                      <span>Frete</span>
+                      <span>Ads</span>
+                      <span>Outros</span>
+                      <span>Disp.</span>
+                      <span></span>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn--ghost btn--sm" id="btn-add-line">+ Linha manual</button>
+                <p class="form-group__hint">Cupom, frete, ADS, outros e personalização são por linha. Pers.: venda + custo (ex. 50 e 10). Piscina: <span id="pool-label">—</span>/peça (coluna Ads).</p>
+                <p class="sale-lines__total" id="sale-lines-total">0 peças</p>
 
-                <button type="submit" class="btn btn--primary btn--block" id="btn-save-sale">Registrar venda</button>
+                <div id="finance-preview" class="sales-finance-preview sales-finance-preview--compact"></div>
+
+                <button type="submit" class="btn btn--primary btn--block btn--lg" id="btn-save-sale">Confirmar saída</button>
               </form>
             </div>
           </div>
+        </section>
 
-          <div class="sales-list">
-            <div class="sales-toolbar">
-              <input type="search" id="search-input" class="form-input sales-toolbar__search" placeholder="Buscar pedido, produto ou cliente...">
-              <select id="filter-channel" class="form-input form-select sales-toolbar__filter">
-                <option value="">Todos os canais</option>
-                <option value="instagram">Instagram</option>
-                <option value="whatsapp">WhatsApp</option>
-                <option value="presencial">Presencial</option>
-                <option value="site">Site</option>
-                <option value="outro">Outro</option>
-              </select>
+        <section id="tab-history" class="sales-tab-panel" hidden>
+          <div class="card sales-history-card">
+            <div class="card__header">
+              <h3 class="card__title">Saídas recentes</h3>
             </div>
+            <div class="card__body">
+              <input type="search" id="search-input" class="form-input sales-toolbar__search" placeholder="Buscar produto...">
+              <p id="sales-count" class="sales-stats">Carregando...</p>
 
-            <p id="sales-count" class="sales-stats">Carregando vendas...</p>
-
-            <div class="table-wrapper">
-              <table class="table" id="sales-table">
-                <thead>
-                  <tr>
-                    <th>Pedido</th>
-                    <th>Produto</th>
-                    <th>Qtd</th>
-                    <th>Total</th>
-                    <th>Lucro</th>
-                    <th>Repasse</th>
-                    <th>Data</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="sales-tbody">
-                  <tr><td colspan="8" class="table__empty">Carregando...</td></tr>
-                </tbody>
-              </table>
+              <div class="table-wrapper sales-history-table">
+                <table class="table" id="sales-table">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Produto</th>
+                      <th>Peças</th>
+                      <th>Total</th>
+                      <th>Lucro</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sales-tbody">
+                    <tr><td colspan="5" class="table__empty">Carregando...</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
-  </div>
+        </section>
 
-  <div id="view-modal" class="modal">
-    <div class="modal__backdrop"></div>
-    <div class="modal__dialog modal__dialog--lg">
-      <div class="modal__header">
-        <h3 class="modal__title" id="view-modal-title">Detalhes da venda</h3>
-        <button type="button" class="modal__close" data-modal-close aria-label="Fechar">&times;</button>
-      </div>
-      <div class="modal__body" id="view-modal-body"></div>
-      <div class="modal__footer">
-        <button type="button" class="btn btn--secondary" data-modal-close>Fechar</button>
-      </div>
+        <section id="tab-costs" class="sales-tab-panel" hidden>
+          <div class="grid grid--2">
+            <div class="card">
+              <div class="card__header">
+                <h3 class="card__title">Piscina de custos</h3>
+              </div>
+              <div class="card__body">
+                <p class="text-sm text-muted" style="margin-bottom:1rem">
+                  Valores fixos do mês diluídos automaticamente por peça vendida nas saídas.
+                </p>
+                <form id="costs-form">
+                  <div class="form-group">
+                    <label class="form-group__label" for="set-freight">Frete padrão por venda (R$)</label>
+                    <input class="form-input" type="number" id="set-freight" min="0" step="0.01" value="20">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label" for="set-ads">ADS / tráfego pago — piscina do mês (R$)</label>
+                    <input class="form-input" type="number" id="set-ads" min="0" step="0.01" value="0">
+                    <p class="form-group__hint">Ex.: total gasto em anúncios no mês. Divide pelas peças vendidas.</p>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label" for="set-other">Outros custos fixos — piscina (R$)</label>
+                    <input class="form-input" type="number" id="set-other" min="0" step="0.01" value="0">
+                    <p class="form-group__hint">Embalagem, etiquetas, taxas fixas, etc.</p>
+                  </div>
+                  <div class="costs-pool-preview" id="pool-preview"></div>
+                  <button type="submit" class="btn btn--primary">Salvar custos</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card__header">
+                <h3 class="card__title">Cupons de desconto</h3>
+              </div>
+              <div class="card__body">
+                <p class="text-sm text-muted" style="margin-bottom:1rem">
+                  Cadastre cupons para usar na saída rápida. Cada linha pode ter um cupom diferente.
+                </p>
+                <div id="coupons-list" class="coupons-list"></div>
+                <div class="coupons-add form-row">
+                  <input class="form-input" type="text" id="new-coupon-name" placeholder="Nome (ex. INSTA10)">
+                  <input class="form-input" type="number" id="new-coupon-percent" min="1" max="100" step="0.01" placeholder="%">
+                  <button type="button" class="btn btn--secondary" id="btn-add-coupon">+ Cupom</button>
+                </div>
+                <button type="button" class="btn btn--primary" id="btn-save-coupons" style="margin-top:1rem">Salvar cupons</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-personalization" class="sales-tab-panel" hidden>
+          <div class="grid grid--2">
+            <div class="card">
+              <div class="card__header">
+                <h3 class="card__title">Padrão de personalização</h3>
+              </div>
+              <div class="card__body">
+                <p class="text-sm text-muted" style="margin-bottom:1rem">
+                  Valores usados quando nenhum tipo específico for escolhido na linha da saída rápida.
+                </p>
+                <form id="personalization-form">
+                  <div class="form-group">
+                    <label class="form-group__label" for="set-pers-price">Preço padrão ao cliente (R$/peça)</label>
+                    <input class="form-input" type="number" id="set-pers-price" min="0" step="0.01" value="50">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label" for="set-pers-cost">Custo interno padrão (R$/peça)</label>
+                    <input class="form-input" type="number" id="set-pers-cost" min="0" step="0.01" value="10">
+                    <p class="form-group__hint">Vinil, tinta, mão de obra etc.</p>
+                  </div>
+                  <div class="costs-pool-preview" id="pers-preview"></div>
+                  <button type="submit" class="btn btn--primary">Salvar padrão</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card__header">
+                <h3 class="card__title">Tipos de personalização</h3>
+              </div>
+              <div class="card__body">
+                <p class="text-sm text-muted" style="margin-bottom:1rem">
+                  Cadastre cada serviço com preço de venda e custo interno. Use na coluna Pers. da saída rápida.
+                </p>
+                <div id="pers-types-list" class="coupons-list"></div>
+                <div class="coupons-add form-row">
+                  <input class="form-input" type="text" id="new-pers-name" placeholder="Nome (ex. Nome e número)">
+                  <input class="form-input" type="number" id="new-pers-price" min="0" step="0.01" placeholder="Preço">
+                  <input class="form-input" type="number" id="new-pers-cost" min="0" step="0.01" placeholder="Custo">
+                  <button type="button" class="btn btn--secondary" id="btn-add-pers-type">+ Tipo</button>
+                </div>
+                <button type="button" class="btn btn--primary" id="btn-save-pers-types" style="margin-top:1rem">Salvar tipos</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:1.5rem">
+            <div class="card__header">
+              <h3 class="card__title">Regra SHIR7</h3>
+            </div>
+            <div class="card__body">
+              <ul class="pers-rules">
+                <li>O lucro de personalização fica <strong>100% com a loja</strong>.</li>
+                <li>O repasse do investidor <strong>não inclui</strong> receita nem custo de personalização.</li>
+                <li>Marque Pers. em cada linha; escolha o tipo ou use o valor padrão.</li>
+                <li>O custo interno reduz o lucro líquido só na parte personalizada.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   </div>
 

@@ -9,6 +9,7 @@ import { waitForAuth } from '../services/authService.js';
 import { listInvestors } from '../services/investorService.js';
 import {
   registerMovement,
+  registerStockEntry,
   getMovementHistory,
   getLowStockThreshold,
   getLowStockItems,
@@ -19,8 +20,9 @@ import {
   importTaxPerUnit,
   unitCostWithImportTax,
   totalQuantity,
+  DEFAULT_SALE_PRICE,
 } from '../utils/calculations.js';
-import { validateProduct, parseSizesQuickInput } from '../utils/validators.js';
+import { validateProduct, validateStockEntry, parseSizesQuickInput } from '../utils/validators.js';
 import { formatCurrency } from '../utils/formatCurrency.js';
 import {
   qs,
@@ -41,6 +43,9 @@ let lowStockThreshold = 5;
 let editingId = null;
 let viewingId = null;
 let deletingId = null;
+let openedProductFromStock = false;
+let pendingStockProductId = '';
+let pendingStockName = '';
 
 const tbody = qs('#products-tbody');
 const searchInput = qs('#search-input');
@@ -51,6 +56,10 @@ const investorGroup = qs('#investor-group');
 const stockOriginField = qs('#field-stockOrigin');
 const sizesRows = qs('#sizes-rows');
 const sizesTotal = qs('#sizes-total');
+const stockSizesRows = qs('#stock-sizes-rows');
+const stockSizesTotal = qs('#stock-sizes-total');
+const stockForm = qs('#stock-form');
+const stockFormErrors = qs('#stock-form-errors');
 
 function sizeSelectHtml(selected = '') {
   const options = SIZE_OPTIONS.map(
@@ -114,45 +123,232 @@ function updateSizesTotal() {
   updateImportCostPreview();
 }
 
-function updateImportCostPreview() {
-  const preview = qs('#import-cost-preview');
+function renderStockSizeRow(size = '', quantity = '') {
+  const row = document.createElement('div');
+  row.className = 'sizes-editor__row';
+  row.innerHTML = `
+    <select class="form-input form-select stock-size-field">${sizeSelectHtml(size)}</select>
+    <input class="form-input form-input--qty stock-qty-field" type="number" min="1" value="${quantity}" placeholder="Qtd">
+    <button type="button" class="btn btn--ghost btn--sm btn-remove-stock-size" title="Remover">&times;</button>
+  `;
+  row.querySelector('.stock-size-field')?.addEventListener('change', updateStockSizesTotal);
+  row.querySelector('.stock-qty-field')?.addEventListener('input', updateStockSizesTotal);
+  row.querySelector('.btn-remove-stock-size')?.addEventListener('click', () => {
+    row.remove();
+    updateStockSizesTotal();
+    if (!stockSizesRows.children.length) addStockSizeRow();
+  });
+  return row;
+}
+
+function addStockSizeRow(size = '', quantity = '') {
+  stockSizesRows.appendChild(renderStockSizeRow(size, quantity));
+  updateStockSizesTotal();
+}
+
+function setStockSizeRows(sizes) {
+  stockSizesRows.innerHTML = '';
+  if (sizes?.length) {
+    sizes.forEach((s) => addStockSizeRow(s.size, s.quantity));
+  } else {
+    addStockSizeRow();
+    addStockSizeRow();
+  }
+}
+
+function collectStockSizesFromRows() {
+  return [...stockSizesRows.querySelectorAll('.sizes-editor__row')].map((row) => ({
+    size: row.querySelector('.stock-size-field')?.value || '',
+    quantity: Number(row.querySelector('.stock-qty-field')?.value) || 0,
+  })).filter((s) => s.size && s.quantity > 0);
+}
+
+function updateStockSizesTotal() {
+  const sizes = collectStockSizesFromRows();
+  const total = sizes.reduce((sum, s) => sum + s.quantity, 0);
+  const summary = sizes.map((s) => `${s.quantity} ${s.size}`).join(', ');
+  stockSizesTotal.textContent = summary
+    ? `Total: ${total} peças (${summary})`
+    : `Total: ${total} peças`;
+  updateStockImportCostPreview();
+}
+
+function showStockFormErrors(errors) {
+  if (!errors.length) {
+    stockFormErrors.classList.remove('form-errors--visible');
+    stockFormErrors.innerHTML = '';
+    return;
+  }
+  stockFormErrors.innerHTML = `<ul>${errors.map((e) => `<li>${e}</li>`).join('')}</ul>`;
+  stockFormErrors.classList.add('form-errors--visible');
+}
+
+function populateStockProductSelect(selectedId = '') {
+  const select = qs('#stock-product');
+  if (!select) return;
+
+  const options = allProducts
+    .filter((p) => p.status !== 'inativo')
+    .map((p) => `<option value="${p.id}">${p.name}</option>`)
+    .join('');
+
+  select.innerHTML = `<option value="">Selecione o produto</option>${options}`;
+  select.value = selectedId || pendingStockProductId || '';
+}
+
+function syncStockNameFromProduct() {
+  const productId = qs('#stock-product')?.value;
+  const nameInput = qs('#stock-name');
+  if (!nameInput || nameInput.value.trim()) return;
+  const product = allProducts.find((p) => p.id === productId);
+  if (product?.name) nameInput.value = product.name;
+}
+
+function resetStockForm() {
+  stockForm?.reset();
+  qs('#stock-name').value = '';
+  qs('#stock-observation').value = '';
+  qs('#stock-sizes-quick-input').value = '';
+  qs('#stock-suggestedSalePrice').value = DEFAULT_SALE_PRICE;
+  qs('#stock-importTaxes').value = '';
+  qs('#stock-importTaxesPaidAt').value = '';
+  showStockFormErrors([]);
+  setStockSizeRows([]);
+  populateStockProductSelect();
+  updateStockImportCostPreview();
+}
+
+function openStockModal(productId = '') {
+  pendingStockProductId = productId;
+  resetStockForm();
+  if (productId) {
+    qs('#stock-product').value = productId;
+    syncStockNameFromProduct();
+  }
+  openModal('stock-modal');
+}
+
+function openProductRegisterTab() {
+  resetForm();
+  switchTab('product-register');
+}
+
+function openProductRegisterFromStock() {
+  openedProductFromStock = true;
+  pendingStockProductId = qs('#stock-product')?.value || '';
+  pendingStockName = qs('#stock-name')?.value || '';
+  closeModal('stock-modal');
+  openProductRegisterTab();
+}
+
+function applyStockQuickSizes() {
+  const text = qs('#stock-sizes-quick-input').value;
+  const parsed = parseSizesQuickInput(text);
+
+  if (!parsed.length) {
+    showToast('Formato inválido. Use: 10 M, 30 G, 5 GG', 'warning');
+    return;
+  }
+
+  setStockSizeRows(parsed);
+  qs('#stock-sizes-quick-input').value = '';
+  showToast(`${parsed.length} tamanho(s) aplicado(s)!`, 'success');
+}
+
+function getStockPricingData() {
+  return {
+    costPrice: qs('#stock-costPrice')?.value,
+    suggestedSalePrice: qs('#stock-suggestedSalePrice')?.value,
+    minimumSalePrice: qs('#stock-minimumSalePrice')?.value,
+    importTaxes: qs('#stock-importTaxes')?.value || 0,
+    importTaxesPaidAt: qs('#stock-importTaxesPaidAt')?.value || '',
+  };
+}
+
+function updateStockImportCostPreview() {
+  const preview = qs('#stock-import-cost-preview');
   if (!preview) return;
 
-  const sizes = collectSizesFromRows().filter((s) => s.size);
-  const costPrice = qs('#field-costPrice')?.value;
-  const importTaxes = qs('#field-importTaxes')?.value;
-  const total = totalQuantity(sizes);
-  const taxPerUnit = importTaxPerUnit(importTaxes, sizes);
-  const finalCost = unitCostWithImportTax(costPrice, importTaxes, sizes);
+  const lines = collectStockSizesFromRows().filter((s) => s.size && Number(s.quantity) > 0);
+  const { costPrice, importTaxes } = getStockPricingData();
+  const total = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
+  const taxPerUnit = importTaxPerUnit(importTaxes, lines);
+  const finalCost = unitCostWithImportTax(costPrice, importTaxes, lines);
 
   if (!total) {
-    preview.textContent = 'Informe os tamanhos/quantidades para calcular o imposto por peça.';
+    preview.textContent = 'Informe as peças entrando para calcular o custo final por peça deste lote.';
     return;
   }
 
   if (!importTaxes || Number(importTaxes) <= 0) {
-    preview.textContent = `Custo por peça: ${formatCurrency(costPrice || 0)} (sem impostos informados)`;
+    preview.textContent = `Custo deste lote: ${formatCurrency(costPrice || 0)} por peça (sem impostos).`;
     return;
   }
 
   preview.textContent =
     `Imposto por peça: ${formatCurrency(taxPerUnit)} (${formatCurrency(importTaxes)} ÷ ${total} peças) → ` +
-    `Custo final por peça: ${formatCurrency(finalCost)}`;
+    `Custo final do lote: ${formatCurrency(finalCost)} por peça`;
+}
+
+async function handleStockSubmit(e) {
+  e.preventDefault();
+  const stockName = qs('#stock-name').value.trim();
+  const productId = qs('#stock-product').value;
+  const lines = collectStockSizesFromRows();
+  const pricing = getStockPricingData();
+
+  const validation = validateStockEntry({
+    stockEntryName: stockName,
+    productId,
+    lines,
+    ...pricing,
+  });
+
+  showStockFormErrors(validation.errors);
+  if (!validation.valid) return;
+
+  const observation = qs('#stock-observation').value.trim();
+  const btn = qs('#btn-save-stock');
+  setLoading(btn, true);
+
+  const result = await registerStockEntry({
+    productId,
+    stockEntryName: stockName,
+    lines,
+    observation: observation || 'Entrada de estoque',
+    pricing,
+  });
+
+  setLoading(btn, false);
+
+  if (!result.success) {
+    showToast(result.error, 'error');
+    return;
+  }
+
+  const pieces = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
+  showToast(`${pieces} peça(s) adicionada(s) ao estoque!`, 'success');
+  closeModal('stock-modal');
+  pendingStockProductId = '';
+  pendingStockName = '';
+  await loadProducts();
+  await loadMovements();
 }
 
 function formatCostCell(product) {
-  const sizes = product.sizes || [];
-  const finalCost = unitCostWithImportTax(product.costPrice, product.importTaxes, sizes);
-  const taxPerUnit = importTaxPerUnit(product.importTaxes, sizes);
-
-  if (!product.importTaxes || Number(product.importTaxes) <= 0) {
-    return formatCurrency(product.costPrice);
+  const cost = Number(product.costPrice) || 0;
+  if (!cost) {
+    return '<span class="text-muted">—</span>';
   }
+  return `<strong>${formatCurrency(cost)}</strong>`;
+}
 
-  return `
-    <strong>${formatCurrency(finalCost)}</strong>
-    <br><span class="text-xs text-muted">base ${formatCurrency(product.costPrice)} + imp. ${formatCurrency(taxPerUnit)}</span>
-  `;
+function formatPriceCell(product) {
+  const price = Number(product.suggestedSalePrice) || 0;
+  if (!price) {
+    return '<span class="text-muted">—</span>';
+  }
+  return formatCurrency(price);
 }
 
 function formatSizesBadges(sizes) {
@@ -177,11 +373,6 @@ function getFormData() {
     supplier: qs('#field-supplier').value.trim(),
     stockOrigin: qs('#field-stockOrigin').value,
     investorId: qs('#field-investorId').value.trim(),
-    costPrice: qs('#field-costPrice').value,
-    importTaxes: qs('#field-importTaxes').value || 0,
-    importTaxesPaidAt: qs('#field-importTaxesPaidAt').value || '',
-    suggestedSalePrice: qs('#field-suggestedSalePrice').value,
-    minimumSalePrice: qs('#field-minimumSalePrice').value,
     status: qs('#field-status').value,
     notes: qs('#field-notes').value.trim(),
   };
@@ -292,7 +483,7 @@ function renderTable(products) {
       <td>${formatSizesBadges(p.sizes)}</td>
       <td>${p.quantity ?? 0}</td>
       <td>${formatCostCell(p)}</td>
-      <td>${formatCurrency(p.suggestedSalePrice)}</td>
+      <td>${formatPriceCell(p)}</td>
       <td>${getOriginBadge(p.stockOrigin)}</td>
       <td>${getStatusBadge(p.status)}</td>
       <td>
@@ -326,10 +517,9 @@ function resetForm() {
   editingId = null;
   formErrors.classList.remove('form-errors--visible');
   qs('#sizes-quick-input').value = '';
-  qs('#product-modal-title').textContent = 'Novo produto';
+  qs('#product-register-title').textContent = 'Novo produto';
   setSizeRows([]);
   toggleInvestorField();
-  updateImportCostPreview();
 }
 
 function fillForm(product) {
@@ -338,15 +528,9 @@ function fillForm(product) {
   qs('#field-supplier').value = product.supplier || '';
   qs('#field-stockOrigin').value = product.stockOrigin || 'proprio';
   qs('#field-investorId').value = product.investorId || '';
-  qs('#field-costPrice').value = product.costPrice ?? '';
-  qs('#field-importTaxes').value = product.importTaxes ?? '';
-  qs('#field-importTaxesPaidAt').value = product.importTaxesPaidAt || '';
-  qs('#field-suggestedSalePrice').value = product.suggestedSalePrice ?? '';
-  qs('#field-minimumSalePrice').value = product.minimumSalePrice ?? '';
   qs('#field-notes').value = product.notes || '';
   setSizeRows(product.sizes || []);
   toggleInvestorField();
-  updateImportCostPreview();
 }
 
 function applyQuickSizes() {
@@ -362,12 +546,7 @@ function applyQuickSizes() {
   showToast(`${parsed.length} tamanho(s) aplicado(s)!`, 'success');
 }
 
-function openCreateModal() {
-  resetForm();
-  openModal('product-modal');
-}
-
-async function openEditModal(id) {
+async function openEditProductTab(id) {
   const result = await getProductById(id);
   if (!result.success) {
     showToast(result.error, 'error');
@@ -375,9 +554,9 @@ async function openEditModal(id) {
   }
 
   editingId = id;
-  qs('#product-modal-title').textContent = 'Editar produto';
+  qs('#product-register-title').textContent = 'Editar produto';
   fillForm(result.data);
-  openModal('product-modal');
+  switchTab('product-register');
 }
 
 async function openViewModal(id) {
@@ -391,8 +570,7 @@ async function openViewModal(id) {
   viewingId = id;
 
   const sizesText = (p.sizes || []).map((s) => `${s.quantity} ${s.size}`).join(', ') || '—';
-  const taxPerUnit = importTaxPerUnit(p.importTaxes, p.sizes);
-  const finalCost = unitCostWithImportTax(p.costPrice, p.importTaxes, p.sizes);
+  const hasPricing = Number(p.costPrice) > 0 || Number(p.suggestedSalePrice) > 0;
 
   const fields = [
     ['Nome', p.name],
@@ -401,13 +579,9 @@ async function openViewModal(id) {
     ['Fornecedor', p.supplier],
     ['Origem', p.stockOrigin === 'investidor' ? 'Investidor' : 'Próprio'],
     ['Investidor', p.stockOrigin === 'investidor' ? getInvestorName(p.investorId) : '—'],
-    ['Custo por peça (base)', formatCurrency(p.costPrice)],
-    ['Impostos importação (total)', p.importTaxes ? formatCurrency(p.importTaxes) : '—'],
-    ['Imposto por peça', p.importTaxes ? formatCurrency(taxPerUnit) : '—'],
-    ['Custo final por peça', formatCurrency(finalCost)],
-    ['Data pag. impostos', p.importTaxesPaidAt || '—'],
-    ['Preço sugerido', formatCurrency(p.suggestedSalePrice)],
-    ['Preço mínimo', formatCurrency(p.minimumSalePrice)],
+    ['Custo médio atual', hasPricing ? formatCurrency(p.costPrice) : 'Definido na entrada de estoque'],
+    ['Preço sugerido atual', hasPricing ? formatCurrency(p.suggestedSalePrice) : '—'],
+    ['Preço mínimo atual', hasPricing ? formatCurrency(p.minimumSalePrice) : '—'],
     ['Status', p.status],
     ['Observações', p.notes || '—'],
   ];
@@ -446,16 +620,42 @@ async function handleSave(e) {
   const saveBtn = qs('#btn-save-product');
   setLoading(saveBtn, true);
 
+  let payload = data;
+  if (editingId) {
+    const existing = allProducts.find((p) => p.id === editingId);
+    if (existing) {
+      payload = {
+        ...data,
+        costPrice: existing.costPrice,
+        importTaxes: existing.importTaxes,
+        importTaxesPaidAt: existing.importTaxesPaidAt,
+        suggestedSalePrice: existing.suggestedSalePrice,
+        minimumSalePrice: existing.minimumSalePrice,
+      };
+    }
+  }
+
   const result = editingId
-    ? await updateProduct(editingId, data)
-    : await createProduct(data);
+    ? await updateProduct(editingId, payload)
+    : await createProduct(payload);
 
   setLoading(saveBtn, false);
 
   if (result.success) {
+    const wasFromStock = openedProductFromStock;
+    const newProductId = !editingId ? result.data?.id : null;
     showToast(editingId ? 'Produto atualizado!' : 'Produto criado!', 'success');
-    closeModal('product-modal');
+    editingId = null;
+    resetForm();
+    openedProductFromStock = false;
     await loadProducts();
+    if (wasFromStock) {
+      openStockModal(newProductId || pendingStockProductId);
+      if (pendingStockName) qs('#stock-name').value = pendingStockName;
+      pendingStockName = '';
+    } else {
+      switchTab('products');
+    }
   } else {
     showToast(result.error, 'error');
   }
@@ -500,6 +700,7 @@ function switchTab(tab) {
     btn.classList.toggle('inventory-tabs__btn--active', btn.dataset.tab === tab);
   });
   qs('#tab-products').hidden = tab !== 'products';
+  qs('#tab-product-register').hidden = tab !== 'product-register';
   qs('#tab-stock').hidden = tab !== 'stock';
 }
 
@@ -618,7 +819,7 @@ function renderMovementsTable() {
       <td>${m.previousQty} → ${m.newQty}</td>
       <td>${m.stockOrigin === 'investidor' ? 'Investidor' : 'Próprio'}</td>
       <td class="text-sm">${m.userEmail || '—'}</td>
-      <td class="text-sm">${m.observation || '—'}</td>
+      <td class="text-sm">${m.stockEntryName ? `<strong>${m.stockEntryName}</strong>${m.observation ? `<br>${m.observation}` : ''}` : (m.observation || '—')}</td>
     </tr>
   `).join('');
 }
@@ -700,11 +901,23 @@ function initStockEvents() {
 }
 
 function initEvents() {
-  setupModalClose('product-modal');
+  setupModalClose('stock-modal');
   setupModalClose('view-modal');
   setupModalClose('delete-modal');
 
-  qs('#btn-new-product')?.addEventListener('click', openCreateModal);
+  qs('#btn-register-stock')?.addEventListener('click', () => openStockModal());
+  qs('#btn-go-product-register')?.addEventListener('click', openProductRegisterFromStock);
+  qs('#btn-reset-product-form')?.addEventListener('click', resetForm);
+  qs('#stock-product')?.addEventListener('change', syncStockNameFromProduct);
+  stockForm?.addEventListener('submit', handleStockSubmit);
+  qs('#btn-stock-add-size')?.addEventListener('click', () => addStockSizeRow());
+  qs('#btn-stock-parse-sizes')?.addEventListener('click', applyStockQuickSizes);
+  qs('#stock-sizes-quick-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      applyStockQuickSizes();
+    }
+  });
   qs('#btn-add-size')?.addEventListener('click', () => addSizeRow());
   qs('#btn-parse-sizes')?.addEventListener('click', applyQuickSizes);
   qs('#sizes-quick-input')?.addEventListener('keydown', (e) => {
@@ -716,8 +929,9 @@ function initEvents() {
 
   productForm?.addEventListener('submit', handleSave);
   stockOriginField?.addEventListener('change', toggleInvestorField);
-  qs('#field-costPrice')?.addEventListener('input', updateImportCostPreview);
-  qs('#field-importTaxes')?.addEventListener('input', updateImportCostPreview);
+  ['#stock-costPrice', '#stock-importTaxes', '#stock-suggestedSalePrice', '#stock-minimumSalePrice'].forEach((sel) => {
+    qs(sel)?.addEventListener('input', updateStockImportCostPreview);
+  });
   searchInput?.addEventListener('input', () => renderTable(allProducts));
 
   ['#filter-size', '#filter-origin', '#filter-investor', '#filter-status'].forEach((sel) => {
@@ -740,14 +954,14 @@ function initEvents() {
     if (!product) return;
 
     if (btn.dataset.action === 'view') openViewModal(btn.dataset.id);
-    if (btn.dataset.action === 'edit') openEditModal(btn.dataset.id);
+    if (btn.dataset.action === 'edit') openEditProductTab(btn.dataset.id);
     if (btn.dataset.action === 'delete') openDeleteModal(btn.dataset.id, product.name);
   });
 
   qs('#btn-edit-from-view')?.addEventListener('click', () => {
     if (viewingId) {
       closeModal('view-modal');
-      openEditModal(viewingId);
+      openEditProductTab(viewingId);
     }
   });
 
