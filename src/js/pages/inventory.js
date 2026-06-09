@@ -5,6 +5,7 @@ import {
   updateProduct,
   deleteProduct,
 } from '../services/productService.js';
+import { CATALOG_PRODUCTS } from '../../data/catalog-products.js';
 import { waitForAuth } from '../services/authService.js';
 import { listInvestors } from '../services/investorService.js';
 import {
@@ -366,9 +367,31 @@ function productHasLowStock(product) {
   return (product.sizes || []).some((s) => availableQty(s) <= lowStockThreshold);
 }
 
+function productThumbHtml(imageUrl, alt = '') {
+  if (!imageUrl) {
+    return '<span class="table__thumb--empty" aria-hidden="true">—</span>';
+  }
+  const safeAlt = alt.replace(/"/g, '&quot;');
+  return `<img class="table__thumb" src="${imageUrl}" alt="${safeAlt}" loading="lazy">`;
+}
+
+function updateImagePreview(url = qs('#field-imageUrl')?.value.trim()) {
+  const preview = qs('#field-image-preview');
+  if (!preview) return;
+  if (!url) {
+    preview.hidden = true;
+    preview.removeAttribute('src');
+    return;
+  }
+  preview.src = url;
+  preview.hidden = false;
+  preview.onerror = () => { preview.hidden = true; };
+}
+
 function getFormData() {
   return {
     name: qs('#field-name').value.trim(),
+    imageUrl: qs('#field-imageUrl')?.value.trim() || '',
     sizes: collectSizesFromRows(),
     supplier: qs('#field-supplier').value.trim(),
     stockOrigin: qs('#field-stockOrigin').value,
@@ -473,12 +496,13 @@ function renderTable(products) {
     : `${filtered.length} de ${allProducts.length} produto(s)`;
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="8" class="table__empty">Nenhum produto encontrado.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="table__empty">Nenhum produto encontrado.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = filtered.map((p) => `
     <tr data-id="${p.id}" class="${productHasLowStock(p) ? 'table__row--low-stock' : ''}">
+      <td>${productThumbHtml(p.imageUrl, p.name)}</td>
       <td><strong>${p.name}</strong></td>
       <td>${formatSizesBadges(p.sizes)}</td>
       <td>${p.quantity ?? 0}</td>
@@ -497,6 +521,26 @@ function renderTable(products) {
   `).join('');
 }
 
+async function importCatalogIfNeeded(products) {
+  const existingNames = new Set(products.map((p) => p.name?.trim().toLowerCase()));
+  const pending = CATALOG_PRODUCTS.filter(
+    (item) => !existingNames.has(item.name.trim().toLowerCase())
+  );
+
+  if (!pending.length) return { imported: 0 };
+
+  let imported = 0;
+  for (const item of pending) {
+    const result = await createProduct({
+      ...item,
+      sizes: [],
+    });
+    if (result.success) imported += 1;
+  }
+
+  return { imported };
+}
+
 async function loadProducts() {
   productsCount.textContent = 'Carregando produtos...';
   const result = await listProducts();
@@ -507,7 +551,15 @@ async function loadProducts() {
     return;
   }
 
-  allProducts = result.data;
+  const { imported } = await importCatalogIfNeeded(result.data);
+  if (imported > 0) {
+    const refreshed = await listProducts();
+    allProducts = refreshed.success ? refreshed.data : result.data;
+    showToast(`${imported} produto(s) do catálogo SHIR7 cadastrado(s)!`, 'success');
+  } else {
+    allProducts = result.data;
+  }
+
   renderTable(allProducts);
   refreshStockUI();
 }
@@ -520,10 +572,12 @@ function resetForm() {
   qs('#product-register-title').textContent = 'Novo produto';
   setSizeRows([]);
   toggleInvestorField();
+  updateImagePreview('');
 }
 
 function fillForm(product) {
   qs('#field-name').value = product.name || '';
+  qs('#field-imageUrl').value = product.imageUrl || '';
   qs('#field-status').value = product.status || 'ativo';
   qs('#field-supplier').value = product.supplier || '';
   qs('#field-stockOrigin').value = product.stockOrigin || 'proprio';
@@ -531,6 +585,7 @@ function fillForm(product) {
   qs('#field-notes').value = product.notes || '';
   setSizeRows(product.sizes || []);
   toggleInvestorField();
+  updateImagePreview(product.imageUrl);
 }
 
 function applyQuickSizes() {
@@ -572,8 +627,14 @@ async function openViewModal(id) {
   const sizesText = (p.sizes || []).map((s) => `${s.quantity} ${s.size}`).join(', ') || '—';
   const hasPricing = Number(p.costPrice) > 0 || Number(p.suggestedSalePrice) > 0;
 
+  const imageBlock = p.imageUrl
+    ? `<img class="product-view__image" src="${p.imageUrl}" alt="${p.name}">`
+    : '<div class="product-view__image table__thumb--empty">Sem foto</div>';
+
   const fields = [
     ['Nome', p.name],
+    ['Categoria', p.category || '—'],
+    ['SKU', p.sku || '—'],
     ['Tamanhos', sizesText],
     ['Quantidade total', p.quantity ?? 0],
     ['Fornecedor', p.supplier],
@@ -587,13 +648,16 @@ async function openViewModal(id) {
   ];
 
   qs('#view-modal-body').innerHTML = `
-    <div class="product-view__fields">
-      ${fields.map(([label, value]) => `
-        <div>
-          <div class="product-view__field-label">${label}</div>
-          <div class="product-view__field-value">${value}</div>
-        </div>
-      `).join('')}
+    <div class="product-view__grid">
+      ${imageBlock}
+      <div class="product-view__fields">
+        ${fields.map(([label, value]) => `
+          <div>
+            <div class="product-view__field-label">${label}</div>
+            <div class="product-view__field-value">${value}</div>
+          </div>
+        `).join('')}
+      </div>
     </div>
   `;
 
@@ -626,6 +690,8 @@ async function handleSave(e) {
     if (existing) {
       payload = {
         ...data,
+        sku: existing.sku,
+        category: existing.category,
         costPrice: existing.costPrice,
         importTaxes: existing.importTaxes,
         importTaxesPaidAt: existing.importTaxesPaidAt,
@@ -928,6 +994,7 @@ function initEvents() {
   });
 
   productForm?.addEventListener('submit', handleSave);
+  qs('#field-imageUrl')?.addEventListener('input', (e) => updateImagePreview(e.target.value.trim()));
   stockOriginField?.addEventListener('change', toggleInvestorField);
   ['#stock-costPrice', '#stock-importTaxes', '#stock-suggestedSalePrice', '#stock-minimumSalePrice'].forEach((sel) => {
     qs(sel)?.addEventListener('input', updateStockImportCostPreview);

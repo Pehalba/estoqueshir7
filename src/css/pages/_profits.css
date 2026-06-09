@@ -1,0 +1,223 @@
+.profits-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-xs);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.profits-tabs__btn {
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.profits-tabs__btn:hover {
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+
+.profits-tabs__btn--active {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.profits-tab-panel {
+  animation: profitsFadeIn 0.2s ease;
+}
+
+@keyframes profitsFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.profits-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  align-items: end;
+  margin-bottom: var(--space-lg);
+}
+
+.profits-filters .form-group {
+  margin-bottom: 0;
+  min-width: 140px;
+}
+
+.profits-summary {
+  margin-bottom: var(--space-xl);
+}
+
+.profits-card {
+  padding: var(--space-lg);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  width: 100%;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.profits-card--clickable {
+  cursor: pointer;
+}
+
+.profits-card--clickable:hover,
+.profits-card--clickable.profits-card--open {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.profits-card__label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: var(--space-xs);
+}
+
+.profits-card__value {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.profits-card__hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-sm);
+}
+
+.profits-card--investor {
+  border-left: 4px solid #c9a227;
+}
+
+.profits-card--shir7 {
+  border-left: 4px solid var(--color-primary);
+}
+
+.profits-card--proprio {
+  border-left: 4px solid var(--color-success);
+}
+
+.profits-card__chevron {
+  float: right;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.profits-detail {
+  margin-top: var(--space-lg);
+  padding: var(--space-lg);
+  background-color: rgba(var(--color-primary-rgb), 0.06);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.profits-detail[hidden] {
+  display: none;
+}
+
+.profits-detail__title {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  margin-bottom: var(--space-md);
+}
+
+.profits-partners {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.profits-partner {
+  padding: var(--space-lg);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.profits-partner__name {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-xs);
+}
+
+.profits-partner__share {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+.profits-partner__value {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.profits-partner__breakdown {
+  margin-top: var(--space-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.profits-breakdown {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm) var(--space-lg);
+  font-size: var(--font-size-sm);
+}
+
+.profits-breakdown dt {
+  color: var(--color-text-muted);
+}
+
+.profits-breakdown dd {
+  font-weight: 600;
+  margin: 0 0 var(--space-sm);
+}
+
+.profits-rules {
+  margin-top: var(--space-lg);
+  padding: var(--space-md);
+  background-color: var(--color-bg);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.profits-rules li {
+  margin-bottom: var(--space-xs);
+}
+
+.profits-rules li::marker {
+  color: var(--color-primary);
+}
+
+@media (max-width: 768px) {
+  .profits-partners,
+  .profits-breakdown {
+    grid-template-columns: 1fr;
+  }
+
+  .profits-card__value,
+  .profits-partner__value {
+    font-size: var(--font-size-xl);
+  }
+}

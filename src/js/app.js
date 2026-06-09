@@ -8,6 +8,7 @@ const PROTECTED_PAGES = [
   'inventory.html',
   'sales.html',
   'investors.html',
+  'profits.html',
   'reports.html',
 ];
 

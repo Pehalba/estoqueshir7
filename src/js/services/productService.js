@@ -39,6 +39,9 @@ function buildPayload(data) {
 
   return {
     name: data.name,
+    sku: data.sku || '',
+    category: data.category || '',
+    imageUrl: data.imageUrl || '',
     sizes,
     quantity: totalQuantity(sizes),
     supplier: data.supplier,
