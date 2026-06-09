@@ -1,6 +1,33 @@
 /* Ajustes globais para tablets e celulares */
 
+.table-wrapper--hint {
+  position: relative;
+}
+
+.table-wrapper--hint::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2rem;
+  pointer-events: none;
+  background: linear-gradient(to left, var(--color-surface), transparent);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.scroll-hint {
+  display: none;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: 0 0 var(--space-sm);
+}
+
 @media (max-width: 768px) {
+  .scroll-hint {
+    display: block;
+  }
   .header {
     padding-left: max(var(--space-md), env(safe-area-inset-left));
     padding-right: max(var(--space-md), env(safe-area-inset-right));
@@ -39,10 +66,12 @@
   .reports-tabs,
   .profits-tabs {
     width: 100%;
+    max-width: 100%;
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    overscroll-behavior-x: contain;
   }
 
   .inventory-tabs::-webkit-scrollbar,
@@ -56,9 +85,20 @@
   .sales-tabs__btn,
   .reports-tabs__btn,
   .profits-tabs__btn {
+    flex: 0 0 auto;
     flex-shrink: 0;
     white-space: nowrap;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.85rem;
+    font-size: var(--font-size-xs);
+    min-height: 40px;
+    touch-action: manipulation;
+  }
+
+  .profits-tabs--4 .profits-tabs__btn,
+  .profits-tabs--5 .profits-tabs__btn {
+    flex: 0 0 auto;
+    min-width: auto;
+    padding: 0.45rem 0.7rem;
   }
 
   .inventory-toolbar,
@@ -122,10 +162,97 @@
   .table-wrapper {
     -webkit-overflow-scrolling: touch;
     border-radius: var(--radius-md);
+    overscroll-behavior-x: contain;
+  }
+
+  .table-wrapper--hint::after {
+    display: block;
   }
 
   .table {
-    min-width: 560px;
+    min-width: 520px;
+  }
+
+  .dashboard-kpi {
+    padding: var(--space-md);
+  }
+
+  .dashboard-kpi__value {
+    font-size: var(--font-size-lg);
+    word-break: break-word;
+  }
+
+  .dashboard-stock-detail__head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+  }
+
+  .stock-detail-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stock-detail-tabs,
+  .stock-detail-view {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .stock-detail-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .stock-detail-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .stock-detail-tabs__btn,
+  .stock-detail-view__btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .dashboard-potential-summary--2 {
+    grid-template-columns: 1fr;
+  }
+
+  .profits-resumo-total .profits-card__value {
+    font-size: var(--font-size-xl);
+  }
+
+  .profits-summary--compact {
+    max-width: none;
+  }
+
+  .platform-costs.grid--3 {
+    grid-template-columns: 1fr;
+  }
+
+  .sales-summary__value {
+    font-size: var(--font-size-xl);
+  }
+
+  .sales-finance-preview--compact {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sales-finance-preview__chip {
+    width: 100%;
+  }
+
+  .card__header {
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .card__header--between .btn {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .table th,
@@ -243,11 +370,22 @@
 
 @media (max-width: 480px) {
   .app-layout__content {
-    padding: var(--space-sm);
+    padding: max(var(--space-sm), env(safe-area-inset-left)) max(var(--space-sm), env(safe-area-inset-right));
+    padding-bottom: max(var(--space-sm), env(safe-area-inset-bottom));
+  }
+
+  .page-header__title {
+    font-size: var(--font-size-base);
   }
 
   .btn:not(.btn--sm):not(.btn--ghost) {
     min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .form-input,
+  .form-select {
+    font-size: 16px;
   }
 
   .btn--sm {

@@ -48,6 +48,7 @@ let allStockEntries = [];
 let allInvestors = [];
 let allMovements = [];
 let lowStockThreshold = 5;
+let movementsLoaded = false;
 let editingId = null;
 let viewingId = null;
 let viewingStockEntryId = null;
@@ -294,8 +295,10 @@ async function handleStockSubmit(e) {
   closeModal('stock-modal');
   pendingStockProductId = '';
   pendingStockName = '';
-  await loadStockEntries();
-  await loadMovements();
+  await loadStockEntries({ fresh: true });
+  if (movementsLoaded) {
+    await loadMovements({ fresh: true });
+  }
 }
 
 function formatCostCell(entry) {
@@ -551,34 +554,52 @@ async function importCatalogIfNeeded(products) {
   return { imported };
 }
 
-async function loadStockEntries() {
+async function loadStockEntries(options = {}) {
   stockEntriesCount.textContent = 'Carregando estoques...';
 
-  const productsResult = await listProducts();
+  const [productsResult, stockResult] = await Promise.all([
+    listProducts(options),
+    listStockEntries({}, options),
+  ]);
+
   if (productsResult.success) {
     allProducts = productsResult.data;
-    const migration = await migrateLegacyProductStock(allProducts);
+    const migration = await migrateLegacyProductStock(
+      allProducts,
+      stockResult.success ? stockResult.data : null
+    );
+
     if (migration.migrated > 0) {
       showToast(`${migration.migrated} estoque(s) legado(s) migrado(s) para lotes.`, 'success');
-      const refreshed = await listProducts();
-      if (refreshed.success) allProducts = refreshed.data;
+      const [refreshedProducts, refreshedStock] = await Promise.all([
+        listProducts({ fresh: true }),
+        listStockEntries({}, { fresh: true }),
+      ]);
+      if (refreshedProducts.success) allProducts = refreshedProducts.data;
+      if (refreshedStock.success) {
+        allStockEntries = refreshedStock.data;
+        renderStockEntriesTable(allStockEntries);
+        renderCatalogTable(allProducts);
+        refreshStockUI();
+        return;
+      }
     }
+
     const { imported } = await importCatalogIfNeeded(allProducts);
     if (imported > 0) {
       showToast(`${imported} produto(s) do catálogo SHIR7 cadastrado(s)!`, 'success');
+      const refreshed = await listProducts({ fresh: true });
+      if (refreshed.success) allProducts = refreshed.data;
     }
-    const refreshedProducts = await listProducts();
-    if (refreshedProducts.success) allProducts = refreshedProducts.data;
   }
 
-  const result = await listStockEntries();
-  if (!result.success) {
+  if (!stockResult.success) {
     stockEntriesCount.textContent = 'Erro ao carregar estoques.';
-    showToast(result.error, 'error');
+    showToast(stockResult.error, 'error');
     return;
   }
 
-  allStockEntries = result.data;
+  allStockEntries = stockResult.data;
   renderStockEntriesTable(allStockEntries);
   renderCatalogTable(allProducts);
   refreshStockUI();
@@ -785,7 +806,7 @@ async function handleSave(e) {
     editingId = null;
     resetForm();
     openedProductFromStock = false;
-    await loadStockEntries();
+    await loadStockEntries({ fresh: true });
     if (wasFromStock) {
       openStockModal(newProductId || pendingStockProductId);
       if (pendingStockName) qs('#stock-name').value = pendingStockName;
@@ -814,8 +835,10 @@ async function handleDelete() {
     closeModal('delete-modal');
     deletingId = null;
     deletingTarget = null;
-    await loadStockEntries();
-    if (wasStock) await loadMovements();
+    await loadStockEntries({ fresh: true });
+    if (wasStock && movementsLoaded) {
+      await loadMovements({ fresh: true });
+    }
   } else {
     showToast(result.error, 'error');
   }
@@ -845,6 +868,11 @@ function switchTab(tab) {
   qs('#tab-catalog').hidden = tab !== 'catalog';
   qs('#tab-product-register').hidden = tab !== 'product-register';
   qs('#tab-movements').hidden = tab !== 'movements';
+
+  if (tab === 'movements' && !movementsLoaded) {
+    movementsLoaded = true;
+    loadMovements();
+  }
 }
 
 function populateMovementStockSelect() {
@@ -972,9 +1000,9 @@ function renderMovementsTable() {
   `).join('');
 }
 
-async function loadMovements() {
+async function loadMovements(options = {}) {
   qs('#movements-count').textContent = 'Carregando histórico...';
-  const result = await getMovementHistory();
+  const result = await getMovementHistory({}, options);
 
   if (!result.success) {
     qs('#movements-count').textContent = 'Erro ao carregar histórico.';
@@ -1022,8 +1050,10 @@ async function handleMovementSubmit(e) {
   if (result.success) {
     showToast('Movimentação registrada!', 'success');
     qs('#mov-observation').value = '';
-    await loadStockEntries();
-    await loadMovements();
+    await loadStockEntries({ fresh: true });
+    if (movementsLoaded) {
+      await loadMovements({ fresh: true });
+    }
   } else {
     showToast(result.error, 'error');
   }
@@ -1135,10 +1165,13 @@ async function init() {
   initEvents();
   initStockEvents();
   await waitForAuth();
-  lowStockThreshold = await getLowStockThreshold();
-  await loadInvestorsForSelect();
-  await loadStockEntries();
-  await loadMovements();
+  await Promise.all([
+    getLowStockThreshold().then((value) => {
+      lowStockThreshold = value ?? 5;
+    }),
+    loadInvestorsForSelect(),
+    loadStockEntries(),
+  ]);
 }
 
 init();

@@ -47,15 +47,30 @@
 @media (max-width: 768px) {
   .app-layout__main {
     margin-left: 0;
+    width: 100%;
+    min-width: 0;
   }
 
   .app-layout__content {
-    padding: var(--space-md);
+    padding: max(var(--space-md), env(safe-area-inset-left)) max(var(--space-md), env(safe-area-inset-right));
+    padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
+    min-width: 0;
   }
 
   .grid--2,
   .grid--3,
   .grid--4 {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-kpis.grid--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-sm);
+  }
+}
+
+@media (max-width: 400px) {
+  .dashboard-kpis.grid--4 {
     grid-template-columns: 1fr;
   }
 }

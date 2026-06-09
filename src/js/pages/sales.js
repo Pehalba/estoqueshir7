@@ -258,14 +258,38 @@ function renderSaleLine(line = {}) {
   row.className = 'sale-lines__row';
   const price = unitPrice !== '' ? unitPrice : getBasePrice();
   row.innerHTML = `
-    <select class="form-input form-select line-size">${sizeSelectHtml(size, stockEntry)}</select>
-    <input class="form-input line-qty" type="number" min="1" value="${quantity}" placeholder="Qtd">
-    <input class="form-input line-price" type="number" min="0" step="0.01" value="${price}" placeholder="R$">
-    <select class="form-input form-select line-coupon" title="Cupom da linha">${couponSelectHtml(couponId)}</select>
-    <input class="form-input line-freight" type="number" min="0" step="0.01" value="${freight}" title="Frete da linha">
-    <input class="form-input line-ads" type="number" min="0" step="0.01" value="${ads}" title="ADS / tráfego da linha">
-    <input class="form-input line-other" type="number" min="0" step="0.01" value="${otherCosts}" title="Outros gastos da linha">
-    <span class="sale-lines__avail text-sm text-muted"></span>
+    <label class="sale-lines__field">
+      <span class="sale-lines__field-label">Tamanho</span>
+      <select class="form-input form-select line-size">${sizeSelectHtml(size, stockEntry)}</select>
+    </label>
+    <label class="sale-lines__field">
+      <span class="sale-lines__field-label">Quantidade</span>
+      <input class="form-input line-qty" type="number" min="1" value="${quantity}" placeholder="Qtd">
+    </label>
+    <label class="sale-lines__field">
+      <span class="sale-lines__field-label">Preço (R$)</span>
+      <input class="form-input line-price" type="number" min="0" step="0.01" value="${price}" placeholder="R$">
+    </label>
+    <label class="sale-lines__field">
+      <span class="sale-lines__field-label">Cupom</span>
+      <select class="form-input form-select line-coupon" title="Cupom da linha">${couponSelectHtml(couponId)}</select>
+    </label>
+    <label class="sale-lines__field">
+      <span class="sale-lines__field-label">Frete</span>
+      <input class="form-input line-freight" type="number" min="0" step="0.01" value="${freight}" title="Frete da linha">
+    </label>
+    <label class="sale-lines__field">
+      <span class="sale-lines__field-label">Ads</span>
+      <input class="form-input line-ads" type="number" min="0" step="0.01" value="${ads}" title="ADS / tráfego da linha">
+    </label>
+    <label class="sale-lines__field">
+      <span class="sale-lines__field-label">Outros</span>
+      <input class="form-input line-other" type="number" min="0" step="0.01" value="${otherCosts}" title="Outros gastos da linha">
+    </label>
+    <div class="sale-lines__field sale-lines__field--avail">
+      <span class="sale-lines__field-label">Disponível</span>
+      <span class="sale-lines__avail text-sm text-muted"></span>
+    </div>
     <button type="button" class="btn btn--ghost btn--sm btn-remove-line" title="Remover">&times;</button>
     <div class="sale-lines__pers">
       <label class="sale-lines__pers-check">

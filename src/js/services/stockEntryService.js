@@ -12,6 +12,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { db } from '../config/firebase.js';
 import { totalQuantity } from '../utils/calculations.js';
+import { cachedFetch, invalidateCache, CACHE_KEYS } from '../utils/dataCache.js';
 
 const COLLECTION = 'stockEntries';
 
@@ -62,22 +63,28 @@ export function buildStockEntryPayload(data) {
   };
 }
 
-export async function listStockEntries(filters = {}) {
-  try {
-    let snapshot;
-    try {
-      const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
-      snapshot = await getDocs(q);
-    } catch {
-      snapshot = await getDocs(collection(db, COLLECTION));
-    }
+async function fetchStockEntriesFromFirestore() {
+  const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
+  const snapshot = await getDocs(q);
+  const data = snapshot.docs.map(mapDoc);
+  data.sort((a, b) => {
+    const ta = a.createdAt?.seconds ?? 0;
+    const tb = b.createdAt?.seconds ?? 0;
+    return tb - ta;
+  });
+  return { success: true, data };
+}
 
-    let data = snapshot.docs.map(mapDoc);
-    data.sort((a, b) => {
-      const ta = a.createdAt?.seconds ?? 0;
-      const tb = b.createdAt?.seconds ?? 0;
-      return tb - ta;
-    });
+export async function listStockEntries(filters = {}, options = {}) {
+  try {
+    const result = await cachedFetch(
+      CACHE_KEYS.STOCK_ENTRIES,
+      fetchStockEntriesFromFirestore,
+      options
+    );
+    if (!result.success) return result;
+
+    let data = [...result.data];
 
     if (filters.productId) {
       data = data.filter((e) => e.productId === filters.productId);
@@ -98,7 +105,7 @@ export async function listStockEntries(filters = {}) {
       );
     }
 
-    return { success: true, data };
+    return { success: true, data, fromCache: result.fromCache };
   } catch (error) {
     const msg = error.code === 'permission-denied'
       ? 'Sem permissão. Verifique se está logado.'
@@ -126,6 +133,7 @@ export async function createStockEntry(data) {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    invalidateCache(CACHE_KEYS.STOCK_ENTRIES);
     return { success: true, data: { id: docRef.id } };
   } catch (error) {
     return { success: false, error: error.message };
@@ -138,6 +146,7 @@ export async function updateStockEntry(id, data) {
       ...buildStockEntryPayload(data),
       updatedAt: serverTimestamp(),
     });
+    invalidateCache(CACHE_KEYS.STOCK_ENTRIES);
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
@@ -147,6 +156,7 @@ export async function updateStockEntry(id, data) {
 export async function deleteStockEntry(id) {
   try {
     await deleteDoc(doc(db, COLLECTION, id));
+    invalidateCache(CACHE_KEYS.STOCK_ENTRIES);
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };

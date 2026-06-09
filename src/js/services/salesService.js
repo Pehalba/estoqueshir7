@@ -8,9 +8,11 @@ import {
   query,
   where,
   orderBy,
+  limit,
   serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { db } from '../config/firebase.js';
+import { cachedFetch, invalidateCache, CACHE_KEYS } from '../utils/dataCache.js';
 import { getCurrentUser } from './authService.js';
 import { getProductById } from './productService.js';
 import { getStockEntryById } from './stockEntryService.js';
@@ -35,22 +37,24 @@ function mapSale(snapshot) {
   return { id: snapshot.id, ...snapshot.data() };
 }
 
-export async function listSales(filters = {}) {
-  try {
-    let snapshot;
-    try {
-      const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
-      snapshot = await getDocs(q);
-    } catch {
-      snapshot = await getDocs(collection(db, COLLECTION));
-    }
+async function fetchSalesFromFirestore() {
+  const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
+  const snapshot = await getDocs(q);
+  const sales = snapshot.docs.map(mapSale);
+  sales.sort((a, b) => {
+    const ta = a.createdAt?.seconds ?? 0;
+    const tb = b.createdAt?.seconds ?? 0;
+    return tb - ta;
+  });
+  return { success: true, data: sales };
+}
 
-    let sales = snapshot.docs.map(mapSale);
-    sales.sort((a, b) => {
-      const ta = a.createdAt?.seconds ?? 0;
-      const tb = b.createdAt?.seconds ?? 0;
-      return tb - ta;
-    });
+export async function listSales(filters = {}, options = {}) {
+  try {
+    const result = await cachedFetch(CACHE_KEYS.SALES, fetchSalesFromFirestore, options);
+    if (!result.success) return result;
+
+    let sales = [...result.data];
 
     if (filters.status) {
       sales = sales.filter((s) => s.status === filters.status);
@@ -71,7 +75,7 @@ export async function listSales(filters = {}) {
       );
     }
 
-    return { success: true, data: sales };
+    return { success: true, data: sales, fromCache: result.fromCache };
   } catch (error) {
     return { success: false, error: error.message };
   }
@@ -91,13 +95,15 @@ export async function getSaleById(id) {
 
 export async function orderIdExists(orderId) {
   try {
-    const q = query(collection(db, COLLECTION), where('orderId', '==', orderId.trim()));
+    const q = query(
+      collection(db, COLLECTION),
+      where('orderId', '==', orderId.trim()),
+      limit(1)
+    );
     const snapshot = await getDocs(q);
     return !snapshot.empty;
   } catch {
-    const result = await listSales();
-    if (!result.success) return false;
-    return result.data.some((s) => s.orderId === orderId.trim());
+    return false;
   }
 }
 
@@ -232,6 +238,12 @@ export async function createSale(input) {
     await updateDoc(doc(db, MOVEMENTS, movementResult.data.movementId), {
       relatedSaleId: saleRef.id,
     });
+
+    invalidateCache(
+      CACHE_KEYS.SALES,
+      CACHE_KEYS.STOCK_ENTRIES,
+      CACHE_KEYS.MOVEMENTS
+    );
 
     return { success: true, data: { id: saleRef.id, ...salePayload, investorPayout } };
   } catch (error) {
@@ -420,6 +432,12 @@ export async function createQuickSale(input) {
       movementIds.map((mid) =>
         updateDoc(doc(db, MOVEMENTS, mid), { relatedSaleId: saleRef.id })
       )
+    );
+
+    invalidateCache(
+      CACHE_KEYS.SALES,
+      CACHE_KEYS.STOCK_ENTRIES,
+      CACHE_KEYS.MOVEMENTS
     );
 
     return { success: true, data: { id: saleRef.id, ...salePayload } };

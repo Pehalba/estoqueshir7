@@ -12,6 +12,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { db } from '../config/firebase.js';
 import { listStockEntries } from './stockEntryService.js';
+import { cachedFetch, invalidateCache, CACHE_KEYS } from '../utils/dataCache.js';
 
 const COLLECTION = 'investors';
 
@@ -44,24 +45,21 @@ function buildPayload(data) {
   };
 }
 
-export async function listInvestors() {
+async function fetchInvestorsFromFirestore() {
+  const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
+  const snapshot = await getDocs(q);
+  const data = snapshot.docs.map(mapDoc);
+  data.sort((a, b) => {
+    const ta = a.createdAt?.seconds ?? 0;
+    const tb = b.createdAt?.seconds ?? 0;
+    return tb - ta;
+  });
+  return { success: true, data };
+}
+
+export async function listInvestors(options = {}) {
   try {
-    let snapshot;
-    try {
-      const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
-      snapshot = await getDocs(q);
-    } catch {
-      snapshot = await getDocs(collection(db, COLLECTION));
-    }
-
-    const data = snapshot.docs.map(mapDoc);
-    data.sort((a, b) => {
-      const ta = a.createdAt?.seconds ?? 0;
-      const tb = b.createdAt?.seconds ?? 0;
-      return tb - ta;
-    });
-
-    return { success: true, data };
+    return await cachedFetch(CACHE_KEYS.INVESTORS, fetchInvestorsFromFirestore, options);
   } catch (error) {
     const msg = error.code === 'permission-denied'
       ? 'Sem permissão. Verifique se está logado e se as regras do Firestore foram publicadas.'
@@ -89,6 +87,7 @@ export async function createInvestor(data) {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    invalidateCache(CACHE_KEYS.INVESTORS);
     return { success: true, data: { id: docRef.id } };
   } catch (error) {
     return { success: false, error: error.message };
@@ -101,6 +100,7 @@ export async function updateInvestor(id, data) {
       ...buildPayload(data),
       updatedAt: serverTimestamp(),
     });
+    invalidateCache(CACHE_KEYS.INVESTORS);
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
@@ -126,6 +126,7 @@ export async function deleteInvestor(id) {
     }
 
     await deleteDoc(doc(db, COLLECTION, id));
+    invalidateCache(CACHE_KEYS.INVESTORS);
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };

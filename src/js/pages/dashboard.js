@@ -1410,16 +1410,46 @@ function renderDashboard({ products, sales, investors, threshold }) {
   });
 }
 
+const EMPTY_SALES_STATS = {
+  count: 0,
+  revenue: 0,
+  profit: 0,
+  pieces: 0,
+  avgMargin: 0,
+  ticket: 0,
+};
+
+const EMPTY_PERS_STATS = {
+  revenue: 0,
+  cost: 0,
+  profit: 0,
+  pieces: 0,
+  orderCount: 0,
+};
+
 async function loadData() {
-  const [stockRes, salesRes, investorsRes, threshold] = await Promise.all([
-    listStockEntries(),
+  const thresholdPromise = getLowStockThreshold();
+  const stockRes = await listStockEntries();
+  const threshold = (await thresholdPromise) ?? 5;
+
+  if (stockRes.success) {
+    const products = entriesAsStockItems(stockRes.data);
+    const stock = aggregateStock(products);
+    dashboardData = { products, sales: [], investors: [], stock, threshold };
+    renderKpis(stock, EMPTY_SALES_STATS, EMPTY_PERS_STATS);
+    renderLists(products, [], threshold);
+    renderAiChips();
+    revealDashboard();
+  } else {
+    showToast(stockRes.error, 'error');
+  }
+
+  const [salesRes, investorsRes] = await Promise.all([
     listSales(),
     listInvestors(),
-    getLowStockThreshold(),
   ]);
 
   const errors = [];
-  if (!stockRes.success) errors.push(stockRes.error);
   if (!salesRes.success) errors.push(salesRes.error);
   if (!investorsRes.success) errors.push(investorsRes.error);
 
@@ -1436,7 +1466,7 @@ async function loadData() {
     products: stockRes.success ? entriesAsStockItems(stockRes.data) : [],
     sales: salesRes.success ? salesRes.data : [],
     investors: investorsRes.success ? investorsRes.data : [],
-    threshold: threshold ?? 5,
+    threshold,
   });
 }
 

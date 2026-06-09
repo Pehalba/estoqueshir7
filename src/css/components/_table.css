@@ -61,3 +61,14 @@
   text-align: center;
   color: var(--color-text-muted);
 }
+
+@media (max-width: 768px) {
+  .table__thumb {
+    width: 32px;
+    height: 32px;
+  }
+
+  .sizes-badges {
+    max-width: 140px;
+  }
+}

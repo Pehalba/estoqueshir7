@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Vendas — SHIR7</title>
   <link rel="stylesheet" href="../src/css/main.css">
 </head>
@@ -161,7 +161,8 @@
               <input type="search" id="search-input" class="form-input sales-toolbar__search" placeholder="Buscar produto...">
               <p id="sales-count" class="sales-stats">Carregando...</p>
 
-              <div class="table-wrapper sales-history-table">
+              <p class="scroll-hint">Deslize a tabela para ver todas as colunas →</p>
+              <div class="table-wrapper table-wrapper--hint sales-history-table">
                 <table class="table" id="sales-table">
                   <thead>
                     <tr>

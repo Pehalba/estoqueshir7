@@ -66,11 +66,25 @@
 }
 
 @media (max-width: 768px) {
+  .header {
+    padding-left: max(var(--space-md), env(safe-area-inset-left));
+    padding-right: max(var(--space-md), env(safe-area-inset-right));
+    height: auto;
+    min-height: var(--header-height);
+    padding-top: env(safe-area-inset-top);
+  }
+
   .header__menu-btn {
     display: flex;
+    touch-action: manipulation;
   }
 
   .header__user-email {
     display: none;
+  }
+
+  .header__right .btn {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 }

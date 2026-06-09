@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Estoque — SHIR7</title>
   <link rel="stylesheet" href="../src/css/main.css">
 </head>
@@ -119,7 +119,8 @@
 
         <p id="stock-entries-count" class="inventory-stats">Carregando estoques...</p>
 
-        <div class="table-wrapper">
+        <p class="scroll-hint">Deslize a tabela para ver todas as colunas →</p>
+        <div class="table-wrapper table-wrapper--hint">
           <table class="table" id="stock-entries-table">
             <thead>
               <tr>
@@ -160,7 +161,8 @@
 
         <p id="catalog-count" class="inventory-stats">Carregando produtos...</p>
 
-        <div class="table-wrapper">
+        <p class="scroll-hint">Deslize a tabela para ver todas as colunas →</p>
+        <div class="table-wrapper table-wrapper--hint">
           <table class="table" id="catalog-table">
             <thead>
               <tr>
@@ -355,7 +357,8 @@
 
           <p id="movements-count" class="inventory-stats">Carregando histórico...</p>
 
-          <div class="table-wrapper">
+          <p class="scroll-hint">Deslize a tabela para ver todas as colunas →</p>
+          <div class="table-wrapper table-wrapper--hint">
             <table class="table" id="movements-table">
               <thead>
                 <tr>

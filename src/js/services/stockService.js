@@ -5,6 +5,7 @@ import {
   getDocs,
   query,
   orderBy,
+  limit,
   serverTimestamp,
   runTransaction,
   updateDoc,
@@ -23,6 +24,9 @@ import {
   importTaxPerUnit,
   unitCostWithImportTax,
 } from '../utils/calculations.js';
+import { cachedFetch, invalidateCache, CACHE_KEYS } from '../utils/dataCache.js';
+
+const MOVEMENTS_FETCH_LIMIT = 200;
 
 const MOVEMENTS = 'stockMovements';
 const STOCK_ENTRIES = 'stockEntries';
@@ -58,11 +62,19 @@ function entryStatusFromQty(qty, currentStatus) {
 /**
  * Migra estoque legado que ainda está no documento do produto para stockEntries.
  */
-export async function migrateLegacyProductStock(products) {
-  const entriesResult = await listStockEntries();
-  if (!entriesResult.success) return entriesResult;
+export async function migrateLegacyProductStock(products, existingEntries = null) {
+  const hasLegacyStock = (products || []).some((product) => totalQuantity(product.sizes) > 0);
+  if (!hasLegacyStock) {
+    return { success: true, migrated: 0 };
+  }
 
-  const existing = entriesResult.data;
+  let existing = existingEntries;
+  if (!existing) {
+    const entriesResult = await listStockEntries();
+    if (!entriesResult.success) return entriesResult;
+    existing = entriesResult.data;
+  }
+
   let migrated = 0;
 
   for (const product of products) {
@@ -118,6 +130,10 @@ export async function migrateLegacyProductStock(products) {
     });
 
     migrated += 1;
+  }
+
+  if (migrated > 0) {
+    invalidateCache(CACHE_KEYS.STOCK_ENTRIES, CACHE_KEYS.PRODUCTS);
   }
 
   return { success: true, migrated };
@@ -222,6 +238,8 @@ export async function registerMovement({
         movementId: movementRef.id,
       };
     });
+
+    invalidateCache(CACHE_KEYS.STOCK_ENTRIES, CACHE_KEYS.MOVEMENTS);
 
     return { success: true, data: result };
   } catch (error) {
@@ -337,6 +355,8 @@ export async function registerStockEntry({
       }
     });
 
+    invalidateCache(CACHE_KEYS.STOCK_ENTRIES, CACHE_KEYS.MOVEMENTS);
+
     return {
       success: true,
       data: {
@@ -351,23 +371,32 @@ export async function registerStockEntry({
   }
 }
 
-export async function getMovementHistory(filters = {}) {
+async function fetchMovementsFromFirestore() {
+  const q = query(
+    collection(db, MOVEMENTS),
+    orderBy('createdAt', 'desc'),
+    limit(MOVEMENTS_FETCH_LIMIT)
+  );
+  const snapshot = await getDocs(q);
+  const movements = snapshot.docs.map(mapMovement);
+  movements.sort((a, b) => {
+    const ta = a.createdAt?.seconds ?? 0;
+    const tb = b.createdAt?.seconds ?? 0;
+    return tb - ta;
+  });
+  return { success: true, data: movements };
+}
+
+export async function getMovementHistory(filters = {}, options = {}) {
   try {
-    let snapshot;
-    try {
-      const q = query(collection(db, MOVEMENTS), orderBy('createdAt', 'desc'));
-      snapshot = await getDocs(q);
-    } catch {
-      snapshot = await getDocs(collection(db, MOVEMENTS));
-    }
+    const result = await cachedFetch(
+      CACHE_KEYS.MOVEMENTS,
+      fetchMovementsFromFirestore,
+      options
+    );
+    if (!result.success) return result;
 
-    let movements = snapshot.docs.map(mapMovement);
-
-    movements.sort((a, b) => {
-      const ta = a.createdAt?.seconds ?? 0;
-      const tb = b.createdAt?.seconds ?? 0;
-      return tb - ta;
-    });
+    let movements = [...result.data];
 
     if (filters.productId) {
       movements = movements.filter((m) => m.productId === filters.productId);

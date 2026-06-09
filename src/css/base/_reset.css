@@ -9,11 +9,14 @@
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
   min-height: 100vh;
+  min-height: 100dvh;
   line-height: 1.5;
+  overflow-x: clip;
 }
 
 img,

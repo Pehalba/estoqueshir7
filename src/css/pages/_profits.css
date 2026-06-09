@@ -304,4 +304,12 @@
   .profits-partner__value {
     font-size: var(--font-size-xl);
   }
+
+  .profits-partners--compact {
+    gap: var(--space-sm);
+  }
+
+  .profits-resumo-socios .profits-partners {
+    grid-template-columns: 1fr;
+  }
 }

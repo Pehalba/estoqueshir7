@@ -76,8 +76,9 @@
 
 @media (max-width: 480px) {
   .toast-container {
-    left: var(--space-md);
-    right: var(--space-md);
+    left: max(var(--space-md), env(safe-area-inset-left));
+    right: max(var(--space-md), env(safe-area-inset-right));
+    bottom: max(var(--space-md), env(safe-area-inset-bottom));
     max-width: none;
   }
 }

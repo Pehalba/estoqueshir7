@@ -11,6 +11,7 @@ import {
   serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { db } from '../config/firebase.js';
+import { cachedFetch, invalidateCache, CACHE_KEYS } from '../utils/dataCache.js';
 
 const COLLECTION = 'products';
 
@@ -58,24 +59,21 @@ function buildPayload(data) {
   };
 }
 
-export async function listProducts() {
+async function fetchProductsFromFirestore() {
+  const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
+  const snapshot = await getDocs(q);
+  const data = snapshot.docs.map(mapDoc);
+  data.sort((a, b) => {
+    const ta = a.createdAt?.seconds ?? 0;
+    const tb = b.createdAt?.seconds ?? 0;
+    return tb - ta;
+  });
+  return { success: true, data };
+}
+
+export async function listProducts(options = {}) {
   try {
-    let snapshot;
-    try {
-      const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
-      snapshot = await getDocs(q);
-    } catch {
-      snapshot = await getDocs(collection(db, COLLECTION));
-    }
-
-    const data = snapshot.docs.map(mapDoc);
-    data.sort((a, b) => {
-      const ta = a.createdAt?.seconds ?? 0;
-      const tb = b.createdAt?.seconds ?? 0;
-      return tb - ta;
-    });
-
-    return { success: true, data };
+    return await cachedFetch(CACHE_KEYS.PRODUCTS, fetchProductsFromFirestore, options);
   } catch (error) {
     const msg = error.code === 'permission-denied'
       ? 'Sem permissão. Verifique se está logado e se as regras do Firestore foram publicadas.'
@@ -103,6 +101,7 @@ export async function createProduct(data) {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    invalidateCache(CACHE_KEYS.PRODUCTS);
     return { success: true, data: { id: docRef.id } };
   } catch (error) {
     return { success: false, error: error.message };
@@ -115,6 +114,7 @@ export async function updateProduct(id, data) {
       ...buildPayload(data),
       updatedAt: serverTimestamp(),
     });
+    invalidateCache(CACHE_KEYS.PRODUCTS);
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
@@ -124,6 +124,7 @@ export async function updateProduct(id, data) {
 export async function deleteProduct(id) {
   try {
     await deleteDoc(doc(db, COLLECTION, id));
+    invalidateCache(CACHE_KEYS.PRODUCTS);
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };

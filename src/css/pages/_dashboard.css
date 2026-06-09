@@ -441,6 +441,11 @@
 }
 
 @media (max-width: 768px) {
+  .dashboard-kpi__hint {
+    font-size: 0.65rem;
+    line-height: 1.35;
+  }
+
   .dashboard-chart {
     height: 180px;
   }
