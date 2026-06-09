@@ -66,6 +66,10 @@ function initSidebar() {
   qsa('.sidebar__link').forEach((link) => {
     link.addEventListener('click', closeSidebar);
   });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) closeSidebar();
+  });
 }
 
 function initLogout() {

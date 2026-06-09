@@ -83,3 +83,27 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
 }
+
+@media (max-width: 480px) {
+  .login-page {
+    align-items: flex-start;
+    padding: max(var(--space-md), env(safe-area-inset-top)) var(--space-md) var(--space-lg);
+  }
+
+  .login-page__brand {
+    margin-bottom: var(--space-xl);
+  }
+
+  .login-page__logo {
+    width: 96px;
+  }
+
+  .login-page__title {
+    font-size: var(--font-size-xl);
+  }
+
+  .login-card {
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+  }
+}

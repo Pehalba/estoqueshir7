@@ -101,6 +101,15 @@
 }
 
 @media (max-width: 768px) {
+  .investors-toolbar__search {
+    max-width: none;
+    width: 100%;
+  }
+
+  .investors-toolbar > .btn {
+    width: 100%;
+  }
+
   .investor-panel__grid {
     grid-template-columns: 1fr;
   }

@@ -342,9 +342,23 @@
   color: var(--color-text);
 }
 
+@media (max-width: 768px) {
+  .inventory-toolbar__search {
+    max-width: none;
+    width: 100%;
+  }
+}
+
 @media (max-width: 640px) {
   .product-view__grid {
     grid-template-columns: 1fr;
+  }
+
+  .product-view__image {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    aspect-ratio: 1;
   }
 
   .product-view__fields {
@@ -353,5 +367,10 @@
 
   .sizes-editor__row {
     flex-wrap: wrap;
+  }
+
+  .sizes-editor__row .form-input--qty {
+    max-width: none;
+    flex: 1;
   }
 }

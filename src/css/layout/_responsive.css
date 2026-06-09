@@ -1,0 +1,297 @@
+/* Ajustes globais para tablets e celulares */
+
+@media (max-width: 768px) {
+  .header {
+    padding-left: max(var(--space-md), env(safe-area-inset-left));
+    padding-right: max(var(--space-md), env(safe-area-inset-right));
+  }
+
+  .header__title {
+    font-size: var(--font-size-base);
+  }
+
+  .page-header {
+    margin-bottom: var(--space-lg);
+  }
+
+  .page-header__title {
+    font-size: var(--font-size-lg);
+  }
+
+  .page-header__subtitle {
+    font-size: var(--font-size-xs);
+    line-height: 1.45;
+  }
+
+  .card__header,
+  .card__body {
+    padding: var(--space-md);
+  }
+
+  .card__header--between {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-sm);
+  }
+
+  .inventory-tabs,
+  .sales-tabs,
+  .reports-tabs,
+  .profits-tabs {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .inventory-tabs::-webkit-scrollbar,
+  .sales-tabs::-webkit-scrollbar,
+  .reports-tabs::-webkit-scrollbar,
+  .profits-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .inventory-tabs__btn,
+  .sales-tabs__btn,
+  .reports-tabs__btn,
+  .profits-tabs__btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 0.5rem 1rem;
+  }
+
+  .inventory-toolbar,
+  .investors-toolbar,
+  .sales-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .inventory-toolbar__search,
+  .investors-toolbar__search,
+  .sales-toolbar__search,
+  .sales-toolbar__filter {
+    flex: none;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .inventory-toolbar > .btn,
+  .investors-toolbar > .btn {
+    width: 100%;
+  }
+
+  .inventory-filters {
+    flex-direction: column;
+    padding: var(--space-sm);
+  }
+
+  .inventory-filters__group {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .inventory-filters__actions {
+    width: 100%;
+  }
+
+  .inventory-filters__actions .btn {
+    flex: 1;
+  }
+
+  .profits-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .profits-filters .form-group {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .reports-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .reports-filters__actions .btn {
+    flex: 1;
+  }
+
+  .table-wrapper {
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-md);
+  }
+
+  .table {
+    min-width: 560px;
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--font-size-xs);
+  }
+
+  .table__actions {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .dashboard-list__item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+  }
+
+  .dashboard-list__name {
+    white-space: normal;
+    width: 100%;
+  }
+
+  .dashboard-list__meta,
+  .dashboard-list__value {
+    white-space: normal;
+  }
+
+  .stock-alerts__item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+  }
+
+  .stock-product-picker {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stock-product-picker__select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .expenses-list__item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+  }
+
+  .coupons-list__item {
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .coupons-add {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .product-image-field__row {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .sizes-editor__quick {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sizes-editor__quick .form-input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .modal {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal__dialog,
+  .modal__dialog--lg {
+    max-width: none;
+    width: 100%;
+    max-height: 92vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .modal__header,
+  .modal__body {
+    padding: var(--space-md);
+  }
+
+  .modal__footer {
+    flex-wrap: wrap;
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .modal__footer .btn {
+    flex: 1 1 calc(50% - var(--space-xs));
+    min-width: 120px;
+  }
+
+  .modal__footer--between {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .modal__footer--between .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-layout__content {
+    padding: var(--space-sm);
+  }
+
+  .btn:not(.btn--sm):not(.btn--ghost) {
+    min-height: 44px;
+  }
+
+  .btn--sm {
+    min-height: 36px;
+    padding: 0.5rem 0.625rem;
+  }
+
+  .table {
+    min-width: 480px;
+  }
+
+  .table__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .table__actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .dashboard-kpi__value,
+  .stock-summary__value,
+  .sales-summary__value,
+  .profits-card__value {
+    font-size: var(--font-size-xl);
+  }
+
+  .sale-lines__pers-fields {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sale-lines__pers-field {
+    max-width: none;
+    width: 100%;
+  }
+
+  .sales-finance-preview__row {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sales-quick-input {
+    flex-direction: column;
+  }
+}
