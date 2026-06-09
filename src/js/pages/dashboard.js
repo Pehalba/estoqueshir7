@@ -18,9 +18,10 @@ import {
 import { renderBarChart, renderGroupedBarChart, renderDoughnutChart } from '../utils/chartRenderer.js';
 import { formatCurrency, formatPercent } from '../utils/formatCurrency.js';
 import { formatSaleLinesSummary, availableQty } from '../utils/calculations.js';
-import { qs, showToast, openModal, setupModalClose } from '../utils/domHelpers.js';
+import { qs, qsa, showToast, openModal, setupModalClose } from '../utils/domHelpers.js';
 
 let dashboardData = null;
+let stockDetailOrigin = null;
 
 function showDashboardError(message) {
   const loading = qs('#dashboard-loading');
@@ -49,73 +50,138 @@ function getInvestorName(id) {
   return dashboardData?.investors?.find((i) => i.id === id)?.name || '—';
 }
 
-function formatEntrySizes(sizes) {
-  const lines = (sizes || [])
-    .map((s) => {
-      const qty = availableQty(s);
-      if (qty <= 0) return null;
-      const reserved = Number(s.reserved) || 0;
-      const label = reserved > 0 ? `${s.size}: ${qty} disp. (${s.quantity} total)` : `${s.size}: ${qty}`;
-      return label;
-    })
-    .filter(Boolean);
+const STOCK_DETAIL_TAB_HINTS = {
+  remaining: 'Quantidade total que ainda resta em cada lote (por tamanho).',
+  available: 'Peças livres para venda, descontando reservas.',
+};
 
-  return lines.length ? lines.join(' · ') : '—';
+function entryRemainingTotal(sizes) {
+  return (sizes || []).reduce((sum, s) => sum + (Number(s.quantity) || 0), 0);
 }
 
 function entryAvailableTotal(sizes) {
   return (sizes || []).reduce((sum, s) => sum + availableQty(s), 0);
 }
 
-function buildStockDetailContent(origin) {
-  const isInvestor = origin === 'investidor';
-  const titleLabel = isInvestor ? 'Estoque investidor' : 'Estoque próprio';
-  const entries = (dashboardData?.products || []).filter(
+function entryTotalByMode(sizes, mode) {
+  return mode === 'remaining' ? entryRemainingTotal(sizes) : entryAvailableTotal(sizes);
+}
+
+function formatEntrySizesByMode(sizes, mode) {
+  const lines = (sizes || [])
+    .map((s) => {
+      const qty = mode === 'remaining'
+        ? Number(s.quantity) || 0
+        : availableQty(s);
+      if (qty <= 0) return null;
+
+      const reserved = Number(s.reserved) || 0;
+      if (mode === 'available' && reserved > 0) {
+        return `${s.size}: ${qty} (${reserved} reserv.)`;
+      }
+      return `${s.size}: ${qty}`;
+    })
+    .filter(Boolean);
+
+  return lines.length ? lines.join(' · ') : null;
+}
+
+function getStockDetailEntries(origin) {
+  return (dashboardData?.products || []).filter(
     (e) => e.status !== 'inativo' && e.stockOrigin === origin
   );
-  const withPieces = entries.filter((e) => entryAvailableTotal(e.sizes) > 0);
+}
 
-  if (!withPieces.length) {
-    return {
-      title: titleLabel,
-      body: '<p class="text-muted">Nenhuma peça disponível nesta origem no momento.</p>',
-    };
-  }
+function renderStockDetailItem(entry, mode, isInvestor) {
+  const total = entryTotalByMode(entry.sizes, mode);
+  const sizesText = formatEntrySizesByMode(entry.sizes, mode);
+  const lotLine = entry.stockEntryName && entry.stockEntryName !== entry.productName
+    ? `<p class="dashboard-stock-detail__meta">Lote: ${entry.stockEntryName}</p>`
+    : '';
+  const investorLine = isInvestor
+    ? `<p class="dashboard-stock-detail__meta">Investidor: ${getInvestorName(entry.investorId)}</p>`
+    : '';
 
-  const totalPieces = withPieces.reduce((sum, e) => sum + entryAvailableTotal(e.sizes), 0);
-  const items = withPieces.map((e) => {
-    const total = entryAvailableTotal(e.sizes);
-    const lotLine = e.stockEntryName && e.stockEntryName !== e.productName
-      ? `<p class="dashboard-stock-detail__meta">Lote: ${e.stockEntryName}</p>`
-      : '';
-    const investorLine = isInvestor
-      ? `<p class="dashboard-stock-detail__meta">Investidor: ${getInvestorName(e.investorId)}</p>`
-      : '';
-
+  if (total <= 0 || !sizesText) {
     return `
-      <div class="dashboard-stock-detail__item">
+      <div class="dashboard-stock-detail__item dashboard-stock-detail__item--empty">
         <div class="dashboard-stock-detail__head">
-          <strong>${e.productName || e.name}</strong>
-          <span class="dashboard-stock-detail__qty">${total} peça(s)</span>
+          <strong>${entry.productName || entry.name}</strong>
+          <span class="badge badge--neutral dashboard-stock-detail__badge-empty">Estoque esgotado</span>
         </div>
         ${lotLine}
         ${investorLine}
-        <p class="dashboard-stock-detail__sizes">${formatEntrySizes(e.sizes)}</p>
       </div>
     `;
-  }).join('');
+  }
 
-  return {
-    title: `${titleLabel} — ${totalPieces} peça(s)`,
-    body: `<div class="dashboard-stock-detail__list">${items}</div>`,
-  };
+  return `
+    <div class="dashboard-stock-detail__item">
+      <div class="dashboard-stock-detail__head">
+        <strong>${entry.productName || entry.name}</strong>
+        <span class="dashboard-stock-detail__qty">${total} peça(s)</span>
+      </div>
+      ${lotLine}
+      ${investorLine}
+      <p class="dashboard-stock-detail__sizes">${sizesText}</p>
+    </div>
+  `;
+}
+
+function setStockDetailTab(mode) {
+  qsa('.stock-detail-tabs__btn', qs('#stock-detail-body')).forEach((btn) => {
+    btn.classList.toggle('stock-detail-tabs__btn--active', btn.dataset.stockTab === mode);
+  });
+  const hint = qs('#stock-detail-hint');
+  if (hint) hint.textContent = STOCK_DETAIL_TAB_HINTS[mode] || '';
+}
+
+function renderStockDetailPanel(origin, mode = 'remaining') {
+  const isInvestor = origin === 'investidor';
+  const titleLabel = isInvestor ? 'Estoque investidor' : 'Estoque próprio';
+  const entries = getStockDetailEntries(origin);
+  const panel = qs('#stock-detail-panel');
+
+  if (!entries.length) {
+    qs('#stock-detail-title').textContent = titleLabel;
+    if (panel) {
+      panel.innerHTML = '<p class="text-muted">Nenhum lote cadastrado nesta origem.</p>';
+    }
+    return;
+  }
+
+  const modeLabel = mode === 'remaining' ? 'restam' : 'disponíveis';
+  const totalPieces = entries.reduce((sum, e) => sum + entryTotalByMode(e.sizes, mode), 0);
+  qs('#stock-detail-title').textContent = `${titleLabel} — ${totalPieces} peça(s) (${modeLabel})`;
+
+  const items = entries.map((e) => renderStockDetailItem(e, mode, isInvestor)).join('');
+  if (panel) {
+    panel.innerHTML = totalPieces === 0
+      ? `<p class="dashboard-stock-detail__all-empty text-muted">Todas as peças desta origem estão esgotadas.</p>
+         <div class="dashboard-stock-detail__list">${items}</div>`
+      : `<div class="dashboard-stock-detail__list">${items}</div>`;
+  }
+
+  setStockDetailTab(mode);
 }
 
 function openStockDetailModal(origin) {
-  const { title, body } = buildStockDetailContent(origin);
-  qs('#stock-detail-title').textContent = title;
-  qs('#stock-detail-body').innerHTML = body;
+  stockDetailOrigin = origin;
+  qs('#stock-detail-body').innerHTML = `
+    <nav class="stock-detail-tabs">
+      <button type="button" class="stock-detail-tabs__btn stock-detail-tabs__btn--active" data-stock-tab="remaining">Restam</button>
+      <button type="button" class="stock-detail-tabs__btn" data-stock-tab="available">Disponíveis</button>
+    </nav>
+    <p class="stock-detail-tabs__hint text-sm text-muted" id="stock-detail-hint"></p>
+    <div id="stock-detail-panel"></div>
+  `;
+  renderStockDetailPanel(origin, 'remaining');
   openModal('stock-detail-modal');
+}
+
+function switchStockDetailTab(mode) {
+  if (!stockDetailOrigin) return;
+  renderStockDetailPanel(stockDetailOrigin, mode);
 }
 
 function renderKpis(stock, salesStats) {
@@ -327,6 +393,12 @@ async function loadData() {
 
 function initEvents() {
   setupModalClose('stock-detail-modal');
+
+  qs('#stock-detail-body')?.addEventListener('click', (e) => {
+    const tabBtn = e.target.closest('[data-stock-tab]');
+    if (!tabBtn) return;
+    switchStockDetailTab(tabBtn.dataset.stockTab);
+  });
 
   qs('#dashboard-kpis')?.addEventListener('click', (e) => {
     const card = e.target.closest('[data-detail-origin]');
