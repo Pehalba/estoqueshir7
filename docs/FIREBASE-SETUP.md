@@ -135,15 +135,33 @@ Abra no navegador: `http://localhost:3000`
 
 ---
 
+## Passo 8 — GitHub Pages (site publicado)
+
+Se você usa [https://pehalba.github.io/estoqueshir7/](https://pehalba.github.io/estoqueshir7/):
+
+1. As credenciais ficam em `src/js/config/firebase.credentials.deploy.js` (commitado no repositório).
+2. No Firebase Console → **Authentication** → **Settings** → **Authorized domains**:
+   - Clique em **Add domain**
+   - Adicione: `pehalba.github.io`
+   - Salve
+3. Confirme que o usuário (e-mail/senha) foi criado em **Authentication** → **Users**.
+4. Após cada `git push`, aguarde 1–2 minutos e teste em `pages/login.html`.
+
+> **Não coloque senha na URL** (`?password=...`). Use só o formulário de login. Parâmetros na URL podem vazar em histórico e logs.
+
+---
+
 ## Problemas comuns
 
 | Erro | Solução |
 |------|---------|
-| `auth/invalid-api-key` | `apiKey` errada em `firebase.credentials.js` |
+| `auth/invalid-api-key` | `apiKey` errada em `firebase.credentials.deploy.js` |
 | `auth/invalid-credential` | E-mail/senha incorretos ou usuário não criado no Console |
+| `auth/unauthorized-domain` | Adicione `pehalba.github.io` em Authentication → Authorized domains |
+| Login não funciona no GitHub Pages | Publique o projeto (`git push`) e verifique o Passo 8 |
 | `Missing or insufficient permissions` | Publique `firestore.rules` (Passo 6) |
 | Tela em branco / erro de módulo | Use `npx serve .` na **raiz**, não abra o HTML direto no disco |
-| Firebase não configurado (console) | Preencha `firebase.credentials.js` — não deixe `YOUR_API_KEY` |
+| Firebase não configurado (console) | Preencha `firebase.credentials.deploy.js` — não deixe `YOUR_API_KEY` |
 
 ---
 

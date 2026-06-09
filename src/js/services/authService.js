@@ -19,6 +19,7 @@ const AUTH_ERRORS = {
   'auth/invalid-credential': 'E-mail ou senha incorretos.',
   'auth/too-many-requests': 'Muitas tentativas. Tente novamente mais tarde.',
   'auth/network-request-failed': 'Erro de conexão. Verifique sua internet.',
+  'auth/unauthorized-domain': 'Domínio não autorizado. No Firebase Console → Authentication → Settings → Authorized domains, adicione pehalba.github.io',
 };
 
 function mapAuthError(error) {

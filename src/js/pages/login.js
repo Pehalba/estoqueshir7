@@ -18,12 +18,22 @@ function hideAlert() {
   alertEl.className = 'login-card__alert';
 }
 
+function prefillFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const email = params.get('email');
+  const password = params.get('password');
+  if (email) qs('#email').value = email;
+  if (password) qs('#password').value = password;
+}
+
 if (!isFirebaseConfigured()) {
   showAlert(
-    'Firebase não configurado. Abra docs/FIREBASE-SETUP.md e preencha src/js/config/firebase.credentials.js',
+    'Firebase não configurado. Abra docs/FIREBASE-SETUP.md e preencha firebase.credentials.deploy.js',
     'error'
   );
 }
+
+prefillFromQuery();
 
 observeAuth((user) => {
   if (user) {
@@ -40,7 +50,7 @@ form?.addEventListener('submit', async (e) => {
   const password = qs('#password')?.value;
 
   if (!isFirebaseConfigured()) {
-    showAlert('Configure o Firebase antes de fazer login. Veja docs/FIREBASE-SETUP.md');
+    showAlert('Configure o Firebase antes de fazer login. Veja docs/FIREBASE-SETUP.md (Passo 8 para GitHub Pages).');
     return;
   }
 

@@ -7,7 +7,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/fireba
 import { getAuth } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { getStorage } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js';
-import { firebaseConfig } from './firebase.credentials.js';
+import { firebaseConfig } from './firebase.credentials.deploy.js';
 
 export function isFirebaseConfigured() {
   return (
@@ -20,7 +20,7 @@ export function isFirebaseConfigured() {
 
 if (!isFirebaseConfigured()) {
   console.warn(
-    '[SHIR7] Firebase não configurado. Siga o guia em docs/FIREBASE-SETUP.md e preencha src/js/config/firebase.credentials.js'
+    '[SHIR7] Firebase não configurado. Siga o guia em docs/FIREBASE-SETUP.md e preencha firebase.credentials.deploy.js'
   );
 }
 

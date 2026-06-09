@@ -22,6 +22,10 @@ import { qs, qsa, showToast, openModal, setupModalClose } from '../utils/domHelp
 
 let dashboardData = null;
 let stockDetailOrigin = null;
+let stockDetailTab = 'remaining';
+let stockDetailView = 'stock';
+
+const SIZE_ORDER = ['P', 'M', 'G', 'GG', 'XG'];
 
 function showDashboardError(message) {
   const loading = qs('#dashboard-loading');
@@ -50,9 +54,15 @@ function getInvestorName(id) {
   return dashboardData?.investors?.find((i) => i.id === id)?.name || '—';
 }
 
-const STOCK_DETAIL_TAB_HINTS = {
-  remaining: 'Quantidade total que ainda resta em cada lote (por tamanho).',
-  available: 'Peças livres para venda, descontando reservas.',
+const STOCK_DETAIL_HINTS = {
+  stock: {
+    remaining: 'Quantidade total que ainda resta em cada lote (por tamanho).',
+    available: 'Peças livres para venda em cada lote, descontando reservas.',
+  },
+  product: {
+    remaining: 'Soma de todos os lotes do mesmo produto (por tamanho).',
+    available: 'Peças disponíveis somando todos os lotes de cada produto.',
+  },
 };
 
 function entryRemainingTotal(sizes) {
@@ -92,25 +102,102 @@ function getStockDetailEntries(origin) {
   );
 }
 
-function renderStockDetailItem(entry, mode, isInvestor) {
+function sortSizes(sizes) {
+  return [...(sizes || [])].sort((a, b) => {
+    const ia = SIZE_ORDER.indexOf(a.size);
+    const ib = SIZE_ORDER.indexOf(b.size);
+    if (ia === -1 && ib === -1) return String(a.size).localeCompare(String(b.size), 'pt-BR');
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
+}
+
+function mergeSizesFromEntries(entries) {
+  const map = new Map();
+
+  entries.forEach((entry) => {
+    (entry.sizes || []).forEach((s) => {
+      const prev = map.get(s.size) || { quantity: 0, reserved: 0 };
+      prev.quantity += Number(s.quantity) || 0;
+      prev.reserved += Number(s.reserved) || 0;
+      map.set(s.size, prev);
+    });
+  });
+
+  return sortSizes(
+    [...map.entries()].map(([size, data]) => ({
+      size,
+      quantity: data.quantity,
+      reserved: data.reserved,
+    }))
+  );
+}
+
+function aggregateEntriesByProduct(entries) {
+  const map = new Map();
+
+  entries.forEach((entry) => {
+    const key = entry.productId || entry.productName || entry.id;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(entry);
+  });
+
+  return [...map.values()]
+    .map((group) => {
+      const first = group[0];
+      const investorIds = [...new Set(group.map((e) => e.investorId).filter(Boolean))];
+      return {
+        productId: first.productId,
+        productName: first.productName || first.name,
+        lotCount: group.length,
+        investorIds,
+        sizes: mergeSizesFromEntries(group),
+      };
+    })
+    .sort((a, b) => (a.productName || '').localeCompare(b.productName || '', 'pt-BR'));
+}
+
+function getStockDetailRows(entries, view) {
+  if (view === 'product') return aggregateEntriesByProduct(entries);
+  return [...entries].sort((a, b) => {
+    const nameA = a.stockEntryName || a.productName || '';
+    const nameB = b.stockEntryName || b.productName || '';
+    return nameA.localeCompare(nameB, 'pt-BR');
+  });
+}
+
+function renderStockDetailItem(entry, mode, isInvestor, view = 'stock') {
   const total = entryTotalByMode(entry.sizes, mode);
   const sizesText = formatEntrySizesByMode(entry.sizes, mode);
-  const lotLine = entry.stockEntryName && entry.stockEntryName !== entry.productName
-    ? `<p class="dashboard-stock-detail__meta">Lote: ${entry.stockEntryName}</p>`
-    : '';
-  const investorLine = isInvestor
-    ? `<p class="dashboard-stock-detail__meta">Investidor: ${getInvestorName(entry.investorId)}</p>`
-    : '';
+  const title = entry.productName || entry.name;
+
+  let metaLines = '';
+
+  if (view === 'stock') {
+    if (entry.stockEntryName && entry.stockEntryName !== entry.productName) {
+      metaLines += `<p class="dashboard-stock-detail__meta">Lote: ${entry.stockEntryName}</p>`;
+    }
+    if (isInvestor && entry.investorId) {
+      metaLines += `<p class="dashboard-stock-detail__meta">Investidor: ${getInvestorName(entry.investorId)}</p>`;
+    }
+  } else {
+    const lotLabel = entry.lotCount === 1 ? '1 lote' : `${entry.lotCount} lotes somados`;
+    metaLines += `<p class="dashboard-stock-detail__meta">${lotLabel}</p>`;
+    if (isInvestor && entry.investorIds?.length) {
+      const names = entry.investorIds.map(getInvestorName).join(', ');
+      metaLines += `<p class="dashboard-stock-detail__meta">Investidor(es): ${names}</p>`;
+    }
+  }
 
   if (total <= 0 || !sizesText) {
     return `
       <div class="dashboard-stock-detail__item dashboard-stock-detail__item--empty">
         <div class="dashboard-stock-detail__head">
-          <strong>${entry.productName || entry.name}</strong>
+          <strong>${title}</strong>
           <span class="badge badge--neutral dashboard-stock-detail__badge-empty">Estoque esgotado</span>
         </div>
-        ${lotLine}
-        ${investorLine}
+        ${metaLines}
       </div>
     `;
   }
@@ -118,25 +205,30 @@ function renderStockDetailItem(entry, mode, isInvestor) {
   return `
     <div class="dashboard-stock-detail__item">
       <div class="dashboard-stock-detail__head">
-        <strong>${entry.productName || entry.name}</strong>
+        <strong>${title}</strong>
         <span class="dashboard-stock-detail__qty">${total} peça(s)</span>
       </div>
-      ${lotLine}
-      ${investorLine}
+      ${metaLines}
       <p class="dashboard-stock-detail__sizes">${sizesText}</p>
     </div>
   `;
 }
 
-function setStockDetailTab(mode) {
-  qsa('.stock-detail-tabs__btn', qs('#stock-detail-body')).forEach((btn) => {
+function setStockDetailFilters(mode, view) {
+  qsa('[data-stock-tab]', qs('#stock-detail-body')).forEach((btn) => {
     btn.classList.toggle('stock-detail-tabs__btn--active', btn.dataset.stockTab === mode);
   });
+  qsa('[data-stock-view]', qs('#stock-detail-body')).forEach((btn) => {
+    btn.classList.toggle('stock-detail-view__btn--active', btn.dataset.stockView === view);
+  });
   const hint = qs('#stock-detail-hint');
-  if (hint) hint.textContent = STOCK_DETAIL_TAB_HINTS[mode] || '';
+  if (hint) hint.textContent = STOCK_DETAIL_HINTS[view]?.[mode] || '';
 }
 
-function renderStockDetailPanel(origin, mode = 'remaining') {
+function renderStockDetailPanel(origin, mode = stockDetailTab, view = stockDetailView) {
+  stockDetailTab = mode;
+  stockDetailView = view;
+
   const isInvestor = origin === 'investidor';
   const titleLabel = isInvestor ? 'Estoque investidor' : 'Estoque próprio';
   const entries = getStockDetailEntries(origin);
@@ -150,11 +242,14 @@ function renderStockDetailPanel(origin, mode = 'remaining') {
     return;
   }
 
+  const rows = getStockDetailRows(entries, view);
   const modeLabel = mode === 'remaining' ? 'restam' : 'disponíveis';
-  const totalPieces = entries.reduce((sum, e) => sum + entryTotalByMode(e.sizes, mode), 0);
-  qs('#stock-detail-title').textContent = `${titleLabel} — ${totalPieces} peça(s) (${modeLabel})`;
+  const viewLabel = view === 'product' ? 'por produto' : 'por lote';
+  const totalPieces = rows.reduce((sum, e) => sum + entryTotalByMode(e.sizes, mode), 0);
 
-  const items = entries.map((e) => renderStockDetailItem(e, mode, isInvestor)).join('');
+  qs('#stock-detail-title').textContent = `${titleLabel} — ${totalPieces} peça(s) (${modeLabel}, ${viewLabel})`;
+
+  const items = rows.map((e) => renderStockDetailItem(e, mode, isInvestor, view)).join('');
   if (panel) {
     panel.innerHTML = totalPieces === 0
       ? `<p class="dashboard-stock-detail__all-empty text-muted">Todas as peças desta origem estão esgotadas.</p>
@@ -162,26 +257,41 @@ function renderStockDetailPanel(origin, mode = 'remaining') {
       : `<div class="dashboard-stock-detail__list">${items}</div>`;
   }
 
-  setStockDetailTab(mode);
+  setStockDetailFilters(mode, view);
 }
 
 function openStockDetailModal(origin) {
   stockDetailOrigin = origin;
+  stockDetailTab = 'remaining';
+  stockDetailView = 'product';
+
   qs('#stock-detail-body').innerHTML = `
-    <nav class="stock-detail-tabs">
-      <button type="button" class="stock-detail-tabs__btn stock-detail-tabs__btn--active" data-stock-tab="remaining">Restam</button>
-      <button type="button" class="stock-detail-tabs__btn" data-stock-tab="available">Disponíveis</button>
-    </nav>
+    <div class="stock-detail-toolbar">
+      <nav class="stock-detail-tabs" aria-label="Tipo de quantidade">
+        <button type="button" class="stock-detail-tabs__btn stock-detail-tabs__btn--active" data-stock-tab="remaining">Restam</button>
+        <button type="button" class="stock-detail-tabs__btn" data-stock-tab="available">Disponíveis</button>
+      </nav>
+      <nav class="stock-detail-view" aria-label="Visualização">
+        <span class="stock-detail-view__label">Ver:</span>
+        <button type="button" class="stock-detail-view__btn" data-stock-view="stock">Por lote</button>
+        <button type="button" class="stock-detail-view__btn stock-detail-view__btn--active" data-stock-view="product">Por produto</button>
+      </nav>
+    </div>
     <p class="stock-detail-tabs__hint text-sm text-muted" id="stock-detail-hint"></p>
     <div id="stock-detail-panel"></div>
   `;
-  renderStockDetailPanel(origin, 'remaining');
+  renderStockDetailPanel(origin, stockDetailTab, stockDetailView);
   openModal('stock-detail-modal');
 }
 
 function switchStockDetailTab(mode) {
   if (!stockDetailOrigin) return;
-  renderStockDetailPanel(stockDetailOrigin, mode);
+  renderStockDetailPanel(stockDetailOrigin, mode, stockDetailView);
+}
+
+function switchStockDetailView(view) {
+  if (!stockDetailOrigin) return;
+  renderStockDetailPanel(stockDetailOrigin, stockDetailTab, view);
 }
 
 function renderKpis(stock, salesStats) {
@@ -395,6 +505,11 @@ function initEvents() {
   setupModalClose('stock-detail-modal');
 
   qs('#stock-detail-body')?.addEventListener('click', (e) => {
+    const viewBtn = e.target.closest('[data-stock-view]');
+    if (viewBtn) {
+      switchStockDetailView(viewBtn.dataset.stockView);
+      return;
+    }
     const tabBtn = e.target.closest('[data-stock-tab]');
     if (!tabBtn) return;
     switchStockDetailTab(tabBtn.dataset.stockTab);
