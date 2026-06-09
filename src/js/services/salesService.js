@@ -313,10 +313,18 @@ export async function createQuickSale(input) {
       };
     });
 
+    const platformId = input.platform || input.channel || 'presencial';
+    const platform = platformId === 'presencial'
+      ? null
+      : input.platformConfig
+        || (input.platformCosts || []).find((p) => p.id === platformId)
+        || null;
+
     const financials = calculateQuickSaleFinancials({
       lines,
       unitCost,
       defaultPersonalizationCostPerPiece: input.defaultPersonalizationCostPerPiece,
+      platform,
     });
 
     const validation = validateQuickSale(
@@ -392,9 +400,12 @@ export async function createQuickSale(input) {
       adsCost: financials.adsCostTotal,
       poolCost: financials.adsCostTotal,
       fees: financials.extraFees,
+      platformCost: financials.platformCost,
+      platformId: platform?.id || '',
+      platformName: platform?.name || '',
       variableCosts: financials.variableCosts,
       trafficCost: 0,
-      channel: input.channel || 'presencial',
+      channel: platformId,
       paymentMethod: input.paymentMethod || 'pix',
       customer: '',
       stockOrigin: stockEntry.stockOrigin || 'proprio',

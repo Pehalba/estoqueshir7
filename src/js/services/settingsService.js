@@ -15,10 +15,17 @@ export const DEFAULT_COUPONS = [
   { id: DEFAULT_COUPON_ID, name: 'FIXO 7%', percent: 7 },
 ];
 
+export const DEFAULT_PLATFORMS = [
+  { id: 'shopify', name: 'Shopify', percent: 2, fixedPerOrder: 0 },
+  { id: 'yampi', name: 'Yampi', percent: 0, fixedPerOrder: 0 },
+  { id: 'appmax', name: 'Appmax', percent: 0, fixedPerOrder: 0 },
+];
+
 export const DEFAULT_SETTINGS = {
   defaultFreight: 20,
   adsPool: 0,
   otherPoolCosts: 0,
+  platformCosts: [...DEFAULT_PLATFORMS],
   defaultPersonalizationPrice: 50,
   personalizationCostPerPiece: 10,
   personalizationTypes: [],
@@ -45,6 +52,20 @@ function normalizeCoupons(coupons) {
   })).filter((c) => c.name && c.percent > 0);
 }
 
+function normalizePlatformCosts(platforms) {
+  const list = (platforms || []).map((p, i) => ({
+    id: p.id || DEFAULT_PLATFORMS[i]?.id || `platform-${i}`,
+    name: String(p.name || DEFAULT_PLATFORMS.find((d) => d.id === p.id)?.name || '').trim(),
+    percent: Math.max(0, Number(p.percent) || 0),
+    fixedPerOrder: Math.max(0, Number(p.fixedPerOrder) || 0),
+  }));
+
+  return DEFAULT_PLATFORMS.map((def) => {
+    const found = list.find((p) => p.id === def.id);
+    return found ? { ...def, ...found, name: def.name } : { ...def };
+  });
+}
+
 /** Garante cupons padrão do sistema (ex.: FIXO 7%). */
 function mergeDefaultCoupons(coupons) {
   const normalized = normalizeCoupons(coupons);
@@ -67,6 +88,7 @@ export function normalizeSettings(data = {}) {
     personalizationCostPerPiece: Number(data.personalizationCostPerPiece) || 0,
     personalizationTypes: normalizePersonalizationTypes(data.personalizationTypes),
     coupons: mergeDefaultCoupons(data.coupons),
+    platformCosts: normalizePlatformCosts(data.platformCosts),
     lowStockThreshold: data.lowStockThreshold != null && data.lowStockThreshold !== ''
       ? Number(data.lowStockThreshold)
       : DEFAULT_SETTINGS.lowStockThreshold,

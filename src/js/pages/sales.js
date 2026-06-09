@@ -59,6 +59,77 @@ function getSelectedStockEntry() {
   return allStockEntries.find((e) => e.id === qs('#field-product').value) || null;
 }
 
+function getSelectedPlatform() {
+  const platformId = qs('#field-platform')?.value || 'presencial';
+  if (platformId === 'presencial') return null;
+
+  const saved = globalSettings.platformCosts?.find((p) => p.id === platformId);
+  const percentInput = qs(`#set-platform-${platformId}-percent`)?.value;
+  const fixedInput = qs(`#set-platform-${platformId}-fixed`)?.value;
+  const percent = percentInput !== '' && percentInput != null
+    ? Number(percentInput) || 0
+    : (saved?.percent ?? 0);
+  const fixedPerOrder = fixedInput !== '' && fixedInput != null
+    ? Number(fixedInput) || 0
+    : (saved?.fixedPerOrder ?? 0);
+
+  return {
+    id: platformId,
+    name: saved?.name || getPlatformLabel(platformId),
+    percent,
+    fixedPerOrder,
+  };
+}
+
+function getPlatformLabel(platformId) {
+  if (!platformId || platformId === 'presencial') return 'Presencial';
+  return globalSettings.platformCosts?.find((p) => p.id === platformId)?.name
+    || platformId;
+}
+
+function collectPlatformCostsFromForm() {
+  const read = (id) => ({
+    percent: Number(qs(`#set-platform-${id}-percent`)?.value) || 0,
+    fixedPerOrder: Number(qs(`#set-platform-${id}-fixed`)?.value) || 0,
+  });
+
+  return (globalSettings.platformCosts || []).map((platform) => {
+    const values = read(platform.id);
+    return {
+      ...platform,
+      percent: values.percent,
+      fixedPerOrder: values.fixedPerOrder,
+    };
+  });
+}
+
+function fillPlatformCostsForm() {
+  (globalSettings.platformCosts || []).forEach((platform) => {
+    const percentEl = qs(`#set-platform-${platform.id}-percent`);
+    const fixedEl = qs(`#set-platform-${platform.id}-fixed`);
+    if (percentEl) percentEl.value = platform.percent;
+    if (fixedEl) fixedEl.value = platform.fixedPerOrder;
+  });
+}
+
+function updatePlatformFeeHint() {
+  const hint = qs('#platform-fee-hint');
+  if (!hint) return;
+
+  const platform = getSelectedPlatform();
+  if (!platform) {
+    hint.textContent = 'Sem taxa de plataforma.';
+    return;
+  }
+
+  const parts = [];
+  if (platform.percent > 0) parts.push(`${platform.percent}% do faturamento`);
+  if (platform.fixedPerOrder > 0) parts.push(`${formatCurrency(platform.fixedPerOrder)} por pedido`);
+  hint.textContent = parts.length
+    ? `Taxa ${platform.name} aplicada automaticamente: ${parts.join(' + ')}. Descontada do lucro ao confirmar.`
+    : `Plataforma ${platform.name} sem taxa configurada.`;
+}
+
 function getBasePrice() {
   return DEFAULT_SALE_PRICE;
 }
@@ -474,6 +545,7 @@ function fillSettingsForm() {
   qs('#set-other').value = globalSettings.otherPoolCosts;
   qs('#set-pers-price').value = globalSettings.defaultPersonalizationPrice;
   qs('#set-pers-cost').value = globalSettings.personalizationCostPerPiece;
+  fillPlatformCostsForm();
   couponsDraft = globalSettings.coupons.map((c) => ({ ...c }));
   persTypesDraft = (globalSettings.personalizationTypes || []).map((t) => ({ ...t }));
   renderCouponsList();
@@ -482,6 +554,7 @@ function fillSettingsForm() {
   renderPersPreview();
   refreshLineCouponSelects();
   updateCostLabels();
+  updatePlatformFeeHint();
 }
 
 async function loadSettings() {
@@ -536,6 +609,7 @@ function getPreviewData() {
     lines: data.lines,
     unitCost: data.unitCost,
     defaultPersonalizationCostPerPiece: globalSettings.personalizationCostPerPiece,
+    platform: getSelectedPlatform(),
   });
 
   let investorPayout = 0;
@@ -592,6 +666,10 @@ function updatePreview() {
   }
   if (financials.extraFees > 0) {
     parts.push(`− Outros ${formatCurrency(financials.extraFees)}`);
+  }
+  if (financials.platformCost > 0) {
+    const platformName = getPlatformLabel(qs('#field-platform')?.value);
+    parts.push(`− Taxa ${platformName} ${formatCurrency(financials.platformCost)}`);
   }
 
   parts.push(
@@ -676,6 +754,9 @@ function renderSalesTable() {
       <td>
         <strong>${s.productName}</strong>
         <div class="text-sm text-muted">${formatSaleLinesSummary(s)}</div>
+        ${s.channel && s.channel !== 'presencial'
+    ? `<span class="badge badge--info">${s.platformName || getPlatformLabel(s.channel)}</span>`
+    : ''}
         ${(s.isPersonalized || s.lines?.some((l) => l.isPersonalized)) ? '<span class="badge badge--info">Personalizado</span>' : ''}
         ${[...new Set((s.lines || []).filter((l) => l.couponName).map((l) => l.couponName))]
           .map((name) => `<span class="badge badge--neutral">${name}</span>`).join('')}
@@ -796,6 +877,7 @@ async function handleCostsForm(e) {
     defaultFreight: qs('#set-freight').value,
     adsPool: qs('#set-ads').value,
     otherPoolCosts: qs('#set-other').value,
+    platformCosts: collectPlatformCostsFromForm(),
     coupons: couponsDraft,
   });
 
@@ -883,6 +965,9 @@ async function handleSubmit(e) {
   setLoading(btn, true);
   const result = await createQuickSale({
     ...data,
+    platform: qs('#field-platform')?.value || 'presencial',
+    platformConfig: getSelectedPlatform(),
+    platformCosts: globalSettings.platformCosts,
     defaultPersonalizationCostPerPiece: globalSettings.personalizationCostPerPiece,
   });
   setLoading(btn, false);
@@ -900,6 +985,10 @@ async function handleSubmit(e) {
 function initEvents() {
   saleForm?.addEventListener('submit', handleSubmit);
   qs('#field-product')?.addEventListener('change', onStockEntryChange);
+  qs('#field-platform')?.addEventListener('change', () => {
+    updatePlatformFeeHint();
+    updatePreview();
+  });
   qs('#btn-parse-sizes')?.addEventListener('click', applyQuickSizes);
   qs('#sizes-quick-input')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {

@@ -329,8 +329,19 @@
 
 .sizes-badges {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xs);
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.2rem;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.sizes-badges .badge {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  padding: 0.1rem 0.35rem;
+  line-height: 1.2;
 }
 
 .import-cost-preview {

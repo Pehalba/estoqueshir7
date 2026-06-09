@@ -51,6 +51,10 @@
   border-left: 4px solid #c9a227;
 }
 
+.dashboard-kpi--info {
+  border-left: 4px solid var(--color-info);
+}
+
 .dashboard-kpi--clickable {
   cursor: pointer;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
@@ -189,6 +193,10 @@
   color: var(--color-text-inverse);
 }
 
+.stock-detail-view--wrap {
+  max-width: 100%;
+}
+
 .stock-detail-tabs__btn {
   padding: 0.45rem 1rem;
   border-radius: var(--radius-md);
@@ -218,6 +226,88 @@
 
 .stock-detail-tabs__hint {
   margin: 0 0 var(--space-md);
+}
+
+.stock-detail-view--full {
+  width: 100%;
+  margin-bottom: var(--space-sm);
+}
+
+.dashboard-stock-detail__qty--money {
+  color: var(--color-success);
+}
+
+.dashboard-stock-detail__qty--cost {
+  color: #b8860b;
+}
+
+.dashboard-potential-summary__card--warning {
+  border-color: #c9a227;
+  background: color-mix(in srgb, #c9a227 10%, white);
+}
+
+.dashboard-potential-summary__card--warning .dashboard-potential-summary__value {
+  color: #b8860b;
+}
+
+.dashboard-potential-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.dashboard-potential-summary__card {
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt, #fafafa);
+}
+
+.dashboard-potential-summary__card--highlight {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, white);
+}
+
+.dashboard-potential-summary__card--profit {
+  border-color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 8%, white);
+}
+
+.dashboard-potential-summary__card--profit .dashboard-potential-summary__value {
+  color: var(--color-success);
+}
+
+.dashboard-potential-summary--2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.dashboard-potential-summary__label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0 0 var(--space-xs);
+}
+
+.dashboard-potential-summary__value {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-success);
+  margin: 0 0 var(--space-xs);
+}
+
+.dashboard-potential-summary__meta {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .dashboard-potential-summary {
+    grid-template-columns: 1fr;
+  }
 }
 
 .dashboard-charts {

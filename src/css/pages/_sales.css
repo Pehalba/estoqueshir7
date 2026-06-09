@@ -74,6 +74,36 @@
   margin-bottom: var(--space-xs);
 }
 
+.platform-costs-section {
+  margin-top: var(--space-xl);
+}
+
+.platform-costs-section__intro {
+  margin-bottom: var(--space-lg);
+}
+
+.platform-costs__card {
+  border: 1px solid var(--color-border);
+  box-shadow: none;
+}
+
+.platform-costs__header {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.platform-costs__header .card__title {
+  font-size: var(--font-size-base);
+}
+
+.platform-costs__card .card__body {
+  padding-top: var(--space-sm);
+}
+
+.platform-costs__card .form-group:last-child {
+  margin-bottom: 0;
+}
+
 .coupons-list {
   display: flex;
   flex-direction: column;

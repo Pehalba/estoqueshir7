@@ -101,20 +101,24 @@ export function investorProfitExcludingPersonalization(financials) {
     productCost = 0,
     variableCosts = 0,
     netProfit = 0,
+    platformCost = 0,
   } = financials;
 
+  const platformFee = Number(platformCost) || 0;
+  const operationalVariableCosts = Math.max(0, (Number(variableCosts) || 0) - platformFee);
+
   if (!personalizationTotal || personalizationTotal <= 0) {
-    return netProfit;
+    return Math.max(0, (Number(netProfit) || 0) + platformFee);
   }
 
   if (!grossRevenue) {
-    return Math.max(0, netProfit);
+    return Math.max(0, (Number(netProfit) || 0) + platformFee);
   }
 
   const itemShare = itemsSubtotal / grossRevenue;
   const itemRevenue = totalRevenue * itemShare;
   const costShare = totalRevenue > 0 ? itemRevenue / totalRevenue : itemShare;
-  const itemVariableCosts = variableCosts * costShare;
+  const itemVariableCosts = operationalVariableCosts * costShare;
   const itemNetProfit = itemRevenue - productCost - itemVariableCosts;
 
   return Math.max(0, itemNetProfit);
@@ -264,10 +268,20 @@ export function calculatePoolCostPerPiece({ adsPool = 0, otherPoolCosts = 0, pie
   return pool / pieces;
 }
 
+/** Taxa da plataforma: % sobre o faturamento do pedido + valor fixo por pedido. */
+export function calculatePlatformFee(platform, totalRevenue) {
+  if (!platform) return 0;
+  const revenue = Math.max(0, Number(totalRevenue) || 0);
+  const percent = Math.max(0, Number(platform.percent) || 0);
+  const fixed = Math.max(0, Number(platform.fixedPerOrder) || 0);
+  return revenue * (percent / 100) + fixed;
+}
+
 export function calculateQuickSaleFinancials({
   lines,
   unitCost,
   defaultPersonalizationCostPerPiece = 0,
+  platform = null,
 }) {
   const defaultPersCost = Number(defaultPersonalizationCostPerPiece) || 0;
   const safeLines = (lines || []).map((l) => ({
@@ -315,7 +329,8 @@ export function calculateQuickSaleFinancials({
   const freightCost = safeLines.reduce((sum, l) => sum + l.freight, 0);
   const adsCostTotal = safeLines.reduce((sum, l) => sum + l.ads, 0);
   const extraFees = safeLines.reduce((sum, l) => sum + l.otherCosts, 0);
-  const variableCosts = freightCost + adsCostTotal + extraFees;
+  const platformCost = calculatePlatformFee(platform, totalRevenue);
+  const variableCosts = freightCost + adsCostTotal + extraFees + platformCost;
   const grossProfit = totalRevenue - productCost;
   const netProfit = grossProfit - variableCosts - personalizationCostTotal;
   const margin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
@@ -334,6 +349,7 @@ export function calculateQuickSaleFinancials({
     adsCostTotal,
     poolCostTotal: adsCostTotal,
     extraFees,
+    platformCost,
     variableCosts,
     grossProfit,
     netProfit,

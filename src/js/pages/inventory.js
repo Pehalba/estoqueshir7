@@ -31,6 +31,7 @@ import {
 } from '../utils/calculations.js';
 import { validateProduct, validateStockEntry, parseSizesQuickInput } from '../utils/validators.js';
 import { formatCurrency } from '../utils/formatCurrency.js';
+import { SIZE_ORDER, sortSizes } from '../utils/sizes.js';
 import {
   qs,
   qsa,
@@ -40,8 +41,6 @@ import {
   setupModalClose,
   setLoading,
 } from '../utils/domHelpers.js';
-
-const SIZE_OPTIONS = ['P', 'M', 'G', 'GG', 'XG'];
 
 let allProducts = [];
 let allStockEntries = [];
@@ -73,7 +72,7 @@ const stockForm = qs('#stock-form');
 const stockFormErrors = qs('#stock-form-errors');
 
 function sizeSelectHtml(selected = '') {
-  const options = SIZE_OPTIONS.map(
+  const options = SIZE_ORDER.map(
     (s) => `<option value="${s}" ${s === selected ? 'selected' : ''}>${s}</option>`
   ).join('');
   return `<option value="">Tam.</option>${options}`;
@@ -316,7 +315,7 @@ function formatPriceCell(product) {
 
 function formatSizesBadges(sizes) {
   if (!sizes?.length) return '<span class="text-muted">—</span>';
-  return `<div class="sizes-badges">${sizes.map((s) => {
+  return `<div class="sizes-badges">${sortSizes(sizes).map((s) => {
     const avail = availableQty(s);
     const low = avail <= lowStockThreshold;
     const reserved = Number(s.reserved) || 0;
@@ -665,7 +664,7 @@ async function openStockEntryViewModal(id) {
   viewingId = null;
   qs('.modal__title', qs('#view-modal')).textContent = 'Detalhes do estoque';
 
-  const sizesText = (e.sizes || []).map((s) => `${s.quantity} ${s.size}`).join(', ') || '—';
+  const sizesText = sortSizes(e.sizes).map((s) => `${s.quantity} ${s.size}`).join(', ') || '—';
   const fields = [
     ['Nome do estoque', e.name],
     ['Produto', e.productName],
@@ -864,7 +863,7 @@ function updateMovementSizeSelect() {
 
   const sizes = entry.sizes || [];
   sizeSelect.innerHTML = sizes.length
-    ? sizes.map((s) => {
+    ? sortSizes(sizes).map((s) => {
       const avail = availableQty(s);
       return `<option value="${s.size}">${s.size} (disp: ${avail})</option>`;
     }).join('')

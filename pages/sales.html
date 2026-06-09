@@ -101,11 +101,23 @@
             <div class="card__body">
               <div id="form-errors" class="form-errors"></div>
               <form id="sale-form">
-                <div class="form-group">
-                  <label class="form-group__label form-group__label--required" for="field-product">Estoque</label>
-                  <select class="form-input form-select" id="field-product" required>
-                    <option value="">Selecione o estoque</option>
-                  </select>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-group__label form-group__label--required" for="field-product">Estoque</label>
+                    <select class="form-input form-select" id="field-product" required>
+                      <option value="">Selecione o estoque</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label" for="field-platform">Plataforma</label>
+                    <select class="form-input form-select" id="field-platform">
+                      <option value="presencial">Presencial / sem plataforma</option>
+                      <option value="shopify">Shopify</option>
+                      <option value="yampi">Yampi</option>
+                      <option value="appmax">Appmax</option>
+                    </select>
+                    <p class="form-group__hint" id="platform-fee-hint">Sem taxa de plataforma. Ao escolher Shopify, Yampi ou Appmax, a taxa entra nos custos e reduz o lucro automaticamente.</p>
+                  </div>
                 </div>
 
                 <p id="product-info" class="sales-product-info"></p>
@@ -227,6 +239,69 @@
                   <button type="button" class="btn btn--secondary" id="btn-add-coupon">+ Cupom</button>
                 </div>
                 <button type="button" class="btn btn--primary" id="btn-save-coupons" style="margin-top:1rem">Salvar cupons</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card platform-costs-section">
+            <div class="card__header">
+              <h3 class="card__title">Custos por plataforma</h3>
+            </div>
+            <div class="card__body">
+              <p class="text-sm text-muted platform-costs-section__intro">
+                Configure a taxa de cada canal. Na saída rápida, ao selecionar a plataforma, o custo é calculado e abatido do lucro líquido automaticamente — sem precisar digitar na coluna &quot;Outros&quot;.
+              </p>
+              <div class="platform-costs grid grid--3">
+                <div class="platform-costs__card card">
+                  <div class="card__header platform-costs__header">
+                    <h4 class="card__title">Shopify</h4>
+                  </div>
+                  <div class="card__body">
+                    <div class="form-group">
+                      <label class="form-group__label" for="set-platform-shopify-percent">Taxa (%)</label>
+                      <input class="form-input" type="number" id="set-platform-shopify-percent" min="0" max="100" step="0.01" value="2">
+                      <p class="form-group__hint">Percentual sobre o faturamento do pedido.</p>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-group__label" for="set-platform-shopify-fixed">Taxa fixa por pedido (R$)</label>
+                      <input class="form-input" type="number" id="set-platform-shopify-fixed" min="0" step="0.01" value="0">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="platform-costs__card card">
+                  <div class="card__header platform-costs__header">
+                    <h4 class="card__title">Yampi</h4>
+                  </div>
+                  <div class="card__body">
+                    <div class="form-group">
+                      <label class="form-group__label" for="set-platform-yampi-percent">Taxa (%)</label>
+                      <input class="form-input" type="number" id="set-platform-yampi-percent" min="0" max="100" step="0.01" value="0">
+                      <p class="form-group__hint">Percentual sobre o faturamento do pedido.</p>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-group__label" for="set-platform-yampi-fixed">Taxa fixa por pedido (R$)</label>
+                      <input class="form-input" type="number" id="set-platform-yampi-fixed" min="0" step="0.01" value="0">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="platform-costs__card card">
+                  <div class="card__header platform-costs__header">
+                    <h4 class="card__title">Appmax</h4>
+                  </div>
+                  <div class="card__body">
+                    <div class="form-group">
+                      <label class="form-group__label" for="set-platform-appmax-percent">Taxa (%)</label>
+                      <input class="form-input" type="number" id="set-platform-appmax-percent" min="0" max="100" step="0.01" value="0">
+                      <p class="form-group__hint">Percentual sobre o faturamento do pedido.</p>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-group__label" for="set-platform-appmax-fixed">Taxa fixa por pedido (R$)</label>
+                      <input class="form-input" type="number" id="set-platform-appmax-fixed" min="0" step="0.01" value="0">
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

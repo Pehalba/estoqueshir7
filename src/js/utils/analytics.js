@@ -109,6 +109,76 @@ export function aggregateSalesTotals(sales) {
   return aggregateSalesStats((sales || []).filter(isSaleActive));
 }
 
+function extractLinePersonalization(line) {
+  if (!line?.isPersonalized) {
+    return { revenue: 0, cost: 0, pieces: 0 };
+  }
+
+  const qty = Number(line.quantity) || 0;
+  const persGross = qty * (Number(line.personalizationPerPiece) || 0);
+  const itemsGross = qty * (Number(line.unitPrice) || 0);
+  const lineGross = itemsGross + persGross;
+  const couponPct = Math.min(100, Math.max(0, Number(line.couponPercent) || 0));
+  const lineDiscount = lineGross * (couponPct / 100);
+  const persDiscount = lineGross > 0 ? lineDiscount * (persGross / lineGross) : 0;
+  const revenue = Math.max(0, persGross - persDiscount);
+  const cost = qty * (Number(line.personalizationCostPerPiece) || 0);
+
+  return { revenue, cost, pieces: qty };
+}
+
+export function getSalePersonalizationStats(sale) {
+  const lines = sale?.lines || [];
+
+  if (lines.length) {
+    return lines.reduce((acc, line) => {
+      const stats = extractLinePersonalization(line);
+      acc.revenue += stats.revenue;
+      acc.cost += stats.cost;
+      acc.pieces += stats.pieces;
+      return acc;
+    }, { revenue: 0, cost: 0, pieces: 0 });
+  }
+
+  const revenue = Number(sale?.personalizationTotal) || 0;
+  const cost = Number(sale?.personalizationCost) || 0;
+  const hasPersonalization = !!sale?.isPersonalized || revenue > 0 || cost > 0;
+  const pieces = hasPersonalization ? (Number(sale?.quantity) || 0) : 0;
+
+  return { revenue, cost, pieces };
+}
+
+export function saleHasPersonalization(sale) {
+  const stats = getSalePersonalizationStats(sale);
+  return stats.pieces > 0 || stats.revenue > 0 || stats.cost > 0 || !!sale?.isPersonalized;
+}
+
+export function summarizePersonalizationSales(sales) {
+  return (sales || []).reduce((acc, sale) => {
+    if (!saleHasPersonalization(sale)) return acc;
+
+    const stats = getSalePersonalizationStats(sale);
+    acc.revenue += stats.revenue;
+    acc.cost += stats.cost;
+    acc.profit += stats.revenue - stats.cost;
+    acc.pieces += stats.pieces;
+    acc.orderCount += 1;
+    return acc;
+  }, {
+    revenue: 0,
+    cost: 0,
+    profit: 0,
+    pieces: 0,
+    orderCount: 0,
+  });
+}
+
+/** Totais de personalização em vendas ativas de toda a operação. */
+export function aggregatePersonalizationTotals(sales) {
+  const active = (sales || []).filter(isSaleActive);
+  return summarizePersonalizationSales(active);
+}
+
 export function aggregateMonthSales(sales, year, month) {
   const monthSales = (sales || []).filter((s) => isSaleInMonth(s, year, month));
   return aggregateSalesStats(monthSales);
@@ -140,6 +210,33 @@ export function getLowStockList(products, threshold) {
     }
   }
   return items.sort((a, b) => a.available - b.available);
+}
+
+export function getLowStockListByProduct(products, threshold) {
+  const byProductSize = new Map();
+
+  for (const entry of products || []) {
+    if (entry.status === 'inativo') continue;
+
+    const productId = entry.productId || entry.id;
+    const productName = entry.productName || entry.name || '—';
+
+    for (const sizeEntry of entry.sizes || []) {
+      const key = `${productId}|${sizeEntry.size}`;
+      const prev = byProductSize.get(key) || {
+        productId,
+        productName,
+        size: sizeEntry.size,
+        available: 0,
+      };
+      prev.available += availableQty(sizeEntry);
+      byProductSize.set(key, prev);
+    }
+  }
+
+  return [...byProductSize.values()]
+    .filter((item) => item.available <= threshold)
+    .sort((a, b) => a.available - b.available);
 }
 
 export function getTopSellingProducts(sales, limit = 5) {
