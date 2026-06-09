@@ -1,12 +1,12 @@
 import { waitForAuth } from '../services/authService.js';
-import { listProducts } from '../services/productService.js';
+import { listStockEntries, entriesAsStockItems } from '../services/stockEntryService.js';
 import { listSales } from '../services/salesService.js';
 import { listInvestors } from '../services/investorService.js';
 import { getLowStockThreshold } from '../services/stockService.js';
 import { askAssistant, getQuickQuestions } from '../services/aiService.js';
 import {
   aggregateStock,
-  aggregateMonthSales,
+  aggregateSalesTotals,
   monthlySeries,
   getLastNMonths,
   getLowStockList,
@@ -17,8 +17,8 @@ import {
 } from '../utils/analytics.js';
 import { renderBarChart, renderGroupedBarChart, renderDoughnutChart } from '../utils/chartRenderer.js';
 import { formatCurrency, formatPercent } from '../utils/formatCurrency.js';
-import { formatSaleLinesSummary } from '../utils/calculations.js';
-import { qs, showToast } from '../utils/domHelpers.js';
+import { formatSaleLinesSummary, availableQty } from '../utils/calculations.js';
+import { qs, showToast, openModal, setupModalClose } from '../utils/domHelpers.js';
 
 let dashboardData = null;
 
@@ -45,25 +45,113 @@ function formatSaleDate(sale) {
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 }
 
-function renderKpis(stock, monthStats) {
+function getInvestorName(id) {
+  return dashboardData?.investors?.find((i) => i.id === id)?.name || '—';
+}
+
+function formatEntrySizes(sizes) {
+  const lines = (sizes || [])
+    .map((s) => {
+      const qty = availableQty(s);
+      if (qty <= 0) return null;
+      const reserved = Number(s.reserved) || 0;
+      const label = reserved > 0 ? `${s.size}: ${qty} disp. (${s.quantity} total)` : `${s.size}: ${qty}`;
+      return label;
+    })
+    .filter(Boolean);
+
+  return lines.length ? lines.join(' · ') : '—';
+}
+
+function entryAvailableTotal(sizes) {
+  return (sizes || []).reduce((sum, s) => sum + availableQty(s), 0);
+}
+
+function buildStockDetailContent(origin) {
+  const isInvestor = origin === 'investidor';
+  const titleLabel = isInvestor ? 'Estoque investidor' : 'Estoque próprio';
+  const entries = (dashboardData?.products || []).filter(
+    (e) => e.status !== 'inativo' && e.stockOrigin === origin
+  );
+  const withPieces = entries.filter((e) => entryAvailableTotal(e.sizes) > 0);
+
+  if (!withPieces.length) {
+    return {
+      title: titleLabel,
+      body: '<p class="text-muted">Nenhuma peça disponível nesta origem no momento.</p>',
+    };
+  }
+
+  const totalPieces = withPieces.reduce((sum, e) => sum + entryAvailableTotal(e.sizes), 0);
+  const items = withPieces.map((e) => {
+    const total = entryAvailableTotal(e.sizes);
+    const lotLine = e.stockEntryName && e.stockEntryName !== e.productName
+      ? `<p class="dashboard-stock-detail__meta">Lote: ${e.stockEntryName}</p>`
+      : '';
+    const investorLine = isInvestor
+      ? `<p class="dashboard-stock-detail__meta">Investidor: ${getInvestorName(e.investorId)}</p>`
+      : '';
+
+    return `
+      <div class="dashboard-stock-detail__item">
+        <div class="dashboard-stock-detail__head">
+          <strong>${e.productName || e.name}</strong>
+          <span class="dashboard-stock-detail__qty">${total} peça(s)</span>
+        </div>
+        ${lotLine}
+        ${investorLine}
+        <p class="dashboard-stock-detail__sizes">${formatEntrySizes(e.sizes)}</p>
+      </div>
+    `;
+  }).join('');
+
+  return {
+    title: `${titleLabel} — ${totalPieces} peça(s)`,
+    body: `<div class="dashboard-stock-detail__list">${items}</div>`,
+  };
+}
+
+function openStockDetailModal(origin) {
+  const { title, body } = buildStockDetailContent(origin);
+  qs('#stock-detail-title').textContent = title;
+  qs('#stock-detail-body').innerHTML = body;
+  openModal('stock-detail-modal');
+}
+
+function renderKpis(stock, salesStats) {
   const kpis = [
-    { label: 'Produtos ativos', value: String(stock.totalProducts), hint: `${stock.totalPieces} peças no total` },
+    { label: 'Lotes em estoque', value: String(stock.totalProducts), hint: `${stock.totalPieces} peças no total` },
     { label: 'Valor em estoque (custo)', value: formatCurrency(stock.costValue), className: 'dashboard-kpi--warning' },
     { label: 'Potencial de venda', value: formatCurrency(stock.potentialValue) },
-    { label: 'Estoque próprio', value: `${stock.proprioPieces} peças` },
-    { label: 'Estoque investidor', value: `${stock.investidorPieces} peças` },
-    { label: 'Faturamento do mês', value: formatCurrency(monthStats.revenue), className: 'dashboard-kpi--revenue' },
-    { label: 'Lucro líquido do mês', value: formatCurrency(monthStats.profit), className: 'dashboard-kpi--profit' },
-    { label: 'Margem média do mês', value: formatPercent(monthStats.avgMargin) },
-    { label: 'Pedidos do mês', value: String(monthStats.count) },
-    { label: 'Ticket médio do mês', value: formatCurrency(monthStats.ticket) },
+    { label: 'Pedidos', value: String(salesStats.count) },
+    {
+      label: 'Estoque próprio',
+      value: `${stock.proprioPieces} peças`,
+      detailOrigin: 'proprio',
+      hint: 'Clique para ver o detalhe',
+      hintClass: 'dashboard-kpi__hint--action',
+    },
+    {
+      label: 'Estoque investidor',
+      value: `${stock.investidorPieces} peças`,
+      detailOrigin: 'investidor',
+      hint: 'Clique para ver o detalhe',
+      hintClass: 'dashboard-kpi__hint--action',
+    },
+    { label: 'Faturamento total', value: formatCurrency(salesStats.revenue), className: 'dashboard-kpi--revenue', hint: `${salesStats.pieces} peça(s) vendidas` },
+    { label: 'Lucro líquido total', value: formatCurrency(salesStats.profit), className: 'dashboard-kpi--profit' },
+    { label: 'Margem média', value: formatPercent(salesStats.avgMargin) },
+    { label: 'Ticket médio', value: formatCurrency(salesStats.ticket) },
   ];
 
   qs('#dashboard-kpis').innerHTML = kpis.map((k) => `
-    <div class="dashboard-kpi ${k.className || ''}">
+    <div
+      class="dashboard-kpi ${k.className || ''} ${k.detailOrigin ? 'dashboard-kpi--clickable' : ''}"
+      ${k.detailOrigin ? `data-detail-origin="${k.detailOrigin}" role="button" tabindex="0"` : ''}
+    >
       <p class="dashboard-kpi__label">${k.label}</p>
       <p class="dashboard-kpi__value">${k.value}</p>
-      ${k.hint ? `<p class="dashboard-kpi__hint">${k.hint}</p>` : ''}
+      ${k.hint ? `<p class="dashboard-kpi__hint ${k.hintClass || ''}">${k.hint}</p>` : ''}
     </div>
   `).join('');
 }
@@ -86,7 +174,7 @@ function renderLists(products, sales, threshold) {
   renderList('#list-low-stock', lowStock, (item) => `
     <div class="dashboard-list__item">
       <div>
-        <p class="dashboard-list__name">${item.productName} — ${item.size}</p>
+        <p class="dashboard-list__name">${item.stockEntryName ? `${item.stockEntryName} · ` : ''}${item.productName} — ${item.size}</p>
         <p class="dashboard-list__meta">${item.stockOrigin === 'investidor' ? 'Investidor' : 'Próprio'}</p>
       </div>
       <span class="dashboard-list__value">${item.available} disp.</span>
@@ -186,12 +274,11 @@ function bindChartsResize() {
 
 function renderDashboard({ products, sales, investors, threshold }) {
   const stock = aggregateStock(products);
-  const now = new Date();
-  const monthStats = aggregateMonthSales(sales, now.getFullYear(), now.getMonth());
+  const salesStats = aggregateSalesTotals(sales);
 
   dashboardData = { products, sales, investors: investors || [], stock, threshold };
 
-  renderKpis(stock, monthStats);
+  renderKpis(stock, salesStats);
   renderLists(products, sales, threshold);
   renderAiChips();
   revealDashboard();
@@ -209,15 +296,15 @@ function renderDashboard({ products, sales, investors, threshold }) {
 }
 
 async function loadData() {
-  const [productsRes, salesRes, investorsRes, threshold] = await Promise.all([
-    listProducts(),
+  const [stockRes, salesRes, investorsRes, threshold] = await Promise.all([
+    listStockEntries(),
     listSales(),
     listInvestors(),
     getLowStockThreshold(),
   ]);
 
   const errors = [];
-  if (!productsRes.success) errors.push(productsRes.error);
+  if (!stockRes.success) errors.push(stockRes.error);
   if (!salesRes.success) errors.push(salesRes.error);
   if (!investorsRes.success) errors.push(investorsRes.error);
 
@@ -225,13 +312,13 @@ async function loadData() {
     errors.forEach((msg) => showToast(msg, 'error'));
   }
 
-  if (!productsRes.success && !salesRes.success) {
+  if (!stockRes.success && !salesRes.success) {
     showDashboardError('Não foi possível carregar os dados. Verifique o Firebase e recarregue a página.');
     return;
   }
 
   renderDashboard({
-    products: productsRes.success ? productsRes.data : [],
+    products: stockRes.success ? entriesAsStockItems(stockRes.data) : [],
     sales: salesRes.success ? salesRes.data : [],
     investors: investorsRes.success ? investorsRes.data : [],
     threshold: threshold ?? 5,
@@ -239,6 +326,22 @@ async function loadData() {
 }
 
 function initEvents() {
+  setupModalClose('stock-detail-modal');
+
+  qs('#dashboard-kpis')?.addEventListener('click', (e) => {
+    const card = e.target.closest('[data-detail-origin]');
+    if (!card) return;
+    openStockDetailModal(card.dataset.detailOrigin);
+  });
+
+  qs('#dashboard-kpis')?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const card = e.target.closest('[data-detail-origin]');
+    if (!card) return;
+    e.preventDefault();
+    openStockDetailModal(card.dataset.detailOrigin);
+  });
+
   qs('#ai-form')?.addEventListener('submit', (e) => {
     e.preventDefault();
     const input = qs('#ai-input');

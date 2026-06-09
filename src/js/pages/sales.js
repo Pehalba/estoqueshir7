@@ -1,4 +1,4 @@
-import { listProducts } from '../services/productService.js';
+import { listStockEntries } from '../services/stockEntryService.js';
 import { listInvestors } from '../services/investorService.js';
 import { listSales, createQuickSale } from '../services/salesService.js';
 import {
@@ -29,7 +29,7 @@ import {
 
 const SIZE_OPTIONS = ['P', 'M', 'G', 'GG', 'XG'];
 
-let allProducts = [];
+let allStockEntries = [];
 let allInvestors = [];
 let allSales = [];
 let globalSettings = { ...DEFAULT_SETTINGS };
@@ -55,8 +55,8 @@ function getInvestorName(id) {
   return allInvestors.find((i) => i.id === id)?.name || '—';
 }
 
-function getSelectedProduct() {
-  return allProducts.find((p) => p.id === qs('#field-product').value) || null;
+function getSelectedStockEntry() {
+  return allStockEntries.find((e) => e.id === qs('#field-product').value) || null;
 }
 
 function getBasePrice() {
@@ -181,8 +181,8 @@ function collectLinesFromDOM() {
 }
 
 function getLineAvailable(size) {
-  const product = getSelectedProduct();
-  const entry = product?.sizes?.find((s) => s.size === size);
+  const stockEntry = getSelectedStockEntry();
+  const entry = stockEntry?.sizes?.find((s) => s.size === size);
   return entry ? availableQty(entry) : 0;
 }
 
@@ -199,12 +199,12 @@ function renderSaleLine(line = {}) {
     personalizationPerPiece = defaultLineExtras().personalizationPerPiece,
     personalizationCostPerPiece = defaultLineExtras().personalizationCostPerPiece,
   } = line;
-  const product = getSelectedProduct();
+  const stockEntry = getSelectedStockEntry();
   const row = document.createElement('div');
   row.className = 'sale-lines__row';
   const price = unitPrice !== '' ? unitPrice : getBasePrice();
   row.innerHTML = `
-    <select class="form-input form-select line-size">${sizeSelectHtml(size, product)}</select>
+    <select class="form-input form-select line-size">${sizeSelectHtml(size, stockEntry)}</select>
     <input class="form-input line-qty" type="number" min="1" value="${quantity}" placeholder="Qtd">
     <input class="form-input line-price" type="number" min="0" step="0.01" value="${price}" placeholder="R$">
     <select class="form-input form-select line-coupon" title="Cupom da linha">${couponSelectHtml(couponId)}</select>
@@ -325,19 +325,19 @@ function showFormErrors(errors) {
 function populateProductSelect() {
   const select = qs('#field-product');
   const current = select.value;
-  select.innerHTML = `<option value="">Selecione o estoque</option>${allProducts
-    .filter((p) => p.status !== 'inativo')
-    .map((p) => `<option value="${p.id}">${p.name}</option>`)
+  select.innerHTML = `<option value="">Selecione o estoque</option>${allStockEntries
+    .filter((e) => e.status !== 'inativo' && e.status !== 'esgotado')
+    .map((e) => `<option value="${e.id}">${e.name} — ${e.productName}</option>`)
     .join('')}`;
   select.value = current;
-  onProductChange();
+  onStockEntryChange();
 }
 
-function onProductChange() {
-  const product = getSelectedProduct();
+function onStockEntryChange() {
+  const stockEntry = getSelectedStockEntry();
   const infoEl = qs('#product-info');
 
-  if (!product) {
+  if (!stockEntry) {
     infoEl.textContent = '';
     setSaleLines([]);
     updatePreview();
@@ -345,24 +345,24 @@ function onProductChange() {
   }
 
   const unitCost = unitCostWithImportTax(
-    product.costPrice,
-    product.importTaxes,
-    product.sizes
+    stockEntry.costPrice,
+    stockEntry.importTaxes,
+    stockEntry.sizes
   );
-  const origin = product.stockOrigin === 'investidor'
-    ? `Investidor: ${getInvestorName(product.investorId)}`
+  const origin = stockEntry.stockOrigin === 'investidor'
+    ? `Investidor: ${getInvestorName(stockEntry.investorId)}`
     : 'Próprio';
 
   infoEl.innerHTML = `
-    <strong>${origin}</strong> · Custo ${formatCurrency(unitCost)} · Mín. ${formatCurrency(product.minimumSalePrice)}
+    <strong>${origin}</strong> · Custo ${formatCurrency(unitCost)} · Mín. ${formatCurrency(stockEntry.minimumSalePrice)}
   `;
 
-  qs('#field-base-price').value = DEFAULT_SALE_PRICE;
+  qs('#field-base-price').value = stockEntry.suggestedSalePrice || DEFAULT_SALE_PRICE;
 
   qsa('.sale-lines__row', saleLinesEl).forEach((row) => {
     const select = row.querySelector('.line-size');
     const current = select.value;
-    select.innerHTML = sizeSelectHtml(current, product);
+    select.innerHTML = sizeSelectHtml(current, stockEntry);
     select.value = current;
     const avail = current ? getLineAvailable(current) : '—';
     row.querySelector('.sale-lines__avail').textContent = current ? String(avail) : '—';
@@ -492,15 +492,30 @@ async function loadSettings() {
   }
 }
 
+function stockEntryAsProduct(entry) {
+  if (!entry) return null;
+  return {
+    name: entry.productName,
+    sizes: entry.sizes,
+    costPrice: entry.costPrice,
+    importTaxes: entry.importTaxes,
+    suggestedSalePrice: entry.suggestedSalePrice,
+    minimumSalePrice: entry.minimumSalePrice,
+    stockOrigin: entry.stockOrigin,
+    investorId: entry.investorId,
+  };
+}
+
 function getFormData() {
-  const product = getSelectedProduct();
-  const unitCost = product
-    ? unitCostWithImportTax(product.costPrice, product.importTaxes, product.sizes)
+  const stockEntry = getSelectedStockEntry();
+  const unitCost = stockEntry
+    ? unitCostWithImportTax(stockEntry.costPrice, stockEntry.importTaxes, stockEntry.sizes)
     : 0;
   const lines = collectLinesFromDOM();
 
   return {
-    productId: qs('#field-product').value,
+    stockEntryId: qs('#field-product').value,
+    productId: stockEntry?.productId || qs('#field-product').value,
     unitCost,
     lines,
   };
@@ -508,8 +523,9 @@ function getFormData() {
 
 function getPreviewData() {
   const data = getFormData();
-  const product = getSelectedProduct();
-  if (!product || !data.lines.length) return null;
+  const stockEntry = getSelectedStockEntry();
+  const product = stockEntryAsProduct(stockEntry);
+  if (!stockEntry || !data.lines.length) return null;
 
   const linesWithStock = data.lines.map((l) => ({
     ...l,
@@ -523,8 +539,8 @@ function getPreviewData() {
   });
 
   let investorPayout = 0;
-  if (product.stockOrigin === 'investidor' && product.investorId) {
-    const investor = allInvestors.find((i) => i.id === product.investorId);
+  if (stockEntry.stockOrigin === 'investidor' && stockEntry.investorId) {
+    const investor = allInvestors.find((i) => i.id === stockEntry.investorId);
     if (investor) {
       investorPayout = calculateInvestorRepasseForSale(investor, {
         unitCost: data.unitCost,
@@ -673,13 +689,13 @@ function renderSalesTable() {
 }
 
 async function loadData() {
-  const [prodResult, invResult, salesResult] = await Promise.all([
-    listProducts(),
+  const [stockResult, invResult, salesResult] = await Promise.all([
+    listStockEntries(),
     listInvestors(),
     listSales(),
   ]);
 
-  allProducts = prodResult.success ? prodResult.data : [];
+  allStockEntries = stockResult.success ? stockResult.data : [];
   allInvestors = invResult.success ? invResult.data : [];
   allSales = salesResult.success ? salesResult.data : [];
 
@@ -846,7 +862,7 @@ function resetForm() {
   saleForm.reset();
   formErrors.classList.remove('form-errors--visible');
   setSaleLines([]);
-  onProductChange();
+  onStockEntryChange();
 }
 
 async function handleSubmit(e) {
@@ -883,7 +899,7 @@ async function handleSubmit(e) {
 
 function initEvents() {
   saleForm?.addEventListener('submit', handleSubmit);
-  qs('#field-product')?.addEventListener('change', onProductChange);
+  qs('#field-product')?.addEventListener('change', onStockEntryChange);
   qs('#btn-parse-sizes')?.addEventListener('click', applyQuickSizes);
   qs('#sizes-quick-input')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {

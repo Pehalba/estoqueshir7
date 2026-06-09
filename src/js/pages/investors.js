@@ -5,7 +5,7 @@ import {
   updateInvestor,
   deleteInvestor,
 } from '../services/investorService.js';
-import { listProducts } from '../services/productService.js';
+import { listStockEntries, entriesAsStockItems } from '../services/stockEntryService.js';
 import { listSales } from '../services/salesService.js';
 import { waitForAuth } from '../services/authService.js';
 import {
@@ -46,7 +46,7 @@ const REPASSE_VALUE_LABELS = {
 };
 
 let allInvestors = [];
-let allProducts = [];
+let allStockItems = [];
 let allSales = [];
 let editingId = null;
 let viewingId = null;
@@ -61,7 +61,7 @@ const repasseTypeField = qs('#field-repasseType');
 const repasseValueGroup = qs('#repasse-value-group');
 
 function getInvestorStats(investorId) {
-  return investorStockTotals(allProducts, investorId);
+  return investorStockTotals(allStockItems, investorId);
 }
 
 function showFormErrors(errors) {
@@ -150,9 +150,9 @@ function renderTable() {
 async function loadData() {
   investorsCount.textContent = 'Carregando investidores...';
 
-  const [invResult, prodResult, salesResult] = await Promise.all([
+  const [invResult, stockResult, salesResult] = await Promise.all([
     listInvestors(),
-    listProducts(),
+    listStockEntries(),
     listSales(),
   ]);
 
@@ -163,7 +163,7 @@ async function loadData() {
   }
 
   allInvestors = invResult.data;
-  allProducts = prodResult.success ? prodResult.data : [];
+  allStockItems = stockResult.success ? entriesAsStockItems(stockResult.data) : [];
   allSales = salesResult.success ? salesResult.data : [];
   renderTable();
 }

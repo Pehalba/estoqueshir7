@@ -62,7 +62,7 @@
       <main class="app-layout__content">
         <div class="page-header">
           <h2 class="page-header__title">Visão Geral</h2>
-          <p class="page-header__subtitle">Resumo do estoque, vendas e lucro em tempo real</p>
+          <p class="page-header__subtitle">Resumo do estoque atual e vendas acumuladas de toda a operação</p>
         </div>
 
         <div id="dashboard-loading" class="dashboard-loading">Carregando dados...</div>
@@ -124,6 +124,21 @@
           </section>
         </div>
       </main>
+    </div>
+  </div>
+
+  <!-- Modal detalhe estoque -->
+  <div id="stock-detail-modal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog">
+      <div class="modal__header">
+        <h3 class="modal__title" id="stock-detail-title">Detalhe do estoque</h3>
+        <button type="button" class="modal__close-btn" data-modal-close aria-label="Fechar">&times;</button>
+      </div>
+      <div class="modal__body" id="stock-detail-body"></div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--secondary" data-modal-close>Fechar</button>
+      </div>
     </div>
   </div>
 

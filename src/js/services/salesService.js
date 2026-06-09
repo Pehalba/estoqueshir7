@@ -13,6 +13,7 @@ import {
 import { db } from '../config/firebase.js';
 import { getCurrentUser } from './authService.js';
 import { getProductById } from './productService.js';
+import { getStockEntryById } from './stockEntryService.js';
 import { getInvestorById } from './investorService.js';
 import { registerMovement } from './stockService.js';
 import {
@@ -106,27 +107,46 @@ export async function createSale(input) {
   }
 
   const orderId = String(input.orderId || '').trim();
-  const productId = input.productId;
+  const stockEntryId = input.stockEntryId || input.productId;
   const size = input.size;
   const quantity = Number(input.quantity) || 0;
 
   try {
-    const [productResult, duplicate] = await Promise.all([
-      getProductById(productId),
+    const [entryResult, duplicate] = await Promise.all([
+      getStockEntryById(stockEntryId),
       orderIdExists(orderId),
     ]);
 
-    if (!productResult.success) {
-      return { success: false, error: productResult.error };
+    if (!entryResult.success) {
+      return { success: false, error: entryResult.error };
     }
 
-    const product = productResult.data;
-    const sizeEntry = (product.sizes || []).find((s) => s.size === size);
+    const stockEntry = entryResult.data;
+    const productId = stockEntry.productId;
+    const productResult = productId
+      ? await getProductById(productId)
+      : { success: true, data: { name: stockEntry.productName } };
+    const product = productResult.success
+      ? productResult.data
+      : { name: stockEntry.productName };
+
+    const stockLikeProduct = {
+      ...product,
+      sizes: stockEntry.sizes,
+      costPrice: stockEntry.costPrice,
+      importTaxes: stockEntry.importTaxes,
+      suggestedSalePrice: stockEntry.suggestedSalePrice,
+      minimumSalePrice: stockEntry.minimumSalePrice,
+      stockOrigin: stockEntry.stockOrigin,
+      investorId: stockEntry.investorId,
+    };
+
+    const sizeEntry = (stockEntry.sizes || []).find((s) => s.size === size);
     const stockAvailable = sizeEntry ? availableQty(sizeEntry) : 0;
     const unitCost = unitCostWithImportTax(
-      product.costPrice,
-      product.importTaxes,
-      product.sizes
+      stockEntry.costPrice,
+      stockEntry.importTaxes,
+      stockEntry.sizes
     );
 
     const financials = calculateSaleFinancials({
@@ -139,8 +159,8 @@ export async function createSale(input) {
     });
 
     const validation = validateSale(
-      { ...input, orderId, unitCost },
-      { product, availableQty: stockAvailable, orderIdExists: duplicate, financials }
+      { ...input, orderId, unitCost, stockEntryId },
+      { product: stockLikeProduct, availableQty: stockAvailable, orderIdExists: duplicate, financials }
     );
 
     if (!validation.valid) {
@@ -150,8 +170,8 @@ export async function createSale(input) {
     let investor = null;
     let investorPayout = 0;
 
-    if (product.stockOrigin === 'investidor' && product.investorId) {
-      const invResult = await getInvestorById(product.investorId);
+    if (stockEntry.stockOrigin === 'investidor' && stockEntry.investorId) {
+      const invResult = await getInvestorById(stockEntry.investorId);
       if (invResult.success) {
         investor = invResult.data;
         investorPayout = calculateInvestorRepasse(investor, {
@@ -164,11 +184,13 @@ export async function createSale(input) {
     }
 
     const movementResult = await registerMovement({
+      stockEntryId,
       productId,
       size,
       type: 'saida',
       quantity,
       observation: `Venda pedido ${orderId}`,
+      stockEntryName: stockEntry.name,
     });
 
     if (!movementResult.success) {
@@ -177,8 +199,10 @@ export async function createSale(input) {
 
     const salePayload = {
       orderId,
+      stockEntryId,
       productId,
-      productName: product.name || '',
+      productName: stockEntry.productName || product.name || '',
+      stockEntryName: stockEntry.name || '',
       size,
       quantity,
       unitPrice: Number(input.unitPrice) || 0,
@@ -189,8 +213,8 @@ export async function createSale(input) {
       channel: input.channel || '',
       paymentMethod: input.paymentMethod || '',
       customer: input.customer?.trim() || '',
-      stockOrigin: product.stockOrigin || 'proprio',
-      investorId: product.investorId || '',
+      stockOrigin: stockEntry.stockOrigin || 'proprio',
+      investorId: stockEntry.investorId || '',
       investorPayout,
       grossRevenue: financials.grossRevenue,
       totalRevenue: financials.totalRevenue,
@@ -231,7 +255,7 @@ export async function createQuickSale(input) {
     return { success: false, error: 'Usuário não autenticado.' };
   }
 
-  const productId = input.productId;
+  const stockEntryId = input.stockEntryId || input.productId;
   const lines = (input.lines || []).map((l) => ({
     size: l.size,
     quantity: Number(l.quantity) || 0,
@@ -254,20 +278,35 @@ export async function createQuickSale(input) {
   }));
 
   try {
-    const productResult = await getProductById(productId);
-    if (!productResult.success) {
-      return { success: false, error: productResult.error };
+    const entryResult = await getStockEntryById(stockEntryId);
+    if (!entryResult.success) {
+      return { success: false, error: entryResult.error };
     }
 
-    const product = productResult.data;
+    const stockEntry = entryResult.data;
+    const productId = stockEntry.productId;
+    const productResult = productId ? await getProductById(productId) : { success: true, data: { name: stockEntry.productName } };
+    const product = productResult.success ? productResult.data : { name: stockEntry.productName };
+
     const unitCost = unitCostWithImportTax(
-      product.costPrice,
-      product.importTaxes,
-      product.sizes
+      stockEntry.costPrice,
+      stockEntry.importTaxes,
+      stockEntry.sizes
     );
 
+    const stockLikeProduct = {
+      ...product,
+      sizes: stockEntry.sizes,
+      costPrice: stockEntry.costPrice,
+      importTaxes: stockEntry.importTaxes,
+      suggestedSalePrice: stockEntry.suggestedSalePrice,
+      minimumSalePrice: stockEntry.minimumSalePrice,
+      stockOrigin: stockEntry.stockOrigin,
+      investorId: stockEntry.investorId,
+    };
+
     const linesWithStock = lines.map((line) => {
-      const sizeEntry = (product.sizes || []).find((s) => s.size === line.size);
+      const sizeEntry = (stockEntry.sizes || []).find((s) => s.size === line.size);
       return {
         ...line,
         available: sizeEntry ? availableQty(sizeEntry) : 0,
@@ -281,8 +320,8 @@ export async function createQuickSale(input) {
     });
 
     const validation = validateQuickSale(
-      { ...input, unitCost },
-      { product, lines: linesWithStock, financials }
+      { ...input, unitCost, productId: stockEntryId },
+      { product: stockLikeProduct, lines: linesWithStock, financials }
     );
 
     if (!validation.valid) {
@@ -292,8 +331,8 @@ export async function createQuickSale(input) {
     let investor = null;
     let investorPayout = 0;
 
-    if (product.stockOrigin === 'investidor' && product.investorId) {
-      const invResult = await getInvestorById(product.investorId);
+    if (stockEntry.stockOrigin === 'investidor' && stockEntry.investorId) {
+      const invResult = await getInvestorById(stockEntry.investorId);
       if (invResult.success) {
         investor = invResult.data;
         investorPayout = calculateInvestorRepasseForSale(investor, {
@@ -309,11 +348,13 @@ export async function createQuickSale(input) {
 
     for (const line of lines) {
       const movementResult = await registerMovement({
+        stockEntryId,
         productId,
         size: line.size,
         type: 'saida',
         quantity: line.quantity,
         observation: `Venda rápida ${orderId}`,
+        stockEntryName: stockEntry.name,
       });
 
       if (!movementResult.success) {
@@ -330,8 +371,10 @@ export async function createQuickSale(input) {
 
     const salePayload = {
       orderId,
+      stockEntryId,
       productId,
-      productName: product.name || '',
+      productName: stockEntry.productName || product.name || '',
+      stockEntryName: stockEntry.name || '',
       lines,
       size: lines.map((l) => l.size).join(', '),
       quantity: totalQty,
@@ -354,8 +397,8 @@ export async function createQuickSale(input) {
       channel: input.channel || 'presencial',
       paymentMethod: input.paymentMethod || 'pix',
       customer: '',
-      stockOrigin: product.stockOrigin || 'proprio',
-      investorId: product.investorId || '',
+      stockOrigin: stockEntry.stockOrigin || 'proprio',
+      investorId: stockEntry.investorId || '',
       investorPayout,
       grossRevenue: financials.grossRevenue,
       totalRevenue: financials.totalRevenue,

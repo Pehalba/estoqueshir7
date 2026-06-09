@@ -62,25 +62,26 @@
       <main class="app-layout__content">
         <div class="page-header">
           <h2 class="page-header__title">Estoque</h2>
-          <p class="page-header__subtitle">Estoque, cadastro de produtos e movimentações</p>
+          <p class="page-header__subtitle">Lotes de estoque, catálogo de produtos e movimentações</p>
         </div>
 
         <nav class="inventory-tabs">
-          <button type="button" class="inventory-tabs__btn inventory-tabs__btn--active" data-tab="products">Estoque</button>
+          <button type="button" class="inventory-tabs__btn inventory-tabs__btn--active" data-tab="stock-entries">Estoque</button>
+          <button type="button" class="inventory-tabs__btn" data-tab="catalog">Produtos cadastrados</button>
           <button type="button" class="inventory-tabs__btn" data-tab="product-register">Cadastro de produtos</button>
-          <button type="button" class="inventory-tabs__btn" data-tab="stock">Movimentações</button>
+          <button type="button" class="inventory-tabs__btn" data-tab="movements">Movimentações</button>
         </nav>
 
-        <section id="tab-products" class="inventory-tab-panel">
+        <section id="tab-stock-entries" class="inventory-tab-panel">
         <div class="inventory-toolbar">
-          <input type="search" id="search-input" class="form-input inventory-toolbar__search" placeholder="Buscar por nome...">
+          <input type="search" id="stock-search-input" class="form-input inventory-toolbar__search" placeholder="Buscar estoque ou produto...">
           <button type="button" id="btn-register-stock" class="btn btn--primary">+ Cadastrar estoque</button>
         </div>
 
         <div class="inventory-filters">
           <div class="inventory-filters__group">
-            <label class="inventory-filters__label" for="filter-size">Tamanho</label>
-            <select id="filter-size" class="inventory-filters__select form-select">
+            <label class="inventory-filters__label" for="stock-filter-size">Tamanho</label>
+            <select id="stock-filter-size" class="inventory-filters__select form-select">
               <option value="">Todos</option>
               <option value="P">P</option>
               <option value="M">M</option>
@@ -90,41 +91,40 @@
             </select>
           </div>
           <div class="inventory-filters__group">
-            <label class="inventory-filters__label" for="filter-origin">Origem</label>
-            <select id="filter-origin" class="inventory-filters__select form-select">
+            <label class="inventory-filters__label" for="stock-filter-origin">Origem</label>
+            <select id="stock-filter-origin" class="inventory-filters__select form-select">
               <option value="">Todas</option>
               <option value="proprio">Próprio</option>
               <option value="investidor">Investidor</option>
             </select>
           </div>
           <div class="inventory-filters__group">
-            <label class="inventory-filters__label" for="filter-investor">Investidor</label>
-            <select id="filter-investor" class="inventory-filters__select form-select">
+            <label class="inventory-filters__label" for="stock-filter-investor">Investidor</label>
+            <select id="stock-filter-investor" class="inventory-filters__select form-select">
               <option value="">Todos</option>
             </select>
           </div>
           <div class="inventory-filters__group">
-            <label class="inventory-filters__label" for="filter-status">Status</label>
-            <select id="filter-status" class="inventory-filters__select form-select">
+            <label class="inventory-filters__label" for="stock-filter-status">Status</label>
+            <select id="stock-filter-status" class="inventory-filters__select form-select">
               <option value="">Todos</option>
               <option value="ativo">Ativo</option>
-              <option value="inativo">Inativo</option>
               <option value="esgotado">Esgotado</option>
             </select>
           </div>
           <div class="inventory-filters__actions">
-            <button type="button" id="btn-clear-filters" class="btn btn--secondary btn--sm">Limpar</button>
+            <button type="button" id="btn-clear-stock-filters" class="btn btn--secondary btn--sm">Limpar</button>
           </div>
         </div>
 
-        <p id="products-count" class="inventory-stats">Carregando produtos...</p>
+        <p id="stock-entries-count" class="inventory-stats">Carregando estoques...</p>
 
         <div class="table-wrapper">
-          <table class="table" id="products-table">
+          <table class="table" id="stock-entries-table">
             <thead>
               <tr>
-                <th class="table__col--thumb">Foto</th>
-                <th>Nome</th>
+                <th>Nome do estoque</th>
+                <th>Produto</th>
                 <th>Tamanhos</th>
                 <th>Qtd total</th>
                 <th>Custo/peça</th>
@@ -134,7 +134,45 @@
                 <th>Ações</th>
               </tr>
             </thead>
-            <tbody id="products-tbody"></tbody>
+            <tbody id="stock-entries-tbody"></tbody>
+          </table>
+        </div>
+        </section>
+
+        <section id="tab-catalog" class="inventory-tab-panel" hidden>
+        <div class="inventory-toolbar">
+          <input type="search" id="catalog-search-input" class="form-input inventory-toolbar__search" placeholder="Buscar produto...">
+        </div>
+
+        <div class="inventory-filters">
+          <div class="inventory-filters__group">
+            <label class="inventory-filters__label" for="catalog-filter-status">Status</label>
+            <select id="catalog-filter-status" class="inventory-filters__select form-select">
+              <option value="">Todos</option>
+              <option value="ativo">Ativo</option>
+              <option value="inativo">Inativo</option>
+            </select>
+          </div>
+          <div class="inventory-filters__actions">
+            <button type="button" id="btn-clear-catalog-filters" class="btn btn--secondary btn--sm">Limpar</button>
+          </div>
+        </div>
+
+        <p id="catalog-count" class="inventory-stats">Carregando produtos...</p>
+
+        <div class="table-wrapper">
+          <table class="table" id="catalog-table">
+            <thead>
+              <tr>
+                <th class="table__col--thumb">Foto</th>
+                <th>Nome</th>
+                <th>Fornecedor</th>
+                <th>Categoria</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="catalog-tbody"></tbody>
           </table>
         </div>
         </section>
@@ -147,7 +185,7 @@
             </div>
             <div class="card__body">
               <p class="text-sm text-muted" style="margin-bottom:1rem">
-                Cadastre o catálogo de camisetas aqui (nome, fornecedor, origem). A <strong>precificação</strong> é definida em <strong>+ Cadastrar estoque</strong>, pois varia a cada entrada/lote.
+                Cadastre o <strong>catálogo</strong> de camisetas (nome, foto, fornecedor). O <strong>estoque</strong> (quantidades, origem, investidor e preços) é cadastrado em <strong>+ Cadastrar estoque</strong> — o mesmo produto pode ter vários lotes (ex.: próprio e investidor).
               </p>
               <form id="product-form">
                 <div id="form-errors" class="form-errors"></div>
@@ -166,18 +204,6 @@
                   <p class="form-group__hint">Caminho relativo à pasta pages/ ou URL completa.</p>
                 </div>
 
-                <div class="sizes-editor">
-                  <p class="sizes-editor__title form-group__label--required">Tamanhos e quantidades iniciais</p>
-                  <div class="sizes-editor__quick">
-                    <input class="form-input" type="text" id="sizes-quick-input" placeholder="Ex: 10 M, 30 G, 5 GG">
-                    <button type="button" class="btn btn--secondary btn--sm" id="btn-parse-sizes">Aplicar</button>
-                  </div>
-                  <p class="form-group__hint">Opcional no cadastro — você pode informar as peças depois em Cadastrar estoque.</p>
-                  <div id="sizes-rows" class="sizes-editor__rows"></div>
-                  <button type="button" class="btn btn--ghost btn--sm" id="btn-add-size" style="margin-top:0.5rem">+ Adicionar tamanho</button>
-                  <p class="sizes-editor__total" id="sizes-total">Total: 0 peças</p>
-                </div>
-
                 <div class="form-group">
                   <label class="form-group__label form-group__label--required" for="field-status">Status</label>
                   <select class="form-input form-select" id="field-status" name="status" required>
@@ -187,26 +213,9 @@
                   </select>
                 </div>
 
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-group__label form-group__label--required" for="field-supplier">Fornecedor</label>
-                    <input class="form-input" type="text" id="field-supplier" name="supplier" required>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-group__label form-group__label--required" for="field-stockOrigin">Origem do estoque</label>
-                    <select class="form-input form-select" id="field-stockOrigin" name="stockOrigin" required>
-                      <option value="proprio">Próprio</option>
-                      <option value="investidor">Investidor</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="form-group" id="investor-group" style="display:none">
-                  <label class="form-group__label form-group__label--required" for="field-investorId">Investidor</label>
-                  <select class="form-input form-select" id="field-investorId" name="investorId">
-                    <option value="">Selecione</option>
-                  </select>
-                  <p class="form-group__hint">Cadastre investidores em <a href="investors.html">Investidores</a> antes de vincular.</p>
+                <div class="form-group">
+                  <label class="form-group__label form-group__label--required" for="field-supplier">Fornecedor</label>
+                  <input class="form-input" type="text" id="field-supplier" name="supplier" required>
                 </div>
 
                 <div class="form-group">
@@ -220,20 +229,20 @@
           </div>
         </section>
 
-        <section id="tab-stock" class="inventory-tab-panel" hidden>
+        <section id="tab-movements" class="inventory-tab-panel" hidden>
           <div class="stock-summary grid grid--2">
             <div class="card stock-summary__card stock-summary__card--proprio">
               <div class="card__body">
                 <p class="stock-summary__label">Estoque próprio</p>
                 <p class="stock-summary__value" id="summary-proprio-pieces">0 peças</p>
-                <p class="stock-summary__detail" id="summary-proprio-products">0 produtos</p>
+                <p class="stock-summary__detail" id="summary-proprio-products">0 lotes</p>
               </div>
             </div>
             <div class="card stock-summary__card stock-summary__card--investidor">
               <div class="card__body">
                 <p class="stock-summary__label">Estoque investidor</p>
                 <p class="stock-summary__value" id="summary-investidor-pieces">0 peças</p>
-                <p class="stock-summary__detail" id="summary-investidor-products">0 produtos</p>
+                <p class="stock-summary__detail" id="summary-investidor-products">0 lotes</p>
               </div>
             </div>
           </div>
@@ -255,8 +264,8 @@
               <form id="movement-form">
                 <div class="form-row form-row--3">
                   <div class="form-group">
-                    <label class="form-group__label form-group__label--required" for="mov-product">Produto</label>
-                    <select class="form-input form-select" id="mov-product" required>
+                    <label class="form-group__label form-group__label--required" for="mov-stock-entry">Estoque</label>
+                    <select class="form-input form-select" id="mov-stock-entry" required>
                       <option value="">Selecione</option>
                     </select>
                   </div>
@@ -298,8 +307,8 @@
 
           <div class="inventory-filters stock-filters">
             <div class="inventory-filters__group">
-              <label class="inventory-filters__label" for="hist-filter-product">Produto</label>
-              <select id="hist-filter-product" class="inventory-filters__select form-select">
+              <label class="inventory-filters__label" for="hist-filter-stock">Estoque</label>
+              <select id="hist-filter-stock" class="inventory-filters__select form-select">
                 <option value="">Todos</option>
               </select>
             </div>
@@ -388,7 +397,7 @@
           </div>
 
           <div class="form-group">
-            <label class="form-group__label form-group__label--required" for="stock-product">Produto</label>
+            <label class="form-group__label form-group__label--required" for="stock-product">Produto do catálogo</label>
             <select class="form-input form-select" id="stock-product" required>
               <option value="">Selecione o produto</option>
             </select>
@@ -396,6 +405,22 @@
               Produto não cadastrado?
               <button type="button" class="btn btn--link btn--sm" id="btn-go-product-register">Ir para Cadastro de produtos</button>
             </p>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-group__label form-group__label--required" for="stock-stockOrigin">Origem do estoque</label>
+              <select class="form-input form-select" id="stock-stockOrigin" required>
+                <option value="proprio">Próprio</option>
+                <option value="investidor">Investidor</option>
+              </select>
+            </div>
+            <div class="form-group" id="stock-investor-group" style="display:none">
+              <label class="form-group__label form-group__label--required" for="stock-investorId">Investidor</label>
+              <select class="form-input form-select" id="stock-investorId">
+                <option value="">Selecione</option>
+              </select>
+            </div>
           </div>
 
           <div class="form-row form-row--3">
@@ -477,7 +502,8 @@
         <button type="button" class="modal__close-btn" data-modal-close aria-label="Fechar">&times;</button>
       </div>
       <div class="modal__body">
-        <p>Tem certeza que deseja excluir o produto <strong id="delete-product-name"></strong>?</p>
+        <p>Tem certeza que deseja excluir <strong id="delete-item-label"></strong>?</p>
+        <p id="delete-extra-warning" class="text-sm text-muted" hidden></p>
         <p class="text-sm text-muted">Esta ação não pode ser desfeita.</p>
       </div>
       <div class="modal__footer">

@@ -9,12 +9,18 @@ import { CATALOG_PRODUCTS } from '../../data/catalog-products.js';
 import { waitForAuth } from '../services/authService.js';
 import { listInvestors } from '../services/investorService.js';
 import {
+  listStockEntries,
+  getStockEntryById,
+  deleteStockEntry,
+} from '../services/stockEntryService.js';
+import {
   registerMovement,
   registerStockEntry,
   getMovementHistory,
   getLowStockThreshold,
   getLowStockItems,
   getStockSummary,
+  migrateLegacyProductStock,
 } from '../services/stockService.js';
 import {
   availableQty,
@@ -38,25 +44,29 @@ import {
 const SIZE_OPTIONS = ['P', 'M', 'G', 'GG', 'XG'];
 
 let allProducts = [];
+let allStockEntries = [];
 let allInvestors = [];
 let allMovements = [];
 let lowStockThreshold = 5;
 let editingId = null;
 let viewingId = null;
+let viewingStockEntryId = null;
 let deletingId = null;
+let deletingTarget = null;
 let openedProductFromStock = false;
 let pendingStockProductId = '';
 let pendingStockName = '';
 
-const tbody = qs('#products-tbody');
-const searchInput = qs('#search-input');
-const productsCount = qs('#products-count');
+const stockEntriesTbody = qs('#stock-entries-tbody');
+const stockSearchInput = qs('#stock-search-input');
+const stockEntriesCount = qs('#stock-entries-count');
+const catalogTbody = qs('#catalog-tbody');
+const catalogSearchInput = qs('#catalog-search-input');
+const catalogCount = qs('#catalog-count');
 const productForm = qs('#product-form');
 const formErrors = qs('#form-errors');
-const investorGroup = qs('#investor-group');
-const stockOriginField = qs('#field-stockOrigin');
-const sizesRows = qs('#sizes-rows');
-const sizesTotal = qs('#sizes-total');
+const stockInvestorGroup = qs('#stock-investor-group');
+const stockOriginField = qs('#stock-stockOrigin');
 const stockSizesRows = qs('#stock-sizes-rows');
 const stockSizesTotal = qs('#stock-sizes-total');
 const stockForm = qs('#stock-form');
@@ -67,61 +77,6 @@ function sizeSelectHtml(selected = '') {
     (s) => `<option value="${s}" ${s === selected ? 'selected' : ''}>${s}</option>`
   ).join('');
   return `<option value="">Tam.</option>${options}`;
-}
-
-function renderSizeRow(size = '', quantity = '') {
-  const row = document.createElement('div');
-  row.className = 'sizes-editor__row';
-  row.innerHTML = `
-    <select class="form-input form-select size-field">${sizeSelectHtml(size)}</select>
-    <input class="form-input form-input--qty qty-field" type="number" min="0" value="${quantity}" placeholder="Qtd">
-    <button type="button" class="btn btn--ghost btn--sm btn-remove-size" title="Remover">&times;</button>
-  `;
-  row.querySelector('.size-field')?.addEventListener('change', updateSizesTotal);
-  row.querySelector('.qty-field')?.addEventListener('input', updateSizesTotal);
-  row.querySelector('.btn-remove-size')?.addEventListener('click', () => {
-    row.remove();
-    updateSizesTotal();
-    if (!sizesRows.children.length) addSizeRow();
-  });
-  return row;
-}
-
-function addSizeRow(size = '', quantity = '') {
-  sizesRows.appendChild(renderSizeRow(size, quantity));
-  updateSizesTotal();
-}
-
-function clearSizeRows() {
-  sizesRows.innerHTML = '';
-}
-
-function setSizeRows(sizes) {
-  clearSizeRows();
-  if (sizes?.length) {
-    sizes.forEach((s) => addSizeRow(s.size, s.quantity));
-  } else {
-    addSizeRow();
-    addSizeRow();
-  }
-}
-
-function collectSizesFromRows() {
-  return [...sizesRows.querySelectorAll('.sizes-editor__row')].map((row) => ({
-    size: row.querySelector('.size-field')?.value || '',
-    quantity: row.querySelector('.qty-field')?.value || 0,
-    reserved: 0,
-  })).filter((s) => s.size || s.quantity);
-}
-
-function updateSizesTotal() {
-  const sizes = collectSizesFromRows().filter((s) => s.size);
-  const total = sizes.reduce((sum, s) => sum + (Number(s.quantity) || 0), 0);
-  const summary = sizes.map((s) => `${s.quantity} ${s.size}`).join(', ');
-  sizesTotal.textContent = summary
-    ? `Total: ${total} peças (${summary})`
-    : `Total: ${total} peças`;
-  updateImportCostPreview();
 }
 
 function renderStockSizeRow(size = '', quantity = '') {
@@ -210,12 +165,15 @@ function resetStockForm() {
   qs('#stock-name').value = '';
   qs('#stock-observation').value = '';
   qs('#stock-sizes-quick-input').value = '';
+  qs('#stock-stockOrigin').value = 'proprio';
+  qs('#stock-investorId').value = '';
   qs('#stock-suggestedSalePrice').value = DEFAULT_SALE_PRICE;
   qs('#stock-importTaxes').value = '';
   qs('#stock-importTaxesPaidAt').value = '';
   showStockFormErrors([]);
   setStockSizeRows([]);
   populateStockProductSelect();
+  toggleStockInvestorField();
   updateStockImportCostPreview();
 }
 
@@ -301,6 +259,8 @@ async function handleStockSubmit(e) {
   const validation = validateStockEntry({
     stockEntryName: stockName,
     productId,
+    stockOrigin: qs('#stock-stockOrigin')?.value || 'proprio',
+    investorId: qs('#stock-investorId')?.value || '',
     lines,
     ...pricing,
   });
@@ -315,6 +275,8 @@ async function handleStockSubmit(e) {
   const result = await registerStockEntry({
     productId,
     stockEntryName: stockName,
+    stockOrigin: qs('#stock-stockOrigin')?.value || 'proprio',
+    investorId: qs('#stock-investorId')?.value || '',
     lines,
     observation: observation || 'Entrada de estoque',
     pricing,
@@ -332,7 +294,7 @@ async function handleStockSubmit(e) {
   closeModal('stock-modal');
   pendingStockProductId = '';
   pendingStockName = '';
-  await loadProducts();
+  await loadStockEntries();
   await loadMovements();
 }
 
@@ -363,10 +325,6 @@ function formatSizesBadges(sizes) {
   }).join('')}</div>`;
 }
 
-function productHasLowStock(product) {
-  return (product.sizes || []).some((s) => availableQty(s) <= lowStockThreshold);
-}
-
 function productThumbHtml(imageUrl, alt = '') {
   if (!imageUrl) {
     return '<span class="table__thumb--empty" aria-hidden="true">—</span>';
@@ -392,10 +350,8 @@ function getFormData() {
   return {
     name: qs('#field-name').value.trim(),
     imageUrl: qs('#field-imageUrl')?.value.trim() || '',
-    sizes: collectSizesFromRows(),
+    sizes: [],
     supplier: qs('#field-supplier').value.trim(),
-    stockOrigin: qs('#field-stockOrigin').value,
-    investorId: qs('#field-investorId').value.trim(),
     status: qs('#field-status').value,
     notes: qs('#field-notes').value.trim(),
   };
@@ -411,9 +367,9 @@ function showFormErrors(errors) {
   formErrors.classList.add('form-errors--visible');
 }
 
-function toggleInvestorField() {
-  const isInvestor = stockOriginField.value === 'investidor';
-  investorGroup.style.display = isInvestor ? '' : 'none';
+function toggleStockInvestorField() {
+  const isInvestor = stockOriginField?.value === 'investidor';
+  if (stockInvestorGroup) stockInvestorGroup.style.display = isInvestor ? '' : 'none';
 }
 
 function getStatusBadge(status) {
@@ -428,27 +384,45 @@ function getOriginBadge(origin) {
     : '<span class="badge badge--neutral">Próprio</span>';
 }
 
-function getFilterValues() {
+function getStockFilterValues() {
   return {
-    search: searchInput.value.trim().toLowerCase(),
-    size: qs('#filter-size').value,
-    origin: qs('#filter-origin').value,
-    investor: qs('#filter-investor').value,
-    status: qs('#filter-status').value,
+    search: stockSearchInput?.value.trim().toLowerCase() || '',
+    size: qs('#stock-filter-size')?.value || '',
+    origin: qs('#stock-filter-origin')?.value || '',
+    investor: qs('#stock-filter-investor')?.value || '',
+    status: qs('#stock-filter-status')?.value || '',
   };
 }
 
-function productHasSize(product, size) {
-  return (product.sizes || []).some((s) => s.size === size);
+function entryHasSize(entry, size) {
+  return (entry.sizes || []).some((s) => s.size === size);
 }
 
-function filterProducts(products) {
-  const f = getFilterValues();
+function filterStockEntries(entries) {
+  const f = getStockFilterValues();
+  return entries.filter((e) => {
+    if (f.size && !entryHasSize(e, f.size)) return false;
+    if (f.origin && e.stockOrigin !== f.origin) return false;
+    if (f.investor && e.investorId !== f.investor) return false;
+    if (f.status && e.status !== f.status) return false;
+    if (f.search) {
+      const hay = `${e.name} ${e.productName}`.toLowerCase();
+      if (!hay.includes(f.search)) return false;
+    }
+    return true;
+  });
+}
 
+function getCatalogFilterValues() {
+  return {
+    search: catalogSearchInput?.value.trim().toLowerCase() || '',
+    status: qs('#catalog-filter-status')?.value || '',
+  };
+}
+
+function filterCatalogProducts(products) {
+  const f = getCatalogFilterValues();
   return products.filter((p) => {
-    if (f.size && !productHasSize(p, f.size)) return false;
-    if (f.origin && p.stockOrigin !== f.origin) return false;
-    if (f.investor && p.investorId !== f.investor) return false;
     if (f.status && p.status !== f.status) return false;
     if (f.search && !p.name?.toLowerCase().includes(f.search)) return false;
     return true;
@@ -464,14 +438,14 @@ function populateInvestorSelects() {
     (i) => `<option value="${i.id}">${i.name}</option>`
   ).join('');
 
-  const fieldSelect = qs('#field-investorId');
-  if (fieldSelect) {
-    const current = fieldSelect.value;
-    fieldSelect.innerHTML = `<option value="">Selecione</option>${options}`;
-    fieldSelect.value = current;
+  const stockInvestorSelect = qs('#stock-investorId');
+  if (stockInvestorSelect) {
+    const current = stockInvestorSelect.value;
+    stockInvestorSelect.innerHTML = `<option value="">Selecione</option>${options}`;
+    stockInvestorSelect.value = current;
   }
 
-  ['#filter-investor', '#hist-filter-investor'].forEach((sel) => {
+  ['#stock-filter-investor', '#hist-filter-investor'].forEach((sel) => {
     const select = qs(sel);
     if (!select) return;
     const current = select.value;
@@ -488,27 +462,60 @@ async function loadInvestorsForSelect() {
   }
 }
 
-function renderTable(products) {
-  const filtered = filterProducts(products);
+function entryHasLowStock(entry) {
+  return (entry.sizes || []).some((s) => availableQty(s) <= lowStockThreshold);
+}
 
-  productsCount.textContent = filtered.length === allProducts.length
-    ? `${allProducts.length} produto(s)`
-    : `${filtered.length} de ${allProducts.length} produto(s)`;
+function renderStockEntriesTable(entries) {
+  const filtered = filterStockEntries(entries);
+
+  stockEntriesCount.textContent = filtered.length === allStockEntries.length
+    ? `${allStockEntries.length} estoque(s) cadastrado(s)`
+    : `${filtered.length} de ${allStockEntries.length} estoque(s)`;
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="9" class="table__empty">Nenhum produto encontrado.</td></tr>`;
+    stockEntriesTbody.innerHTML = `<tr><td colspan="9" class="table__empty">Nenhum estoque cadastrado. Use + Cadastrar estoque.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = filtered.map((p) => `
-    <tr data-id="${p.id}" class="${productHasLowStock(p) ? 'table__row--low-stock' : ''}">
+  stockEntriesTbody.innerHTML = filtered.map((e) => `
+    <tr data-id="${e.id}" class="${entryHasLowStock(e) ? 'table__row--low-stock' : ''}">
+      <td><strong>${e.name}</strong></td>
+      <td>${e.productName || '—'}</td>
+      <td>${formatSizesBadges(e.sizes)}</td>
+      <td>${e.quantity ?? 0}</td>
+      <td>${formatCostCell(e)}</td>
+      <td>${formatPriceCell(e)}</td>
+      <td>${getOriginBadge(e.stockOrigin)}${e.stockOrigin === 'investidor' ? `<br><span class="text-sm text-muted">${getInvestorName(e.investorId)}</span>` : ''}</td>
+      <td>${getStatusBadge(e.status)}</td>
+      <td>
+        <div class="table__actions">
+          <button type="button" class="btn btn--ghost btn--sm" data-action="view-stock" data-id="${e.id}">Ver</button>
+          <button type="button" class="btn btn--danger btn--sm" data-action="delete-stock" data-id="${e.id}">Excluir</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderCatalogTable(products) {
+  const filtered = filterCatalogProducts(products);
+
+  catalogCount.textContent = filtered.length === allProducts.length
+    ? `${allProducts.length} produto(s) no catálogo`
+    : `${filtered.length} de ${allProducts.length} produto(s)`;
+
+  if (!filtered.length) {
+    catalogTbody.innerHTML = `<tr><td colspan="6" class="table__empty">Nenhum produto cadastrado.</td></tr>`;
+    return;
+  }
+
+  catalogTbody.innerHTML = filtered.map((p) => `
+    <tr data-id="${p.id}">
       <td>${productThumbHtml(p.imageUrl, p.name)}</td>
       <td><strong>${p.name}</strong></td>
-      <td>${formatSizesBadges(p.sizes)}</td>
-      <td>${p.quantity ?? 0}</td>
-      <td>${formatCostCell(p)}</td>
-      <td>${formatPriceCell(p)}</td>
-      <td>${getOriginBadge(p.stockOrigin)}</td>
+      <td>${p.supplier || '—'}</td>
+      <td>${p.category || '—'}</td>
       <td>${getStatusBadge(p.status)}</td>
       <td>
         <div class="table__actions">
@@ -541,26 +548,36 @@ async function importCatalogIfNeeded(products) {
   return { imported };
 }
 
-async function loadProducts() {
-  productsCount.textContent = 'Carregando produtos...';
-  const result = await listProducts();
+async function loadStockEntries() {
+  stockEntriesCount.textContent = 'Carregando estoques...';
 
+  const productsResult = await listProducts();
+  if (productsResult.success) {
+    allProducts = productsResult.data;
+    const migration = await migrateLegacyProductStock(allProducts);
+    if (migration.migrated > 0) {
+      showToast(`${migration.migrated} estoque(s) legado(s) migrado(s) para lotes.`, 'success');
+      const refreshed = await listProducts();
+      if (refreshed.success) allProducts = refreshed.data;
+    }
+    const { imported } = await importCatalogIfNeeded(allProducts);
+    if (imported > 0) {
+      showToast(`${imported} produto(s) do catálogo SHIR7 cadastrado(s)!`, 'success');
+    }
+    const refreshedProducts = await listProducts();
+    if (refreshedProducts.success) allProducts = refreshedProducts.data;
+  }
+
+  const result = await listStockEntries();
   if (!result.success) {
-    productsCount.textContent = 'Erro ao carregar produtos.';
+    stockEntriesCount.textContent = 'Erro ao carregar estoques.';
     showToast(result.error, 'error');
     return;
   }
 
-  const { imported } = await importCatalogIfNeeded(result.data);
-  if (imported > 0) {
-    const refreshed = await listProducts();
-    allProducts = refreshed.success ? refreshed.data : result.data;
-    showToast(`${imported} produto(s) do catálogo SHIR7 cadastrado(s)!`, 'success');
-  } else {
-    allProducts = result.data;
-  }
-
-  renderTable(allProducts);
+  allStockEntries = result.data;
+  renderStockEntriesTable(allStockEntries);
+  renderCatalogTable(allProducts);
   refreshStockUI();
 }
 
@@ -568,10 +585,7 @@ function resetForm() {
   productForm.reset();
   editingId = null;
   formErrors.classList.remove('form-errors--visible');
-  qs('#sizes-quick-input').value = '';
   qs('#product-register-title').textContent = 'Novo produto';
-  setSizeRows([]);
-  toggleInvestorField();
   updateImagePreview('');
 }
 
@@ -580,25 +594,8 @@ function fillForm(product) {
   qs('#field-imageUrl').value = product.imageUrl || '';
   qs('#field-status').value = product.status || 'ativo';
   qs('#field-supplier').value = product.supplier || '';
-  qs('#field-stockOrigin').value = product.stockOrigin || 'proprio';
-  qs('#field-investorId').value = product.investorId || '';
   qs('#field-notes').value = product.notes || '';
-  setSizeRows(product.sizes || []);
-  toggleInvestorField();
   updateImagePreview(product.imageUrl);
-}
-
-function applyQuickSizes() {
-  const text = qs('#sizes-quick-input').value;
-  const parsed = parseSizesQuickInput(text);
-
-  if (!parsed.length) {
-    showToast('Formato inválido. Use: 10 M, 30 G, 5 GG', 'warning');
-    return;
-  }
-
-  setSizeRows(parsed);
-  showToast(`${parsed.length} tamanho(s) aplicado(s)!`, 'success');
 }
 
 async function openEditProductTab(id) {
@@ -623,9 +620,8 @@ async function openViewModal(id) {
 
   const p = result.data;
   viewingId = id;
-
-  const sizesText = (p.sizes || []).map((s) => `${s.quantity} ${s.size}`).join(', ') || '—';
-  const hasPricing = Number(p.costPrice) > 0 || Number(p.suggestedSalePrice) > 0;
+  viewingStockEntryId = null;
+  qs('.modal__title', qs('#view-modal')).textContent = 'Detalhes do produto';
 
   const imageBlock = p.imageUrl
     ? `<img class="product-view__image" src="${p.imageUrl}" alt="${p.name}">`
@@ -635,14 +631,7 @@ async function openViewModal(id) {
     ['Nome', p.name],
     ['Categoria', p.category || '—'],
     ['SKU', p.sku || '—'],
-    ['Tamanhos', sizesText],
-    ['Quantidade total', p.quantity ?? 0],
     ['Fornecedor', p.supplier],
-    ['Origem', p.stockOrigin === 'investidor' ? 'Investidor' : 'Próprio'],
-    ['Investidor', p.stockOrigin === 'investidor' ? getInvestorName(p.investorId) : '—'],
-    ['Custo médio atual', hasPricing ? formatCurrency(p.costPrice) : 'Definido na entrada de estoque'],
-    ['Preço sugerido atual', hasPricing ? formatCurrency(p.suggestedSalePrice) : '—'],
-    ['Preço mínimo atual', hasPricing ? formatCurrency(p.minimumSalePrice) : '—'],
     ['Status', p.status],
     ['Observações', p.notes || '—'],
   ];
@@ -664,9 +653,74 @@ async function openViewModal(id) {
   openModal('view-modal');
 }
 
+async function openStockEntryViewModal(id) {
+  const result = await getStockEntryById(id);
+  if (!result.success) {
+    showToast(result.error, 'error');
+    return;
+  }
+
+  const e = result.data;
+  viewingStockEntryId = id;
+  viewingId = null;
+  qs('.modal__title', qs('#view-modal')).textContent = 'Detalhes do estoque';
+
+  const sizesText = (e.sizes || []).map((s) => `${s.quantity} ${s.size}`).join(', ') || '—';
+  const fields = [
+    ['Nome do estoque', e.name],
+    ['Produto', e.productName],
+    ['Tamanhos', sizesText],
+    ['Quantidade total', e.quantity ?? 0],
+    ['Custo/peça', formatCurrency(e.costPrice)],
+    ['Preço sugerido', formatCurrency(e.suggestedSalePrice)],
+    ['Preço mínimo', formatCurrency(e.minimumSalePrice)],
+    ['Origem', e.stockOrigin === 'investidor' ? 'Investidor' : 'Próprio'],
+    ['Investidor', e.stockOrigin === 'investidor' ? getInvestorName(e.investorId) : '—'],
+    ['Status', e.status],
+    ['Observações', e.notes || '—'],
+  ];
+
+  qs('#view-modal-body').innerHTML = `
+    <div class="product-view__fields">
+      ${fields.map(([label, value]) => `
+        <div>
+          <div class="product-view__field-label">${label}</div>
+          <div class="product-view__field-value">${value}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  openModal('view-modal');
+}
+
 function openDeleteModal(id, name) {
   deletingId = id;
-  qs('#delete-product-name').textContent = name;
+  deletingTarget = 'product';
+  qs('#delete-item-label').textContent = `o produto ${name}`;
+  const warning = qs('#delete-extra-warning');
+  if (warning) {
+    warning.hidden = true;
+    warning.textContent = '';
+  }
+  openModal('delete-modal');
+}
+
+function openDeleteStockModal(entry) {
+  deletingId = entry.id;
+  deletingTarget = 'stock';
+  qs('#delete-item-label').textContent = `o estoque ${entry.name}`;
+  const warning = qs('#delete-extra-warning');
+  const qty = entry.quantity ?? totalQuantity(entry.sizes);
+  if (warning) {
+    if (qty > 0) {
+      warning.hidden = false;
+      warning.textContent = `Este lote ainda tem ${qty} peça(s) em estoque. O histórico de movimentações será mantido, mas o lote deixará de aparecer nas vendas.`;
+    } else {
+      warning.hidden = true;
+      warning.textContent = '';
+    }
+  }
   openModal('delete-modal');
 }
 
@@ -714,13 +768,13 @@ async function handleSave(e) {
     editingId = null;
     resetForm();
     openedProductFromStock = false;
-    await loadProducts();
+    await loadStockEntries();
     if (wasFromStock) {
       openStockModal(newProductId || pendingStockProductId);
       if (pendingStockName) qs('#stock-name').value = pendingStockName;
       pendingStockName = '';
     } else {
-      switchTab('products');
+      switchTab('catalog');
     }
   } else {
     showToast(result.error, 'error');
@@ -728,18 +782,23 @@ async function handleSave(e) {
 }
 
 async function handleDelete() {
-  if (!deletingId) return;
+  if (!deletingId || !deletingTarget) return;
 
   const btn = qs('#btn-confirm-delete');
   setLoading(btn, true);
-  const result = await deleteProduct(deletingId);
+  const result = deletingTarget === 'stock'
+    ? await deleteStockEntry(deletingId)
+    : await deleteProduct(deletingId);
   setLoading(btn, false);
 
   if (result.success) {
-    showToast('Produto excluído.', 'success');
+    const wasStock = deletingTarget === 'stock';
+    showToast(wasStock ? 'Estoque excluído.' : 'Produto excluído.', 'success');
     closeModal('delete-modal');
     deletingId = null;
-    await loadProducts();
+    deletingTarget = null;
+    await loadStockEntries();
+    if (wasStock) await loadMovements();
   } else {
     showToast(result.error, 'error');
   }
@@ -765,45 +824,51 @@ function switchTab(tab) {
   qsa('.inventory-tabs__btn').forEach((btn) => {
     btn.classList.toggle('inventory-tabs__btn--active', btn.dataset.tab === tab);
   });
-  qs('#tab-products').hidden = tab !== 'products';
+  qs('#tab-stock-entries').hidden = tab !== 'stock-entries';
+  qs('#tab-catalog').hidden = tab !== 'catalog';
   qs('#tab-product-register').hidden = tab !== 'product-register';
-  qs('#tab-stock').hidden = tab !== 'stock';
+  qs('#tab-movements').hidden = tab !== 'movements';
 }
 
-function populateMovementProductSelect() {
-  const select = qs('#mov-product');
-  const histSelect = qs('#hist-filter-product');
-  const current = select.value;
-  const histCurrent = histSelect.value;
+function populateMovementStockSelect() {
+  const select = qs('#mov-stock-entry');
+  const histSelect = qs('#hist-filter-stock');
+  const current = select?.value;
+  const histCurrent = histSelect?.value;
 
-  const options = allProducts.map((p) =>
-    `<option value="${p.id}">${p.name}</option>`
-  ).join('');
+  const options = allStockEntries
+    .filter((e) => e.status !== 'inativo')
+    .map((e) => `<option value="${e.id}">${e.name} — ${e.productName}</option>`)
+    .join('');
 
-  select.innerHTML = `<option value="">Selecione</option>${options}`;
-  histSelect.innerHTML = `<option value="">Todos</option>${options}`;
-  select.value = current;
-  histSelect.value = histCurrent;
+  if (select) {
+    select.innerHTML = `<option value="">Selecione</option>${options}`;
+    select.value = current;
+  }
+  if (histSelect) {
+    histSelect.innerHTML = `<option value="">Todos</option>${options}`;
+    histSelect.value = histCurrent;
+  }
   updateMovementSizeSelect();
 }
 
 function updateMovementSizeSelect() {
-  const productId = qs('#mov-product').value;
+  const entryId = qs('#mov-stock-entry')?.value;
   const sizeSelect = qs('#mov-size');
-  const product = allProducts.find((p) => p.id === productId);
+  const entry = allStockEntries.find((e) => e.id === entryId);
 
-  if (!product) {
-    sizeSelect.innerHTML = '<option value="">Selecione o produto</option>';
+  if (!entry) {
+    sizeSelect.innerHTML = '<option value="">Selecione o estoque</option>';
     return;
   }
 
-  const sizes = product.sizes || [];
+  const sizes = entry.sizes || [];
   sizeSelect.innerHTML = sizes.length
     ? sizes.map((s) => {
       const avail = availableQty(s);
       return `<option value="${s.size}">${s.size} (disp: ${avail})</option>`;
     }).join('')
-    : '<option value="">Sem tamanhos — use Entrada</option>';
+    : '<option value="">Sem peças neste estoque</option>';
 }
 
 function toggleMovementTypeFields() {
@@ -813,15 +878,15 @@ function toggleMovementTypeFields() {
 }
 
 function renderStockSummary() {
-  const summary = getStockSummary(allProducts);
+  const summary = getStockSummary(allStockEntries);
   qs('#summary-proprio-pieces').textContent = `${summary.proprio.pieces} peças`;
-  qs('#summary-proprio-products').textContent = `${summary.proprio.products} produto(s)`;
+  qs('#summary-proprio-products').textContent = `${summary.proprio.entries} lote(s)`;
   qs('#summary-investidor-pieces').textContent = `${summary.investidor.pieces} peças`;
-  qs('#summary-investidor-products').textContent = `${summary.investidor.products} produto(s)`;
+  qs('#summary-investidor-products').textContent = `${summary.investidor.entries} lote(s)`;
 }
 
 function renderLowStockAlerts() {
-  const items = getLowStockItems(allProducts, lowStockThreshold);
+  const items = getLowStockItems(allStockEntries, lowStockThreshold);
   const container = qs('#low-stock-list');
 
   if (!items.length) {
@@ -831,7 +896,7 @@ function renderLowStockAlerts() {
 
   container.innerHTML = items.map((item) => `
     <div class="stock-alerts__item">
-      <span><strong>${item.productName}</strong> — ${item.size}: ${item.available} disp.</span>
+      <span><strong>${item.stockEntryName || item.productName}</strong> — ${item.size}: ${item.available} disp.</span>
       <span class="badge ${item.stockOrigin === 'investidor' ? 'badge--info' : 'badge--neutral'}">
         ${item.stockOrigin === 'investidor' ? 'Investidor' : 'Próprio'}
       </span>
@@ -841,18 +906,18 @@ function renderLowStockAlerts() {
 
 function getHistoryFilters() {
   return {
-    productId: qs('#hist-filter-product').value,
-    type: qs('#hist-filter-type').value,
-    size: qs('#hist-filter-size').value,
-    origin: qs('#hist-filter-origin').value,
-    investor: qs('#hist-filter-investor').value,
+    stockEntryId: qs('#hist-filter-stock')?.value || '',
+    type: qs('#hist-filter-type')?.value || '',
+    size: qs('#hist-filter-size')?.value || '',
+    origin: qs('#hist-filter-origin')?.value || '',
+    investor: qs('#hist-filter-investor')?.value || '',
   };
 }
 
 function filterMovements(movements) {
   const f = getHistoryFilters();
   return movements.filter((m) => {
-    if (f.productId && m.productId !== f.productId) return false;
+    if (f.stockEntryId && m.stockEntryId !== f.stockEntryId) return false;
     if (f.type && m.type !== f.type) return false;
     if (f.size && m.size !== f.size) return false;
     if (f.origin && m.stockOrigin !== f.origin) return false;
@@ -905,23 +970,29 @@ async function loadMovements() {
 }
 
 function refreshStockUI() {
-  populateMovementProductSelect();
+  populateMovementStockSelect();
+  populateStockProductSelect();
   renderStockSummary();
   renderLowStockAlerts();
-  renderTable(allProducts);
+  renderStockEntriesTable(allStockEntries);
+  renderCatalogTable(allProducts);
 }
 
 async function handleMovementSubmit(e) {
   e.preventDefault();
 
+  const entryId = qs('#mov-stock-entry')?.value;
+  const entry = allStockEntries.find((item) => item.id === entryId);
   const type = qs('#mov-type').value;
   const payload = {
-    productId: qs('#mov-product').value,
+    stockEntryId: entryId,
+    productId: entry?.productId || '',
     size: qs('#mov-size').value,
     type,
     quantity: qs('#mov-quantity').value,
     adjustTo: qs('#mov-adjust').value,
     observation: qs('#mov-observation').value.trim(),
+    stockEntryName: entry?.name || '',
   };
 
   const btn = qs('#btn-register-movement');
@@ -934,7 +1005,7 @@ async function handleMovementSubmit(e) {
   if (result.success) {
     showToast('Movimentação registrada!', 'success');
     qs('#mov-observation').value = '';
-    await loadProducts();
+    await loadStockEntries();
     await loadMovements();
   } else {
     showToast(result.error, 'error');
@@ -946,16 +1017,16 @@ function initStockEvents() {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
-  qs('#mov-product')?.addEventListener('change', updateMovementSizeSelect);
+  qs('#mov-stock-entry')?.addEventListener('change', updateMovementSizeSelect);
   qs('#mov-type')?.addEventListener('change', toggleMovementTypeFields);
   qs('#movement-form')?.addEventListener('submit', handleMovementSubmit);
 
-  ['#hist-filter-product', '#hist-filter-type', '#hist-filter-size', '#hist-filter-origin', '#hist-filter-investor'].forEach((sel) => {
+  ['#hist-filter-stock', '#hist-filter-type', '#hist-filter-size', '#hist-filter-origin', '#hist-filter-investor'].forEach((sel) => {
     qs(sel)?.addEventListener('change', renderMovementsTable);
   });
 
   qs('#btn-clear-hist-filters')?.addEventListener('click', () => {
-    qs('#hist-filter-product').value = '';
+    qs('#hist-filter-stock').value = '';
     qs('#hist-filter-type').value = '';
     qs('#hist-filter-size').value = '';
     qs('#hist-filter-origin').value = '';
@@ -984,37 +1055,45 @@ function initEvents() {
       applyStockQuickSizes();
     }
   });
-  qs('#btn-add-size')?.addEventListener('click', () => addSizeRow());
-  qs('#btn-parse-sizes')?.addEventListener('click', applyQuickSizes);
-  qs('#sizes-quick-input')?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      applyQuickSizes();
-    }
-  });
-
   productForm?.addEventListener('submit', handleSave);
   qs('#field-imageUrl')?.addEventListener('input', (e) => updateImagePreview(e.target.value.trim()));
-  stockOriginField?.addEventListener('change', toggleInvestorField);
+  stockOriginField?.addEventListener('change', toggleStockInvestorField);
   ['#stock-costPrice', '#stock-importTaxes', '#stock-suggestedSalePrice', '#stock-minimumSalePrice'].forEach((sel) => {
     qs(sel)?.addEventListener('input', updateStockImportCostPreview);
   });
-  searchInput?.addEventListener('input', () => renderTable(allProducts));
 
-  ['#filter-size', '#filter-origin', '#filter-investor', '#filter-status'].forEach((sel) => {
-    qs(sel)?.addEventListener('change', () => renderTable(allProducts));
+  stockSearchInput?.addEventListener('input', () => renderStockEntriesTable(allStockEntries));
+  ['#stock-filter-size', '#stock-filter-origin', '#stock-filter-investor', '#stock-filter-status'].forEach((sel) => {
+    qs(sel)?.addEventListener('change', () => renderStockEntriesTable(allStockEntries));
+  });
+  qs('#btn-clear-stock-filters')?.addEventListener('click', () => {
+    stockSearchInput.value = '';
+    qs('#stock-filter-size').value = '';
+    qs('#stock-filter-origin').value = '';
+    qs('#stock-filter-investor').value = '';
+    qs('#stock-filter-status').value = '';
+    renderStockEntriesTable(allStockEntries);
   });
 
-  qs('#btn-clear-filters')?.addEventListener('click', () => {
-    searchInput.value = '';
-    qs('#filter-size').value = '';
-    qs('#filter-origin').value = '';
-    qs('#filter-investor').value = '';
-    qs('#filter-status').value = '';
-    renderTable(allProducts);
+  catalogSearchInput?.addEventListener('input', () => renderCatalogTable(allProducts));
+  qs('#catalog-filter-status')?.addEventListener('change', () => renderCatalogTable(allProducts));
+  qs('#btn-clear-catalog-filters')?.addEventListener('click', () => {
+    catalogSearchInput.value = '';
+    qs('#catalog-filter-status').value = '';
+    renderCatalogTable(allProducts);
   });
 
-  tbody?.addEventListener('click', (e) => {
+  stockEntriesTbody?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const entry = allStockEntries.find((item) => item.id === btn.dataset.id);
+    if (!entry) return;
+
+    if (btn.dataset.action === 'view-stock') openStockEntryViewModal(btn.dataset.id);
+    if (btn.dataset.action === 'delete-stock') openDeleteStockModal(entry);
+  });
+
+  catalogTbody?.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
     const product = allProducts.find((p) => p.id === btn.dataset.id);
@@ -1041,7 +1120,7 @@ async function init() {
   await waitForAuth();
   lowStockThreshold = await getLowStockThreshold();
   await loadInvestorsForSelect();
-  await loadProducts();
+  await loadStockEntries();
   await loadMovements();
 }
 

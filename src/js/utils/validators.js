@@ -9,15 +9,13 @@ export function isValidEmail(email) {
 }
 
 const PRODUCT_REQUIRED = [
-  'name', 'supplier', 'stockOrigin', 'status',
+  'name', 'supplier', 'status',
 ];
 
 const PRODUCT_LABELS = {
   name: 'Nome',
   supplier: 'Fornecedor',
-  stockOrigin: 'Origem',
   status: 'Status',
-  investorId: 'ID do investidor',
 };
 
 export function parseSizesQuickInput(text) {
@@ -76,10 +74,6 @@ export function validateProduct(data) {
     }
   }
 
-  if (data.stockOrigin === 'investidor' && !isRequired(data.investorId)) {
-    errors.push('Investidor é obrigatório quando a origem é investidor.');
-  }
-
   errors.push(...validateSizes((data.sizes || []).filter((s) => s.size), { allowEmpty: true }));
 
   return { valid: errors.length === 0, errors };
@@ -118,6 +112,14 @@ export function validateStockEntry(data) {
 
   if (!isRequired(data.minimumSalePrice)) {
     errors.push('Preço mínimo é obrigatório.');
+  }
+
+  if (!isRequired(data.stockOrigin)) {
+    errors.push('Origem do estoque é obrigatória.');
+  }
+
+  if (data.stockOrigin === 'investidor' && !isRequired(data.investorId)) {
+    errors.push('Investidor é obrigatório quando a origem é investidor.');
   }
 
   const cost = Number(data.costPrice);
@@ -200,8 +202,8 @@ export function validateSale(data, context = {}) {
     errors.push('Este número de pedido já foi registrado.');
   }
 
-  if (!isRequired(data.productId)) {
-    errors.push('Selecione o produto.');
+  if (!isRequired(data.stockEntryId) && !isRequired(data.productId)) {
+    errors.push('Selecione o estoque.');
   }
 
   if (!isRequired(data.size)) {
@@ -240,7 +242,7 @@ export function validateQuickSale(data, context = {}) {
   const errors = [];
   const { product, lines, financials } = context;
 
-  if (!isRequired(data.productId)) {
+  if (!isRequired(data.stockEntryId) && !isRequired(data.productId)) {
     errors.push('Selecione o estoque.');
   }
 

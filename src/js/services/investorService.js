@@ -11,7 +11,7 @@ import {
   serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { db } from '../config/firebase.js';
-import { listProducts } from './productService.js';
+import { listStockEntries } from './stockEntryService.js';
 
 const COLLECTION = 'investors';
 
@@ -108,10 +108,10 @@ export async function updateInvestor(id, data) {
 }
 
 export async function countProductsByInvestor(investorId) {
-  const result = await listProducts();
+  const result = await listStockEntries();
   if (!result.success) return 0;
   return result.data.filter(
-    (p) => p.stockOrigin === 'investidor' && p.investorId === investorId
+    (e) => e.stockOrigin === 'investidor' && e.investorId === investorId
   ).length;
 }
 
@@ -121,7 +121,7 @@ export async function deleteInvestor(id) {
     if (linked > 0) {
       return {
         success: false,
-        error: `Este investidor está vinculado a ${linked} produto(s). Altere a origem ou o investidor nos produtos antes de excluir.`,
+        error: `Este investidor está vinculado a ${linked} lote(s) de estoque. Altere a origem ou o investidor nos estoques antes de excluir.`,
       };
     }
 

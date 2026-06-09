@@ -63,6 +63,7 @@ export function buildReport(type, filters, { products = [], sales = [], investor
   switch (type) {
     case 'estoque': {
       columns.push(
+        { key: 'stockEntryName', label: 'Estoque' },
         { key: 'productName', label: 'Produto' },
         { key: 'size', label: 'Tamanho' },
         { key: 'quantity', label: 'Quantidade' },
@@ -74,14 +75,15 @@ export function buildReport(type, filters, { products = [], sales = [], investor
       const investorMap = new Map(investors.map((i) => [i.id, i.name]));
       for (const p of products) {
         if (p.status === 'inativo') continue;
-        if (filters.productId && p.id !== filters.productId) continue;
+        if (filters.productId && p.productId !== filters.productId) continue;
         if (filters.stockOrigin && p.stockOrigin !== filters.stockOrigin) continue;
         if (filters.investorId && p.investorId !== filters.investorId) continue;
         const unitCost = unitCostWithImportTax(p.costPrice, p.importTaxes, p.sizes);
         for (const s of p.sizes || []) {
           rows.push({
-            productId: p.id,
-            productName: p.name,
+            productId: p.productId,
+            stockEntryName: p.stockEntryName || p.name,
+            productName: p.productName || p.name,
             size: s.size,
             quantity: Number(s.quantity) || 0,
             available: availableQty(s),

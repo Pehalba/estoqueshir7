@@ -84,24 +84,34 @@ export function aggregateStock(products) {
   };
 }
 
-export function aggregateMonthSales(sales, year, month) {
-  const monthSales = (sales || []).filter((s) => isSaleInMonth(s, year, month));
-  const revenue = monthSales.reduce((sum, s) => sum + (Number(s.totalRevenue) || 0), 0);
-  const profit = monthSales.reduce((sum, s) => sum + (Number(s.netProfit) || 0), 0);
-  const pieces = monthSales.reduce((sum, s) => sum + (Number(s.quantity) || 0), 0);
-  const margins = monthSales.map((s) => Number(s.margin) || 0).filter((m) => m !== 0);
+function aggregateSalesStats(salesList) {
+  const list = salesList || [];
+  const revenue = list.reduce((sum, s) => sum + (Number(s.totalRevenue) || 0), 0);
+  const profit = list.reduce((sum, s) => sum + (Number(s.netProfit) || 0), 0);
+  const pieces = list.reduce((sum, s) => sum + (Number(s.quantity) || 0), 0);
+  const margins = list.map((s) => Number(s.margin) || 0).filter((m) => m !== 0);
   const avgMargin = margins.length
     ? margins.reduce((a, b) => a + b, 0) / margins.length
     : 0;
 
   return {
-    count: monthSales.length,
+    count: list.length,
     revenue,
     profit,
     pieces,
     avgMargin,
-    ticket: calculateTicketMedio(monthSales),
+    ticket: calculateTicketMedio(list),
   };
+}
+
+/** Totais de vendas concluídas em toda a operação. */
+export function aggregateSalesTotals(sales) {
+  return aggregateSalesStats((sales || []).filter(isSaleActive));
+}
+
+export function aggregateMonthSales(sales, year, month) {
+  const monthSales = (sales || []).filter((s) => isSaleInMonth(s, year, month));
+  return aggregateSalesStats(monthSales);
 }
 
 export function monthlySeries(sales, months) {
@@ -119,8 +129,9 @@ export function getLowStockList(products, threshold) {
       const avail = availableQty(s);
       if (avail <= threshold) {
         items.push({
-          productId: p.id,
-          productName: p.name,
+          productId: p.productId || p.id,
+          productName: p.productName || p.name,
+          stockEntryName: p.stockEntryName || '',
           size: s.size,
           available: avail,
           stockOrigin: p.stockOrigin,
@@ -168,10 +179,11 @@ export function getStagnantProducts(products, sales, { dateFrom, dateTo } = {}) 
     filterSalesByPeriod(sales, { dateFrom, dateTo }).map((s) => s.productId).filter(Boolean)
   );
   return (products || [])
-    .filter((p) => p.status !== 'inativo' && totalQuantity(p.sizes) > 0 && !soldIds.has(p.id))
+    .filter((p) => p.status !== 'inativo' && totalQuantity(p.sizes) > 0 && !soldIds.has(p.productId || p.id))
     .map((p) => ({
-      productId: p.id,
-      productName: p.name,
+      productId: p.productId || p.id,
+      productName: p.productName || p.name,
+      stockEntryName: p.stockEntryName || '',
       pieces: totalQuantity(p.sizes),
       stockOrigin: p.stockOrigin,
     }))

@@ -1,5 +1,6 @@
 import { waitForAuth } from '../services/authService.js';
 import { listProducts } from '../services/productService.js';
+import { listStockEntries, entriesAsStockItems } from '../services/stockEntryService.js';
 import { listSales } from '../services/salesService.js';
 import { listInvestors } from '../services/investorService.js';
 import {
@@ -20,7 +21,8 @@ import {
 import { formatCurrency } from '../utils/formatCurrency.js';
 import { qs, qsa, showToast, setLoading } from '../utils/domHelpers.js';
 
-let allProducts = [];
+let allCatalogProducts = [];
+let allStockItems = [];
 let allSales = [];
 let allInvestors = [];
 let currentReport = null;
@@ -42,7 +44,7 @@ function populateSelects() {
   ).join('');
 
   const productSelect = qs('#filter-product');
-  productSelect.innerHTML = '<option value="">Todos</option>' + allProducts.map(
+  productSelect.innerHTML = '<option value="">Todos</option>' + allCatalogProducts.map(
     (p) => `<option value="${p.id}">${p.name}</option>`
   ).join('');
 
@@ -93,7 +95,7 @@ async function handleGenerate(e) {
   const type = qs('#report-type').value;
   const filters = getFilters();
   const result = buildReport(type, filters, {
-    products: allProducts,
+    products: allStockItems,
     sales: allSales,
     investors: allInvestors,
   });
@@ -245,14 +247,16 @@ function initEvents() {
 }
 
 async function loadData() {
-  const [productsRes, salesRes, investorsRes, settingsRes] = await Promise.all([
+  const [catalogRes, stockRes, salesRes, investorsRes, settingsRes] = await Promise.all([
     listProducts(),
+    listStockEntries(),
     listSales(),
     listInvestors(),
     getGlobalSettings(),
   ]);
 
-  if (productsRes.success) allProducts = productsRes.data;
+  if (catalogRes.success) allCatalogProducts = catalogRes.data;
+  if (stockRes.success) allStockItems = entriesAsStockItems(stockRes.data);
   if (salesRes.success) allSales = salesRes.data;
   if (investorsRes.success) allInvestors = investorsRes.data;
   if (settingsRes.success) globalSettings = settingsRes.data;
