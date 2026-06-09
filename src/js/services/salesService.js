@@ -18,9 +18,10 @@ import { getInvestorById } from './investorService.js';
 import { registerMovement } from './stockService.js';
 import {
   availableQty,
-  unitCostWithImportTax,
+  getStockEntryUnitCost,
   calculateSaleFinancials,
   calculateQuickSaleFinancials,
+  calculatePlatformFeesBreakdown,
   calculateInvestorRepasse,
   calculateInvestorRepasseForSale,
   totalSaleLinesQuantity,
@@ -143,11 +144,7 @@ export async function createSale(input) {
 
     const sizeEntry = (stockEntry.sizes || []).find((s) => s.size === size);
     const stockAvailable = sizeEntry ? availableQty(sizeEntry) : 0;
-    const unitCost = unitCostWithImportTax(
-      stockEntry.costPrice,
-      stockEntry.importTaxes,
-      stockEntry.sizes
-    );
+    const unitCost = getStockEntryUnitCost(stockEntry);
 
     const financials = calculateSaleFinancials({
       quantity,
@@ -288,11 +285,7 @@ export async function createQuickSale(input) {
     const productResult = productId ? await getProductById(productId) : { success: true, data: { name: stockEntry.productName } };
     const product = productResult.success ? productResult.data : { name: stockEntry.productName };
 
-    const unitCost = unitCostWithImportTax(
-      stockEntry.costPrice,
-      stockEntry.importTaxes,
-      stockEntry.sizes
-    );
+    const unitCost = getStockEntryUnitCost(stockEntry);
 
     const stockLikeProduct = {
       ...product,
@@ -313,19 +306,16 @@ export async function createQuickSale(input) {
       };
     });
 
-    const platformId = input.platform || input.channel || 'presencial';
-    const platform = platformId === 'presencial'
-      ? null
-      : input.platformConfig
-        || (input.platformCosts || []).find((p) => p.id === platformId)
-        || null;
+    const platformCosts = input.platformCosts || [];
 
     const financials = calculateQuickSaleFinancials({
       lines,
       unitCost,
       defaultPersonalizationCostPerPiece: input.defaultPersonalizationCostPerPiece,
-      platform,
+      platformCosts,
     });
+
+    const platformFees = calculatePlatformFeesBreakdown(platformCosts, financials.totalRevenue);
 
     const validation = validateQuickSale(
       { ...input, unitCost, productId: stockEntryId },
@@ -401,11 +391,10 @@ export async function createQuickSale(input) {
       poolCost: financials.adsCostTotal,
       fees: financials.extraFees,
       platformCost: financials.platformCost,
-      platformId: platform?.id || '',
-      platformName: platform?.name || '',
+      platformFees,
       variableCosts: financials.variableCosts,
       trafficCost: 0,
-      channel: platformId,
+      channel: 'site',
       paymentMethod: input.paymentMethod || 'pix',
       customer: '',
       stockOrigin: stockEntry.stockOrigin || 'proprio',

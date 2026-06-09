@@ -9,10 +9,12 @@ import {
 import { waitForAuth } from '../services/authService.js';
 import {
   availableQty,
-  unitCostWithImportTax,
+  getStockEntryUnitCost,
   calculateQuickSaleFinancials,
   calculateInvestorRepasseForSale,
   calculatePoolCostPerPiece,
+  calculatePlatformFeesBreakdown,
+  calculateTotalPlatformFees,
   piecesSoldInCurrentMonth,
   formatSaleLinesSummary,
   totalSaleLinesQuantity,
@@ -59,32 +61,8 @@ function getSelectedStockEntry() {
   return allStockEntries.find((e) => e.id === qs('#field-product').value) || null;
 }
 
-function getSelectedPlatform() {
-  const platformId = qs('#field-platform')?.value || 'presencial';
-  if (platformId === 'presencial') return null;
-
-  const saved = globalSettings.platformCosts?.find((p) => p.id === platformId);
-  const percentInput = qs(`#set-platform-${platformId}-percent`)?.value;
-  const fixedInput = qs(`#set-platform-${platformId}-fixed`)?.value;
-  const percent = percentInput !== '' && percentInput != null
-    ? Number(percentInput) || 0
-    : (saved?.percent ?? 0);
-  const fixedPerOrder = fixedInput !== '' && fixedInput != null
-    ? Number(fixedInput) || 0
-    : (saved?.fixedPerOrder ?? 0);
-
-  return {
-    id: platformId,
-    name: saved?.name || getPlatformLabel(platformId),
-    percent,
-    fixedPerOrder,
-  };
-}
-
-function getPlatformLabel(platformId) {
-  if (!platformId || platformId === 'presencial') return 'Presencial';
-  return globalSettings.platformCosts?.find((p) => p.id === platformId)?.name
-    || platformId;
+function getActivePlatformCosts() {
+  return collectPlatformCostsFromForm();
 }
 
 function collectPlatformCostsFromForm() {
@@ -112,22 +90,27 @@ function fillPlatformCostsForm() {
   });
 }
 
-function updatePlatformFeeHint() {
-  const hint = qs('#platform-fee-hint');
-  if (!hint) return;
+function renderPlatformFeesPreview(exampleRevenue = 229.9) {
+  const el = qs('#platform-fees-preview');
+  if (!el) return;
 
-  const platform = getSelectedPlatform();
-  if (!platform) {
-    hint.textContent = 'Sem taxa de plataforma.';
-    return;
-  }
+  const platforms = getActivePlatformCosts();
+  const total = calculateTotalPlatformFees(platforms, exampleRevenue);
+  const lines = platforms
+    .map((p) => {
+      const fee = calculateTotalPlatformFees([p], exampleRevenue);
+      if (fee <= 0) return null;
+      const parts = [];
+      if (p.percent > 0) parts.push(`${p.percent}%`);
+      if (p.fixedPerOrder > 0) parts.push(`${formatCurrency(p.fixedPerOrder)} fixo`);
+      return `<li><strong>${p.name}</strong> (${p.role || '—'}): ${formatCurrency(fee)}${parts.length ? ` · ${parts.join(' + ')}` : ''}</li>`;
+    })
+    .filter(Boolean);
 
-  const parts = [];
-  if (platform.percent > 0) parts.push(`${platform.percent}% do faturamento`);
-  if (platform.fixedPerOrder > 0) parts.push(`${formatCurrency(platform.fixedPerOrder)} por pedido`);
-  hint.textContent = parts.length
-    ? `Taxa ${platform.name} aplicada automaticamente: ${parts.join(' + ')}. Descontada do lucro ao confirmar.`
-    : `Plataforma ${platform.name} sem taxa configurada.`;
+  el.innerHTML = total > 0
+    ? `<p><strong>Exemplo em pedido de ${formatCurrency(exampleRevenue)}:</strong> ${formatCurrency(total)} de taxas somadas.</p>
+       <ul class="platform-fees-preview__list">${lines.join('')}</ul>`
+    : '<p class="text-muted">Nenhuma taxa configurada — configure Shopify, Yampi e Appmax abaixo.</p>';
 }
 
 function getBasePrice() {
@@ -415,11 +398,7 @@ function onStockEntryChange() {
     return;
   }
 
-  const unitCost = unitCostWithImportTax(
-    stockEntry.costPrice,
-    stockEntry.importTaxes,
-    stockEntry.sizes
-  );
+  const unitCost = getStockEntryUnitCost(stockEntry);
   const origin = stockEntry.stockOrigin === 'investidor'
     ? `Investidor: ${getInvestorName(stockEntry.investorId)}`
     : 'Próprio';
@@ -552,9 +531,9 @@ function fillSettingsForm() {
   renderPersTypesList();
   renderPoolPreview();
   renderPersPreview();
+  renderPlatformFeesPreview();
   refreshLineCouponSelects();
   updateCostLabels();
-  updatePlatformFeeHint();
 }
 
 async function loadSettings() {
@@ -582,7 +561,7 @@ function stockEntryAsProduct(entry) {
 function getFormData() {
   const stockEntry = getSelectedStockEntry();
   const unitCost = stockEntry
-    ? unitCostWithImportTax(stockEntry.costPrice, stockEntry.importTaxes, stockEntry.sizes)
+    ? getStockEntryUnitCost(stockEntry)
     : 0;
   const lines = collectLinesFromDOM();
 
@@ -609,7 +588,7 @@ function getPreviewData() {
     lines: data.lines,
     unitCost: data.unitCost,
     defaultPersonalizationCostPerPiece: globalSettings.personalizationCostPerPiece,
-    platform: getSelectedPlatform(),
+    platformCosts: getActivePlatformCosts(),
   });
 
   let investorPayout = 0;
@@ -668,8 +647,9 @@ function updatePreview() {
     parts.push(`− Outros ${formatCurrency(financials.extraFees)}`);
   }
   if (financials.platformCost > 0) {
-    const platformName = getPlatformLabel(qs('#field-platform')?.value);
-    parts.push(`− Taxa ${platformName} ${formatCurrency(financials.platformCost)}`);
+    const breakdown = calculatePlatformFeesBreakdown(getActivePlatformCosts(), financials.totalRevenue);
+    const detail = breakdown.map((row) => row.name).join(' + ');
+    parts.push(`− Taxas site (${detail}) ${formatCurrency(financials.platformCost)}`);
   }
 
   parts.push(
@@ -754,9 +734,7 @@ function renderSalesTable() {
       <td>
         <strong>${s.productName}</strong>
         <div class="text-sm text-muted">${formatSaleLinesSummary(s)}</div>
-        ${s.channel && s.channel !== 'presencial'
-    ? `<span class="badge badge--info">${s.platformName || getPlatformLabel(s.channel)}</span>`
-    : ''}
+        ${(Number(s.platformCost) || 0) > 0 ? '<span class="badge badge--info">Site</span>' : ''}
         ${(s.isPersonalized || s.lines?.some((l) => l.isPersonalized)) ? '<span class="badge badge--info">Personalizado</span>' : ''}
         ${[...new Set((s.lines || []).filter((l) => l.couponName).map((l) => l.couponName))]
           .map((name) => `<span class="badge badge--neutral">${name}</span>`).join('')}
@@ -867,6 +845,29 @@ async function handlePersonalizationForm(e) {
   showToast('Custos de personalização salvos!', 'success');
 }
 
+async function handleSavePlatformCosts() {
+  const btn = qs('#btn-save-platform-costs');
+  setLoading(btn, true);
+
+  const result = await saveGlobalSettings({
+    ...globalSettings,
+    platformCosts: collectPlatformCostsFromForm(),
+  });
+
+  setLoading(btn, false);
+
+  if (!result.success) {
+    showToast(result.error, 'error');
+    return;
+  }
+
+  globalSettings = result.data;
+  fillPlatformCostsForm();
+  renderPlatformFeesPreview();
+  updatePreview();
+  showToast('Taxas do site salvas!', 'success');
+}
+
 async function handleCostsForm(e) {
   e.preventDefault();
   const btn = qs('#costs-form button[type="submit"]');
@@ -965,9 +966,7 @@ async function handleSubmit(e) {
   setLoading(btn, true);
   const result = await createQuickSale({
     ...data,
-    platform: qs('#field-platform')?.value || 'presencial',
-    platformConfig: getSelectedPlatform(),
-    platformCosts: globalSettings.platformCosts,
+    platformCosts: getActivePlatformCosts(),
     defaultPersonalizationCostPerPiece: globalSettings.personalizationCostPerPiece,
   });
   setLoading(btn, false);
@@ -985,9 +984,13 @@ async function handleSubmit(e) {
 function initEvents() {
   saleForm?.addEventListener('submit', handleSubmit);
   qs('#field-product')?.addEventListener('change', onStockEntryChange);
-  qs('#field-platform')?.addEventListener('change', () => {
-    updatePlatformFeeHint();
-    updatePreview();
+  ['#set-platform-shopify-percent', '#set-platform-shopify-fixed',
+    '#set-platform-yampi-percent', '#set-platform-yampi-fixed',
+    '#set-platform-appmax-percent', '#set-platform-appmax-fixed'].forEach((sel) => {
+    qs(sel)?.addEventListener('input', () => {
+      renderPlatformFeesPreview();
+      updatePreview();
+    });
   });
   qs('#btn-parse-sizes')?.addEventListener('click', applyQuickSizes);
   qs('#sizes-quick-input')?.addEventListener('keydown', (e) => {
@@ -1004,6 +1007,7 @@ function initEvents() {
   });
 
   qs('#costs-form')?.addEventListener('submit', handleCostsForm);
+  qs('#btn-save-platform-costs')?.addEventListener('click', handleSavePlatformCosts);
   qs('#personalization-form')?.addEventListener('submit', handlePersonalizationForm);
   qs('#btn-add-pers-type')?.addEventListener('click', handleAddPersType);
   qs('#btn-save-pers-types')?.addEventListener('click', handleSavePersTypes);

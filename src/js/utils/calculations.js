@@ -2,17 +2,58 @@ export function totalQuantity(sizes) {
   return (sizes || []).reduce((sum, s) => sum + (Number(s.quantity) || 0), 0);
 }
 
-/** Imposto de importação por peça = total de impostos ÷ quantidade total */
-export function importTaxPerUnit(importTaxes, sizes) {
-  const total = totalQuantity(sizes);
+/** Quantidade de peças para diluir imposto (array de tamanhos ou número). */
+function resolvePieceCount(sizesOrQty) {
+  if (typeof sizesOrQty === 'number') {
+    return Math.max(0, sizesOrQty);
+  }
+  return totalQuantity(sizesOrQty);
+}
+
+/** Imposto de importação por peça = total de impostos ÷ quantidade de camisetas do lote */
+export function importTaxPerUnit(importTaxes, sizesOrQty) {
+  const total = resolvePieceCount(sizesOrQty);
   const taxes = Number(importTaxes) || 0;
   if (!total || taxes <= 0) return 0;
   return taxes / total;
 }
 
-/** Custo final por peça = custo unitário + imposto por peça */
-export function unitCostWithImportTax(costPrice, importTaxes, sizes) {
-  return (Number(costPrice) || 0) + importTaxPerUnit(importTaxes, sizes);
+/** Custo final por peça = custo unitário + imposto diluído por peça */
+export function unitCostWithImportTax(costPrice, importTaxes, sizesOrQty) {
+  return (Number(costPrice) || 0) + importTaxPerUnit(importTaxes, sizesOrQty);
+}
+
+/**
+ * Custo unitário de um lote de estoque.
+ * O imposto de importação é diluído na quantidade de peças na entrada e congelado por peça.
+ */
+export function getStockEntryUnitCost(entry) {
+  if (!entry) return 0;
+
+  const finalCost = Number(entry.costPrice) || 0;
+  const frozenImportPerUnit = entry.importTaxPerUnit != null
+    ? Number(entry.importTaxPerUnit)
+    : null;
+  const baseCost = entry.baseCostPrice != null
+    ? Number(entry.baseCostPrice)
+    : null;
+  const importTaxes = Number(entry.importTaxes) || 0;
+
+  if (frozenImportPerUnit != null && !Number.isNaN(frozenImportPerUnit)) {
+    const base = baseCost != null && !Number.isNaN(baseCost)
+      ? baseCost
+      : Math.max(0, finalCost - frozenImportPerUnit);
+    return Math.max(0, base + frozenImportPerUnit);
+  }
+
+  if (importTaxes <= 0) {
+    return finalCost;
+  }
+
+  const entryPieces = Number(entry.entryQuantity) || resolvePieceCount(entry.sizes);
+  const baseUnit = baseCost != null && !Number.isNaN(baseCost) ? baseCost : finalCost;
+  if (!entryPieces) return baseUnit;
+  return baseUnit + importTaxPerUnit(importTaxes, entryPieces);
 }
 
 export function totalReserved(sizes) {
@@ -268,7 +309,7 @@ export function calculatePoolCostPerPiece({ adsPool = 0, otherPoolCosts = 0, pie
   return pool / pieces;
 }
 
-/** Taxa da plataforma: % sobre o faturamento do pedido + valor fixo por pedido. */
+/** Taxa de um serviço: % sobre o faturamento do pedido + valor fixo por pedido. */
 export function calculatePlatformFee(platform, totalRevenue) {
   if (!platform) return 0;
   const revenue = Math.max(0, Number(totalRevenue) || 0);
@@ -277,11 +318,30 @@ export function calculatePlatformFee(platform, totalRevenue) {
   return revenue * (percent / 100) + fixed;
 }
 
+/** Soma Shopify + Yampi + Appmax (e demais) em toda venda do site. */
+export function calculateTotalPlatformFees(platforms, totalRevenue) {
+  return (platforms || []).reduce(
+    (sum, platform) => sum + calculatePlatformFee(platform, totalRevenue),
+    0
+  );
+}
+
+export function calculatePlatformFeesBreakdown(platforms, totalRevenue) {
+  return (platforms || [])
+    .map((platform) => ({
+      id: platform.id,
+      name: platform.name,
+      role: platform.role || '',
+      amount: calculatePlatformFee(platform, totalRevenue),
+    }))
+    .filter((row) => row.amount > 0);
+}
+
 export function calculateQuickSaleFinancials({
   lines,
   unitCost,
   defaultPersonalizationCostPerPiece = 0,
-  platform = null,
+  platformCosts = [],
 }) {
   const defaultPersCost = Number(defaultPersonalizationCostPerPiece) || 0;
   const safeLines = (lines || []).map((l) => ({
@@ -329,7 +389,7 @@ export function calculateQuickSaleFinancials({
   const freightCost = safeLines.reduce((sum, l) => sum + l.freight, 0);
   const adsCostTotal = safeLines.reduce((sum, l) => sum + l.ads, 0);
   const extraFees = safeLines.reduce((sum, l) => sum + l.otherCosts, 0);
-  const platformCost = calculatePlatformFee(platform, totalRevenue);
+  const platformCost = calculateTotalPlatformFees(platformCosts, totalRevenue);
   const variableCosts = freightCost + adsCostTotal + extraFees + platformCost;
   const grossProfit = totalRevenue - productCost;
   const netProfit = grossProfit - variableCosts - personalizationCostTotal;
@@ -422,7 +482,7 @@ export function investorStockTotals(products, investorId) {
 
   for (const p of linked) {
     const qty = totalQuantity(p.sizes);
-    const unitCost = unitCostWithImportTax(p.costPrice, p.importTaxes, p.sizes);
+    const unitCost = getStockEntryUnitCost(p);
     pieces += qty;
     investedValue += unitCost * qty;
     potentialRevenue += (Number(p.suggestedSalePrice) || 0) * qty;

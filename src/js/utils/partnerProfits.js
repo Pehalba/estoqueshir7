@@ -1,4 +1,9 @@
-import { filterSalesByPeriod, isSaleActive } from './analytics.js';
+import {
+  filterSalesByPeriod,
+  isSaleActive,
+  getSalePersonalizationStats,
+  saleHasPersonalization,
+} from './analytics.js';
 import { investorProfitExcludingPersonalization } from './calculations.js';
 
 export const SHIR7_PARTNERS = [
@@ -29,11 +34,33 @@ function getInvestorRepasse(sale) {
   return 0;
 }
 
+function decomposeSaleProfit(sale) {
+  const net = Number(sale.netProfit) || 0;
+  const pers = getSalePersonalizationStats(sale);
+  const persProfit = pers.revenue - pers.cost;
+  const shirtNetProfit = net - persProfit;
+  const payout = sale.stockOrigin === 'investidor' ? getInvestorRepasse(sale) : 0;
+  const isInvestor = sale.stockOrigin === 'investidor';
+
+  return {
+    persRevenue: pers.revenue,
+    persCost: pers.cost,
+    persProfit,
+    persPieces: pers.pieces,
+    hasPersonalization: saleHasPersonalization(sale) && (pers.pieces > 0 || pers.revenue > 0 || pers.cost > 0),
+    shirtNetProfit,
+    shirtRevenue: Math.max(0, (Number(sale.totalRevenue) || 0) - pers.revenue),
+    investorRepasse: payout,
+    shir7ShirtFromInvestor: isInvestor ? Math.max(0, shirtNetProfit - payout) : 0,
+    shir7ShirtFromProprio: !isInvestor ? shirtNetProfit : 0,
+    quantity: Number(sale.quantity) || 0,
+  };
+}
+
 /**
  * Distribuição de lucros SHIR7:
- * - Estoque próprio: lucro líquido 50% Pedro / 50% Eduardo
- * - Estoque investidor: repasse = capital + 40% lucro (sem pers.); SHIR7 fica com o restante
- * - Personalização: 100% SHIR7 (já embutida no lucro líquido)
+ * - Camisas: repasse investidor, parte SHIR7 (investidor) e estoque próprio — sem personalização
+ * - Personalização: faturamento e lucro 100% SHIR7 (investidor não participa)
  */
 export function calculatePartnerDistribution(sales, investors = [], filters = {}) {
   const filtered = filterSalesByPeriod(sales, filters).filter(isSaleActive);
@@ -42,66 +69,103 @@ export function calculatePartnerDistribution(sales, investors = [], filters = {}
 
   let totalNetProfit = 0;
   let investorRepasseTotal = 0;
-  let shir7FromProprio = 0;
-  let shir7FromInvestor = 0;
-  let proprioNetProfit = 0;
+  let shir7ShirtFromInvestor = 0;
+  let shir7ShirtFromProprio = 0;
+  let shirtNetProfitTotal = 0;
   let investorSalesCount = 0;
   let proprioSalesCount = 0;
+  let shirtPieces = 0;
+  let proprioPieces = 0;
+
+  let persRevenue = 0;
+  let persCost = 0;
+  let persProfit = 0;
+  let persPieces = 0;
+  let persOrderCount = 0;
 
   for (const sale of filtered) {
-    const net = Number(sale.netProfit) || 0;
-    totalNetProfit += net;
+    const split = decomposeSaleProfit(sale);
+    totalNetProfit += Number(sale.netProfit) || 0;
+    shirtNetProfitTotal += split.shirtNetProfit;
+    shirtPieces += split.quantity;
+
+    if (split.hasPersonalization) {
+      persOrderCount += 1;
+      persRevenue += split.persRevenue;
+      persCost += split.persCost;
+      persProfit += split.persProfit;
+      persPieces += split.persPieces;
+    }
 
     if (sale.stockOrigin === 'investidor') {
       investorSalesCount += 1;
-      const payout = getInvestorRepasse(sale);
-      const shir7Share = Math.max(0, net - payout);
-
-      investorRepasseTotal += payout;
-      shir7FromInvestor += shir7Share;
+      investorRepasseTotal += split.investorRepasse;
+      shir7ShirtFromInvestor += split.shir7ShirtFromInvestor;
 
       const invId = sale.investorId || 'sem-investidor';
       const prev = byInvestor.get(invId) || {
         repasse: 0,
         shir7Share: 0,
         netProfit: 0,
+        shirtNetProfit: 0,
         sales: 0,
         pieces: 0,
         profitBase: 0,
       };
 
       const financials = getSaleFinancials(sale);
-      prev.repasse += payout;
-      prev.shir7Share += shir7Share;
-      prev.netProfit += net;
+      prev.repasse += split.investorRepasse;
+      prev.shir7Share += split.shir7ShirtFromInvestor;
+      prev.netProfit += split.shirtNetProfit;
+      prev.shirtNetProfit += split.shirtNetProfit;
       prev.sales += 1;
-      prev.pieces += Number(sale.quantity) || 0;
+      prev.pieces += split.quantity;
       prev.profitBase += investorProfitExcludingPersonalization(financials);
       byInvestor.set(invId, prev);
     } else {
       proprioSalesCount += 1;
-      proprioNetProfit += net;
-      shir7FromProprio += net;
+      proprioPieces += split.quantity;
+      shir7ShirtFromProprio += split.shir7ShirtFromProprio;
     }
   }
 
-  const shir7Total = shir7FromProprio + shir7FromInvestor;
+  const shir7ShirtTotal = shir7ShirtFromProprio + shir7ShirtFromInvestor;
+  const shir7Total = shir7ShirtTotal + persProfit;
   const partners = SHIR7_PARTNERS.map((partner) => ({
     ...partner,
     amount: shir7Total * partner.share,
-    fromProprio: shir7FromProprio * partner.share,
-    fromInvestor: shir7FromInvestor * partner.share,
+    fromProprio: shir7ShirtFromProprio * partner.share,
+    fromInvestor: shir7ShirtFromInvestor * partner.share,
+    fromPersonalization: persProfit * partner.share,
   }));
 
   return {
     totalNetProfit,
     investorRepasseTotal,
     shir7Total,
-    shir7FromProprio,
-    shir7FromInvestor,
-    proprioNetProfit,
+    shir7FromProprio: shir7ShirtFromProprio,
+    shir7FromInvestor: shir7ShirtFromInvestor,
+    proprioNetProfit: shir7ShirtFromProprio,
     proprioSalesCount,
     investorSalesCount,
+    shirts: {
+      investorRepasseTotal,
+      shir7FromInvestor: shir7ShirtFromInvestor,
+      shir7FromProprio: shir7ShirtFromProprio,
+      shir7Total: shir7ShirtTotal,
+      netProfit: shirtNetProfitTotal,
+      investorSalesCount,
+      proprioSalesCount,
+      proprioPieces,
+      pieces: shirtPieces,
+    },
+    personalization: {
+      revenue: persRevenue,
+      cost: persCost,
+      netProfit: persProfit,
+      orderCount: persOrderCount,
+      pieces: persPieces,
+    },
     partners,
     byInvestor: [...byInvestor.entries()]
       .map(([id, stats]) => ({

@@ -26,6 +26,7 @@ import {
   availableQty,
   importTaxPerUnit,
   unitCostWithImportTax,
+  getStockEntryUnitCost,
   totalQuantity,
   DEFAULT_SALE_PRICE,
 } from '../utils/calculations.js';
@@ -297,12 +298,15 @@ async function handleStockSubmit(e) {
   await loadMovements();
 }
 
-function formatCostCell(product) {
-  const cost = Number(product.costPrice) || 0;
+function formatCostCell(entry) {
+  const cost = getStockEntryUnitCost(entry);
   if (!cost) {
     return '<span class="text-muted">—</span>';
   }
-  return `<strong>${formatCurrency(cost)}</strong>`;
+  const hasImport = (Number(entry.importTaxes) || 0) > 0
+    || (Number(entry.importTaxPerUnit) || 0) > 0;
+  const suffix = hasImport ? '<br><span class="text-sm text-muted">c/ imposto diluído</span>' : '';
+  return `<strong>${formatCurrency(cost)}</strong>${suffix}`;
 }
 
 function formatPriceCell(product) {
@@ -665,12 +669,26 @@ async function openStockEntryViewModal(id) {
   qs('.modal__title', qs('#view-modal')).textContent = 'Detalhes do estoque';
 
   const sizesText = sortSizes(e.sizes).map((s) => `${s.quantity} ${s.size}`).join(', ') || '—';
+  const unitCost = getStockEntryUnitCost(e);
+  const importTotal = Number(e.importTaxes) || 0;
+  const importPerUnit = Number(e.importTaxPerUnit) || importTaxPerUnit(importTotal, e.entryQuantity || e.quantity);
+  const baseCost = e.baseCostPrice != null ? Number(e.baseCostPrice) : Math.max(0, unitCost - importPerUnit);
+  const entryPieces = Number(e.entryQuantity) || Number(e.quantity) || 0;
+
   const fields = [
     ['Nome do estoque', e.name],
     ['Produto', e.productName],
     ['Tamanhos', sizesText],
     ['Quantidade total', e.quantity ?? 0],
-    ['Custo/peça', formatCurrency(e.costPrice)],
+    ['Custo compra/peça', formatCurrency(baseCost)],
+    ...(importTotal > 0
+      ? [
+        ['Imposto importação (total)', formatCurrency(importTotal)],
+        ['Peças na entrada', entryPieces || '—'],
+        ['Imposto diluído/peça', `${formatCurrency(importPerUnit)} (${formatCurrency(importTotal)} ÷ ${entryPieces} peças)`],
+      ]
+      : []),
+    ['Custo final/peça', formatCurrency(unitCost)],
     ['Preço sugerido', formatCurrency(e.suggestedSalePrice)],
     ['Preço mínimo', formatCurrency(e.minimumSalePrice)],
     ['Origem', e.stockOrigin === 'investidor' ? 'Investidor' : 'Próprio'],

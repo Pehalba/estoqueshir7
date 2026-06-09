@@ -94,6 +94,20 @@
 
 .platform-costs__header .card__title {
   font-size: var(--font-size-base);
+  margin-bottom: 0;
+}
+
+.platform-costs__role {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin: 0.15rem 0 0;
+}
+
+.platform-fees-preview__list {
+  margin: var(--space-sm) 0 0;
+  padding-left: 1.25rem;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
 }
 
 .platform-costs__card .card__body {

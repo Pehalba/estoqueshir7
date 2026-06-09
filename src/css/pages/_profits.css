@@ -7,8 +7,55 @@
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
+}
+
+.profits-tabs--4 .profits-tabs__btn,
+.profits-tabs--5 .profits-tabs__btn {
+  flex: 1 1 auto;
+  min-width: 7.5rem;
+  text-align: center;
+  padding-left: 0.65rem;
+  padding-right: 0.65rem;
+}
+
+.profits-card--total-static {
+  margin-bottom: var(--space-lg);
+  cursor: default;
+}
+
+.profits-resumo {
+  margin-bottom: var(--space-md);
+}
+
+.profits-resumo-total {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+.profits-resumo-total .profits-card__value {
+  color: var(--color-primary);
+  font-size: var(--font-size-2xl);
+}
+
+.profits-resumo-socios .card__body {
+  padding-top: var(--space-md);
+}
+
+.profits-partners--compact .profits-partner__breakdown {
+  margin-top: var(--space-sm);
+}
+
+.profits-tab-intro {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-lg);
+  line-height: 1.5;
+}
+
+.profits-summary--compact {
+  max-width: 28rem;
 }
 
 .profits-tabs__btn {
@@ -52,8 +99,32 @@
   min-width: 140px;
 }
 
-.profits-summary {
+.profits-section {
   margin-bottom: var(--space-xl);
+}
+
+.profits-section__head {
+  margin-bottom: var(--space-md);
+}
+
+.profits-section__title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  margin: 0 0 var(--space-xs);
+}
+
+.profits-section__subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.profits-summary {
+  margin-bottom: var(--space-lg);
+}
+
+.profits-card--total {
+  margin-bottom: var(--space-lg);
 }
 
 .profits-card {
@@ -109,6 +180,19 @@
 
 .profits-card--proprio {
   border-left: 4px solid var(--color-success);
+}
+
+.profits-card--pers-revenue {
+  border-left: 4px solid var(--color-info);
+}
+
+.profits-card--pers-profit {
+  border-left: 4px solid #7c5cbf;
+}
+
+.profits-card--total {
+  border-left: 4px solid var(--color-primary);
+  background-color: rgba(var(--color-primary-rgb), 0.04);
 }
 
 .profits-card__chevron {

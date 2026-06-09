@@ -16,9 +16,9 @@ export const DEFAULT_COUPONS = [
 ];
 
 export const DEFAULT_PLATFORMS = [
-  { id: 'shopify', name: 'Shopify', percent: 2, fixedPerOrder: 0 },
-  { id: 'yampi', name: 'Yampi', percent: 0, fixedPerOrder: 0 },
-  { id: 'appmax', name: 'Appmax', percent: 0, fixedPerOrder: 0 },
+  { id: 'shopify', name: 'Shopify', role: 'Sistema da loja', percent: 2, fixedPerOrder: 0 },
+  { id: 'yampi', name: 'Yampi', role: 'Checkout', percent: 0, fixedPerOrder: 0 },
+  { id: 'appmax', name: 'Appmax', role: 'Gateway de pagamento', percent: 0, fixedPerOrder: 0 },
 ];
 
 export const DEFAULT_SETTINGS = {
@@ -56,13 +56,14 @@ function normalizePlatformCosts(platforms) {
   const list = (platforms || []).map((p, i) => ({
     id: p.id || DEFAULT_PLATFORMS[i]?.id || `platform-${i}`,
     name: String(p.name || DEFAULT_PLATFORMS.find((d) => d.id === p.id)?.name || '').trim(),
+    role: String(p.role || DEFAULT_PLATFORMS.find((d) => d.id === p.id)?.role || '').trim(),
     percent: Math.max(0, Number(p.percent) || 0),
     fixedPerOrder: Math.max(0, Number(p.fixedPerOrder) || 0),
   }));
 
   return DEFAULT_PLATFORMS.map((def) => {
     const found = list.find((p) => p.id === def.id);
-    return found ? { ...def, ...found, name: def.name } : { ...def };
+    return found ? { ...def, ...found, name: def.name, role: def.role } : { ...def };
   });
 }
 

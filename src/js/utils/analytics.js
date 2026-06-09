@@ -1,6 +1,6 @@
 import {
   totalQuantity,
-  unitCostWithImportTax,
+  getStockEntryUnitCost,
   availableQty,
   calculateTicketMedio,
 } from './calculations.js';
@@ -62,7 +62,7 @@ export function aggregateStock(products) {
     if (p.status === 'inativo') continue;
     totalProducts += 1;
     const qty = totalQuantity(p.sizes);
-    const unitCost = unitCostWithImportTax(p.costPrice, p.importTaxes, p.sizes);
+    const unitCost = getStockEntryUnitCost(p);
     const unitPrice = Number(p.suggestedSalePrice) || 0;
     totalPieces += qty;
     costValue += unitCost * qty;

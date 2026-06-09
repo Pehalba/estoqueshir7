@@ -17,7 +17,12 @@ import {
   createStockEntry,
   listStockEntries,
 } from './stockEntryService.js';
-import { applyMovement, totalQuantity, unitCostWithImportTax } from '../utils/calculations.js';
+import {
+  applyMovement,
+  totalQuantity,
+  importTaxPerUnit,
+  unitCostWithImportTax,
+} from '../utils/calculations.js';
 
 const MOVEMENTS = 'stockMovements';
 const STOCK_ENTRIES = 'stockEntries';
@@ -65,10 +70,12 @@ export async function migrateLegacyProductStock(products) {
     if (qty <= 0) continue;
     if (existing.some((e) => e.productId === product.id)) continue;
 
+    const entryPieces = totalQuantity(product.sizes);
+    const importPerUnit = importTaxPerUnit(product.importTaxes, entryPieces);
     const unitFinal = unitCostWithImportTax(
       product.costPrice,
       product.importTaxes,
-      product.sizes
+      entryPieces
     );
 
     const createResult = await createStockEntry({
@@ -78,8 +85,11 @@ export async function migrateLegacyProductStock(products) {
       stockOrigin: product.stockOrigin || 'proprio',
       investorId: product.investorId || '',
       sizes: product.sizes,
+      baseCostPrice: product.costPrice,
       costPrice: unitFinal,
-      importTaxes: 0,
+      importTaxes: Number(product.importTaxes) || 0,
+      importTaxPerUnit: importPerUnit,
+      entryQuantity: entryPieces,
       importTaxesPaidAt: product.importTaxesPaidAt || '',
       suggestedSalePrice: product.suggestedSalePrice,
       minimumSalePrice: product.minimumSalePrice,
@@ -250,7 +260,9 @@ export async function registerStockEntry({
   const minimumSalePrice = Number(pricing.minimumSalePrice) || 0;
   const importTaxes = Number(pricing.importTaxes) || 0;
   const importTaxesPaidAt = pricing.importTaxesPaidAt || '';
-  const entryUnitFinal = unitCostWithImportTax(costPrice, importTaxes, safeLines);
+  const entryPieces = safeLines.reduce((sum, l) => sum + l.quantity, 0);
+  const importPerUnit = importTaxPerUnit(importTaxes, entryPieces);
+  const entryUnitFinal = unitCostWithImportTax(costPrice, importTaxes, entryPieces);
   const origin = stockOrigin === 'investidor' ? 'investidor' : 'proprio';
 
   try {
@@ -262,8 +274,6 @@ export async function registerStockEntry({
     const product = productResult.data;
     const entryRef = doc(collection(db, STOCK_ENTRIES));
     const movementIds = [];
-    const entryPieces = safeLines.reduce((sum, l) => sum + l.quantity, 0);
-
     const sizes = safeLines.map((l) => ({
       size: l.size,
       quantity: l.quantity,
@@ -279,8 +289,11 @@ export async function registerStockEntry({
           stockOrigin: origin,
           investorId: origin === 'investidor' ? investorId : '',
           sizes,
+          baseCostPrice: costPrice,
           costPrice: entryUnitFinal,
-          importTaxes: 0,
+          importTaxes,
+          importTaxPerUnit: importPerUnit,
+          entryQuantity: entryPieces,
           importTaxesPaidAt,
           suggestedSalePrice,
           minimumSalePrice,

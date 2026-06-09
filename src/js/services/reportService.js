@@ -17,7 +17,7 @@ import {
 } from '../utils/analytics.js';
 import {
   totalQuantity,
-  unitCostWithImportTax,
+  getStockEntryUnitCost,
   availableQty,
   formatSaleLinesSummary,
 } from '../utils/calculations.js';
@@ -78,7 +78,7 @@ export function buildReport(type, filters, { products = [], sales = [], investor
         if (filters.productId && p.productId !== filters.productId) continue;
         if (filters.stockOrigin && p.stockOrigin !== filters.stockOrigin) continue;
         if (filters.investorId && p.investorId !== filters.investorId) continue;
-        const unitCost = unitCostWithImportTax(p.costPrice, p.importTaxes, p.sizes);
+        const unitCost = getStockEntryUnitCost(p);
         for (const s of p.sizes || []) {
           rows.push({
             productId: p.productId,

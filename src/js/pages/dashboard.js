@@ -22,7 +22,7 @@ import {
 } from '../utils/analytics.js';
 import { renderBarChart, renderGroupedBarChart, renderDoughnutChart } from '../utils/chartRenderer.js';
 import { formatCurrency, formatPercent } from '../utils/formatCurrency.js';
-import { formatSaleLinesSummary, availableQty, unitCostWithImportTax } from '../utils/calculations.js';
+import { formatSaleLinesSummary, availableQty, getStockEntryUnitCost } from '../utils/calculations.js';
 import { qs, qsa, showToast, openModal, setupModalClose } from '../utils/domHelpers.js';
 import { sortSizes } from '../utils/sizes.js';
 
@@ -324,11 +324,11 @@ const VALUE_DETAIL_CONFIG = {
     highlightClass: 'dashboard-potential-summary__card--warning',
     getEntryAmount(entry) {
       const qty = entryRemainingTotal(entry.sizes);
-      const unitCost = unitCostWithImportTax(entry.costPrice, entry.importTaxes, entry.sizes);
+      const unitCost = getStockEntryUnitCost(entry);
       return unitCost * qty;
     },
     getUnitAmount(entry) {
-      return unitCostWithImportTax(entry.costPrice, entry.importTaxes, entry.sizes);
+      return getStockEntryUnitCost(entry);
     },
   },
   revenue: {
