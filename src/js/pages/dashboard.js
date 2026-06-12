@@ -1,6 +1,7 @@
 import { waitForAuth } from '../services/authService.js';
 import { listStockEntries, entriesAsStockItems } from '../services/stockEntryService.js';
 import { listSales } from '../services/salesService.js';
+import { getGlobalSettings } from '../services/settingsService.js';
 import { listInvestors } from '../services/investorService.js';
 import { getLowStockThreshold } from '../services/stockService.js';
 import { askAssistant, getQuickQuestions } from '../services/aiService.js';
@@ -8,6 +9,7 @@ import {
   aggregateStock,
   aggregateSalesTotals,
   aggregatePersonalizationTotals,
+  applyPlatformSettingsToSales,
   getSalePersonalizationStats,
   saleHasPersonalization,
   summarizePersonalizationSales,
@@ -429,8 +431,12 @@ function getSaleShir7Profit(sale) {
   return Math.max(0, net - getSaleInvestorProfit(sale));
 }
 
+function getPersSettings() {
+  return dashboardData?.settings || {};
+}
+
 function getSalePersonalizationProfit(sale) {
-  const stats = getSalePersonalizationStats(sale);
+  const stats = getSalePersonalizationStats(sale, getPersSettings());
   return stats.revenue - stats.cost;
 }
 
@@ -543,7 +549,7 @@ function aggregatePersonalizationGroups(sales, mode) {
   sales.forEach((sale) => {
     if (!saleHasPersonalization(sale)) return;
 
-    const stats = getSalePersonalizationStats(sale);
+    const stats = getSalePersonalizationStats(sale, getPersSettings());
     let key;
     let title;
 
@@ -1041,7 +1047,7 @@ function renderSalesValueDetailPanel(view, config) {
 function renderPersonalizationValueDetailPanel(view, config) {
   const sales = getPersonalizedSales();
   const panel = qs('#value-detail-panel');
-  const summary = summarizePersonalizationSales(sales);
+  const summary = summarizePersonalizationSales(sales, getPersSettings());
   const isRevenue = config.subtype === 'revenue';
 
   const titleSuffix = isRevenue
@@ -1074,7 +1080,7 @@ function renderPersonalizationValueDetailPanel(view, config) {
         </div>
         <div class="dashboard-stock-detail__list dashboard-stock-detail__list--compact">
           ${sales.slice(0, 10).map((sale) => {
-            const stats = getSalePersonalizationStats(sale);
+            const stats = getSalePersonalizationStats(sale, getPersSettings());
             const orderLabel = sale.orderId || sale.productName || '—';
             return `
               <div class="dashboard-stock-detail__item">
@@ -1386,12 +1392,12 @@ function bindChartsResize() {
   });
 }
 
-function renderDashboard({ products, sales, investors, threshold }) {
+function renderDashboard({ products, sales, investors, threshold, settings = {} }) {
   const stock = aggregateStock(products);
   const salesStats = aggregateSalesTotals(sales);
-  const persStats = aggregatePersonalizationTotals(sales);
+  const persStats = aggregatePersonalizationTotals(sales, settings);
 
-  dashboardData = { products, sales, investors: investors || [], stock, threshold };
+  dashboardData = { products, sales, investors: investors || [], stock, threshold, settings };
 
   renderKpis(stock, salesStats, persStats);
   renderLists(products, sales, threshold);
@@ -1444,14 +1450,16 @@ async function loadData() {
     showToast(stockRes.error, 'error');
   }
 
-  const [salesRes, investorsRes] = await Promise.all([
+  const [salesRes, investorsRes, settingsRes] = await Promise.all([
     listSales(),
     listInvestors(),
+    getGlobalSettings(),
   ]);
 
   const errors = [];
   if (!salesRes.success) errors.push(salesRes.error);
   if (!investorsRes.success) errors.push(investorsRes.error);
+  if (!settingsRes.success) errors.push(settingsRes.error);
 
   if (errors.length) {
     errors.forEach((msg) => showToast(msg, 'error'));
@@ -1462,11 +1470,18 @@ async function loadData() {
     return;
   }
 
+  const investors = investorsRes.success ? investorsRes.data : [];
+  const settings = settingsRes.success ? settingsRes.data : {};
+  const sales = salesRes.success
+    ? applyPlatformSettingsToSales(salesRes.data, settings, investors)
+    : [];
+
   renderDashboard({
     products: stockRes.success ? entriesAsStockItems(stockRes.data) : [],
-    sales: salesRes.success ? salesRes.data : [],
-    investors: investorsRes.success ? investorsRes.data : [],
+    sales,
+    investors,
     threshold,
+    settings,
   });
 }
 

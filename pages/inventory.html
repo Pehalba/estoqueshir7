@@ -26,6 +26,10 @@
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
           Vendas
         </a>
+        <a href="orders.html" class="sidebar__link" data-nav="orders">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+          Pedidos
+        </a>
         <a href="investors.html" class="sidebar__link" data-nav="investors">
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
           Investidores
@@ -455,7 +459,7 @@
           </div>
           <p id="stock-import-cost-preview" class="form-group__hint import-cost-preview"></p>
 
-          <div class="sizes-editor">
+          <div id="stock-sizes-editor" class="sizes-editor">
             <p class="sizes-editor__title form-group__label--required">Peças entrando no estoque</p>
             <div class="sizes-editor__quick">
               <input class="form-input" type="text" id="stock-sizes-quick-input" placeholder="Ex: 10 M, 30 G, 5 GG">

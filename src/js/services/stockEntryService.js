@@ -60,6 +60,9 @@ export function buildStockEntryPayload(data) {
     minimumSalePrice: Number(data.minimumSalePrice) || 0,
     status: qty === 0 ? 'esgotado' : (data.status || 'ativo'),
     notes: data.notes || '',
+    ...(data.deductionPriority != null && data.deductionPriority !== ''
+      ? { deductionPriority: Number(data.deductionPriority) || 999 }
+      : {}),
   };
 }
 

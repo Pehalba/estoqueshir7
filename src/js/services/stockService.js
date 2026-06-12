@@ -16,7 +16,9 @@ import { getProductById, updateProduct } from './productService.js';
 import {
   buildStockEntryPayload,
   createStockEntry,
+  getStockEntryById,
   listStockEntries,
+  updateStockEntry,
 } from './stockEntryService.js';
 import {
   applyMovement,
@@ -364,6 +366,82 @@ export async function registerStockEntry({
         movementIds,
         entryPieces,
         entryUnitFinal,
+      },
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+/** Atualiza dados de um lote existente (preços, impostos, origem) sem alterar quantidades. */
+export async function updateStockEntryDetails(id, {
+  stockEntryName,
+  stockOrigin,
+  investorId,
+  observation,
+  pricing = {},
+}) {
+  const user = getCurrentUser();
+  if (!user) {
+    return { success: false, error: 'Usuário não autenticado.' };
+  }
+
+  try {
+    const entryResult = await getStockEntryById(id);
+    if (!entryResult.success) {
+      return entryResult;
+    }
+
+    const entry = entryResult.data;
+    const entryPieces = Number(entry.entryQuantity) || totalQuantity(entry.sizes);
+    const costPrice = Number(pricing.costPrice);
+    const baseCost = Number.isFinite(costPrice) && costPrice >= 0
+      ? costPrice
+      : (Number(entry.baseCostPrice) || Number(entry.costPrice) || 0);
+    const suggestedSalePrice = Number(pricing.suggestedSalePrice);
+    const minimumSalePrice = Number(pricing.minimumSalePrice);
+    const importTaxes = Number(pricing.importTaxes) || 0;
+    const importTaxesPaidAt = pricing.importTaxesPaidAt || '';
+    const importPerUnit = importTaxPerUnit(importTaxes, entryPieces);
+    const entryUnitFinal = unitCostWithImportTax(baseCost, importTaxes, entryPieces);
+    const origin = stockOrigin === 'investidor' ? 'investidor' : 'proprio';
+
+    const result = await updateStockEntry(id, {
+      name: stockEntryName || entry.name,
+      productId: entry.productId,
+      productName: entry.productName,
+      stockOrigin: origin,
+      investorId: origin === 'investidor' ? (investorId || '') : '',
+      sizes: entry.sizes,
+      baseCostPrice: baseCost,
+      costPrice: entryUnitFinal,
+      importTaxes,
+      importTaxPerUnit: importPerUnit,
+      entryQuantity: entryPieces,
+      importTaxesPaidAt,
+      suggestedSalePrice: Number.isFinite(suggestedSalePrice)
+        ? suggestedSalePrice
+        : Number(entry.suggestedSalePrice) || 0,
+      minimumSalePrice: Number.isFinite(minimumSalePrice)
+        ? minimumSalePrice
+        : Number(entry.minimumSalePrice) || 0,
+      status: entry.status,
+      notes: observation || entry.notes || '',
+      deductionPriority: entry.deductionPriority,
+    });
+
+    if (!result.success) {
+      return result;
+    }
+
+    invalidateCache(CACHE_KEYS.STOCK_ENTRIES);
+
+    return {
+      success: true,
+      data: {
+        id,
+        entryUnitFinal,
+        importPerUnit,
       },
     };
   } catch (error) {

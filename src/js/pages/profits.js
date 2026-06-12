@@ -1,11 +1,14 @@
 import { waitForAuth } from '../services/authService.js';
 import { listSales } from '../services/salesService.js';
+import { listStockEntries } from '../services/stockEntryService.js';
 import { listInvestors } from '../services/investorService.js';
 import {
   calculatePartnerDistribution,
   getDefaultPeriodFilters,
   SHIR7_PARTNERS,
 } from '../utils/partnerProfits.js';
+import { applyPlatformSettingsToSales } from '../utils/analytics.js';
+import { getGlobalSettings } from '../services/settingsService.js';
 import { formatCurrency } from '../utils/formatCurrency.js';
 import { qs, qsa, showToast } from '../utils/domHelpers.js';
 
@@ -19,6 +22,8 @@ const TAB_PANELS = {
 
 let allSales = [];
 let allInvestors = [];
+let allStockEntries = [];
+let globalSettings = {};
 
 function switchTab(tab) {
   qsa('.profits-tabs__btn').forEach((btn) => {
@@ -197,14 +202,16 @@ function renderAll(data, filters) {
 
 function refresh() {
   const filters = getFilters();
-  const data = calculatePartnerDistribution(allSales, allInvestors, filters);
+  const data = calculatePartnerDistribution(allSales, allInvestors, filters, globalSettings, allStockEntries);
   renderAll(data, filters);
 }
 
 async function loadData() {
-  const [salesRes, investorsRes] = await Promise.all([
+  const [salesRes, investorsRes, settingsRes, stockEntriesRes] = await Promise.all([
     listSales(),
     listInvestors(),
+    getGlobalSettings(),
+    listStockEntries(),
   ]);
 
   if (!salesRes.success) {
@@ -213,8 +220,12 @@ async function loadData() {
     return;
   }
 
-  allSales = salesRes.data;
-  allInvestors = investorsRes.success ? investorsRes.data : [];
+  const settings = settingsRes.success ? settingsRes.data : {};
+  const investors = investorsRes.success ? investorsRes.data : [];
+  allStockEntries = stockEntriesRes.success ? stockEntriesRes.data : [];
+  globalSettings = settings;
+  allSales = applyPlatformSettingsToSales(salesRes.data, settings, investors, allStockEntries);
+  allInvestors = investors;
   refresh();
 }
 

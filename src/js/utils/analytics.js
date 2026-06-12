@@ -3,6 +3,8 @@ import {
   getStockEntryUnitCost,
   availableQty,
   calculateTicketMedio,
+  recalculateSaleWithPlatformSettings,
+  resolveLineShirtAndPersonalization,
 } from './calculations.js';
 
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -109,30 +111,48 @@ export function aggregateSalesTotals(sales) {
   return aggregateSalesStats((sales || []).filter(isSaleActive));
 }
 
-function extractLinePersonalization(line) {
+/** Aplica taxas atuais do site (Shopify/Yampi/Appmax) ao lucro de cada venda. */
+export function applyPlatformSettingsToSales(sales, settings = {}, investors = [], stockEntries = []) {
+  const investorMap = new Map((investors || []).map((inv) => [inv.id, inv]));
+  const stockEntryMap = new Map(
+    (stockEntries || []).map((entry) => [entry.id, entry])
+  );
+
+  return (sales || []).map((sale) => {
+    if (!isSaleActive(sale)) return sale;
+    const investor = sale.investorId ? investorMap.get(sale.investorId) : null;
+    const stockEntry = sale.stockEntryId ? stockEntryMap.get(sale.stockEntryId) : null;
+    return recalculateSaleWithPlatformSettings(sale, settings, investor, stockEntry);
+  });
+}
+
+function extractLinePersonalization(line, settings = {}) {
   if (!line?.isPersonalized) {
     return { revenue: 0, cost: 0, pieces: 0 };
   }
 
-  const qty = Number(line.quantity) || 0;
-  const persGross = qty * (Number(line.personalizationPerPiece) || 0);
-  const itemsGross = qty * (Number(line.unitPrice) || 0);
-  const lineGross = itemsGross + persGross;
-  const couponPct = Math.min(100, Math.max(0, Number(line.couponPercent) || 0));
-  const lineDiscount = lineGross * (couponPct / 100);
-  const persDiscount = lineGross > 0 ? lineDiscount * (persGross / lineGross) : 0;
-  const revenue = Math.max(0, persGross - persDiscount);
-  const cost = qty * (Number(line.personalizationCostPerPiece) || 0);
+  const defaultPersPrice = Number(settings.defaultPersonalizationPrice) || 50;
+  const defaultPersCost = Number(settings.personalizationCostPerPiece) || 10;
+  const split = resolveLineShirtAndPersonalization(line, defaultPersPrice);
+  const revenue = split.personalizationTotal;
 
-  return { revenue, cost, pieces: qty };
+  let persCostPerPiece = Number(line.personalizationCostPerPiece) || 0;
+  if (persCostPerPiece <= 0 && defaultPersCost > 0) {
+    persCostPerPiece = defaultPersCost;
+  }
+  const cost = split.qty * persCostPerPiece;
+
+  return { revenue, cost, pieces: split.qty };
 }
 
-export function getSalePersonalizationStats(sale) {
+export function getSalePersonalizationStats(sale, settings = {}) {
   const lines = sale?.lines || [];
+  const defaultPersPrice = Number(settings.defaultPersonalizationPrice) || 50;
+  const defaultPersCost = Number(settings.personalizationCostPerPiece) || 10;
 
   if (lines.length) {
     return lines.reduce((acc, line) => {
-      const stats = extractLinePersonalization(line);
+      const stats = extractLinePersonalization(line, settings);
       acc.revenue += stats.revenue;
       acc.cost += stats.cost;
       acc.pieces += stats.pieces;
@@ -140,24 +160,31 @@ export function getSalePersonalizationStats(sale) {
     }, { revenue: 0, cost: 0, pieces: 0 });
   }
 
-  const revenue = Number(sale?.personalizationTotal) || 0;
-  const cost = Number(sale?.personalizationCost) || 0;
+  let revenue = Number(sale?.personalizationTotal) || 0;
+  let cost = Number(sale?.personalizationCost) || 0;
   const hasPersonalization = !!sale?.isPersonalized || revenue > 0 || cost > 0;
   const pieces = hasPersonalization ? (Number(sale?.quantity) || 0) : 0;
+
+  if (hasPersonalization && revenue <= 0 && defaultPersPrice > 0) {
+    revenue = pieces * defaultPersPrice;
+  }
+  if (hasPersonalization && cost <= 0 && defaultPersCost > 0) {
+    cost = pieces * defaultPersCost;
+  }
 
   return { revenue, cost, pieces };
 }
 
-export function saleHasPersonalization(sale) {
-  const stats = getSalePersonalizationStats(sale);
+export function saleHasPersonalization(sale, settings = {}) {
+  const stats = getSalePersonalizationStats(sale, settings);
   return stats.pieces > 0 || stats.revenue > 0 || stats.cost > 0 || !!sale?.isPersonalized;
 }
 
-export function summarizePersonalizationSales(sales) {
+export function summarizePersonalizationSales(sales, settings = {}) {
   return (sales || []).reduce((acc, sale) => {
-    if (!saleHasPersonalization(sale)) return acc;
+    if (!saleHasPersonalization(sale, settings)) return acc;
 
-    const stats = getSalePersonalizationStats(sale);
+    const stats = getSalePersonalizationStats(sale, settings);
     acc.revenue += stats.revenue;
     acc.cost += stats.cost;
     acc.profit += stats.revenue - stats.cost;
@@ -174,9 +201,9 @@ export function summarizePersonalizationSales(sales) {
 }
 
 /** Totais de personalização em vendas ativas de toda a operação. */
-export function aggregatePersonalizationTotals(sales) {
+export function aggregatePersonalizationTotals(sales, settings = {}) {
   const active = (sales || []).filter(isSaleActive);
-  return summarizePersonalizationSales(active);
+  return summarizePersonalizationSales(active, settings);
 }
 
 export function aggregateMonthSales(sales, year, month) {

@@ -16,6 +16,7 @@ import {
 import {
   registerMovement,
   registerStockEntry,
+  updateStockEntryDetails,
   getMovementHistory,
   getLowStockThreshold,
   getLowStockItems,
@@ -28,6 +29,7 @@ import {
   unitCostWithImportTax,
   getStockEntryUnitCost,
   totalQuantity,
+  computeStockEntryFinancials,
   DEFAULT_SALE_PRICE,
 } from '../utils/calculations.js';
 import { validateProduct, validateStockEntry, parseSizesQuickInput } from '../utils/validators.js';
@@ -52,6 +54,8 @@ let movementsLoaded = false;
 let editingId = null;
 let viewingId = null;
 let viewingStockEntryId = null;
+let editingStockEntryId = null;
+let editingEntryQuantity = null;
 let deletingId = null;
 let deletingTarget = null;
 let openedProductFromStock = false;
@@ -163,6 +167,8 @@ function syncStockNameFromProduct() {
 
 function resetStockForm() {
   stockForm?.reset();
+  editingStockEntryId = null;
+  editingEntryQuantity = null;
   qs('#stock-name').value = '';
   qs('#stock-observation').value = '';
   qs('#stock-sizes-quick-input').value = '';
@@ -175,7 +181,21 @@ function resetStockForm() {
   setStockSizeRows([]);
   populateStockProductSelect();
   toggleStockInvestorField();
+  setStockModalMode('create');
   updateStockImportCostPreview();
+}
+
+function setStockModalMode(mode = 'create') {
+  const title = qs('.modal__title', qs('#stock-modal'));
+  const submitBtn = qs('#btn-save-stock');
+  const sizesEditor = qs('#stock-sizes-editor');
+  const productSelect = qs('#stock-product');
+  const isEdit = mode === 'edit';
+
+  if (title) title.textContent = isEdit ? 'Editar estoque' : 'Cadastrar estoque';
+  if (submitBtn) submitBtn.textContent = isEdit ? 'Salvar alterações' : 'Registrar estoque';
+  if (sizesEditor) sizesEditor.hidden = isEdit;
+  if (productSelect) productSelect.disabled = isEdit;
 }
 
 function openStockModal(productId = '') {
@@ -185,6 +205,44 @@ function openStockModal(productId = '') {
     qs('#stock-product').value = productId;
     syncStockNameFromProduct();
   }
+  openModal('stock-modal');
+}
+
+async function openEditStockModal(id) {
+  const result = await getStockEntryById(id);
+  if (!result.success) {
+    showToast(result.error, 'error');
+    return;
+  }
+
+  const entry = result.data;
+  const importPerUnit = Number(entry.importTaxPerUnit)
+    || importTaxPerUnit(Number(entry.importTaxes) || 0, entry.entryQuantity || entry.quantity);
+  const baseCost = entry.baseCostPrice != null
+    ? Number(entry.baseCostPrice)
+    : Math.max(0, getStockEntryUnitCost(entry) - importPerUnit);
+
+  resetStockForm();
+  editingStockEntryId = id;
+  editingEntryQuantity = Number(entry.entryQuantity) || totalQuantity(entry.sizes);
+  setStockModalMode('edit');
+
+  qs('#stock-name').value = entry.name || '';
+  populateStockProductSelect(entry.productId);
+  qs('#stock-stockOrigin').value = entry.stockOrigin || 'proprio';
+  qs('#stock-investorId').value = entry.investorId || '';
+  toggleStockInvestorField();
+  qs('#stock-costPrice').value = baseCost || '';
+  qs('#stock-suggestedSalePrice').value = entry.suggestedSalePrice ?? DEFAULT_SALE_PRICE;
+  qs('#stock-minimumSalePrice').value = entry.minimumSalePrice ?? '';
+  qs('#stock-importTaxes').value = entry.importTaxes ? entry.importTaxes : '';
+  qs('#stock-importTaxesPaidAt').value = entry.importTaxesPaidAt || '';
+  qs('#stock-observation').value = entry.notes || '';
+  setStockSizeRows((entry.sizes || []).map((s) => ({
+    size: s.size,
+    quantity: Number(s.quantity) || 0,
+  })));
+  updateStockImportCostPreview();
   openModal('stock-modal');
 }
 
@@ -231,11 +289,19 @@ function updateStockImportCostPreview() {
 
   const lines = collectStockSizesFromRows().filter((s) => s.size && Number(s.quantity) > 0);
   const { costPrice, importTaxes } = getStockPricingData();
-  const total = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
-  const taxPerUnit = importTaxPerUnit(importTaxes, lines);
-  const finalCost = unitCostWithImportTax(costPrice, importTaxes, lines);
+  const lineTotal = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
+  const total = editingEntryQuantity || lineTotal;
+  const taxPerUnit = importTaxPerUnit(importTaxes, total || lineTotal);
+  const finalCost = unitCostWithImportTax(costPrice, importTaxes, total || lineTotal);
 
-  if (!total) {
+  if (editingStockEntryId) {
+    preview.textContent = total
+      ? `Edição usa ${total} peça(s) na entrada original para diluir imposto → custo final ${formatCurrency(finalCost)}/peça`
+      : 'Informe o imposto para recalcular o custo final por peça.';
+    return;
+  }
+
+  if (!lineTotal) {
     preview.textContent = 'Informe as peças entrando para calcular o custo final por peça deste lote.';
     return;
   }
@@ -246,7 +312,7 @@ function updateStockImportCostPreview() {
   }
 
   preview.textContent =
-    `Imposto por peça: ${formatCurrency(taxPerUnit)} (${formatCurrency(importTaxes)} ÷ ${total} peças) → ` +
+    `Imposto por peça: ${formatCurrency(taxPerUnit)} (${formatCurrency(importTaxes)} ÷ ${lineTotal} peças) → ` +
     `Custo final do lote: ${formatCurrency(finalCost)} por peça`;
 }
 
@@ -263,6 +329,7 @@ async function handleStockSubmit(e) {
     stockOrigin: qs('#stock-stockOrigin')?.value || 'proprio',
     investorId: qs('#stock-investorId')?.value || '',
     lines,
+    entryQuantity: editingEntryQuantity,
     ...pricing,
   });
 
@@ -273,15 +340,21 @@ async function handleStockSubmit(e) {
   const btn = qs('#btn-save-stock');
   setLoading(btn, true);
 
-  const result = await registerStockEntry({
-    productId,
+  const payload = {
     stockEntryName: stockName,
     stockOrigin: qs('#stock-stockOrigin')?.value || 'proprio',
     investorId: qs('#stock-investorId')?.value || '',
-    lines,
     observation: observation || 'Entrada de estoque',
     pricing,
-  });
+  };
+
+  const result = editingStockEntryId
+    ? await updateStockEntryDetails(editingStockEntryId, payload)
+    : await registerStockEntry({
+      productId,
+      lines,
+      ...payload,
+    });
 
   setLoading(btn, false);
 
@@ -290,11 +363,18 @@ async function handleStockSubmit(e) {
     return;
   }
 
-  const pieces = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
-  showToast(`${pieces} peça(s) adicionada(s) ao estoque!`, 'success');
+  if (editingStockEntryId) {
+    showToast('Estoque atualizado!', 'success');
+  } else {
+    const pieces = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
+    showToast(`${pieces} peça(s) adicionada(s) ao estoque!`, 'success');
+  }
+
   closeModal('stock-modal');
   pendingStockProductId = '';
   pendingStockName = '';
+  editingStockEntryId = null;
+  editingEntryQuantity = null;
   await loadStockEntries({ fresh: true });
   if (movementsLoaded) {
     await loadMovements({ fresh: true });
@@ -690,26 +770,25 @@ async function openStockEntryViewModal(id) {
   qs('.modal__title', qs('#view-modal')).textContent = 'Detalhes do estoque';
 
   const sizesText = sortSizes(e.sizes).map((s) => `${s.quantity} ${s.size}`).join(', ') || '—';
-  const unitCost = getStockEntryUnitCost(e);
-  const importTotal = Number(e.importTaxes) || 0;
-  const importPerUnit = Number(e.importTaxPerUnit) || importTaxPerUnit(importTotal, e.entryQuantity || e.quantity);
-  const baseCost = e.baseCostPrice != null ? Number(e.baseCostPrice) : Math.max(0, unitCost - importPerUnit);
-  const entryPieces = Number(e.entryQuantity) || Number(e.quantity) || 0;
+  const fin = computeStockEntryFinancials(e);
 
   const fields = [
     ['Nome do estoque', e.name],
     ['Produto', e.productName],
     ['Tamanhos', sizesText],
     ['Quantidade total', e.quantity ?? 0],
-    ['Custo compra/peça', formatCurrency(baseCost)],
-    ...(importTotal > 0
+    ['Custo compra/peça', formatCurrency(fin.baseCost)],
+    ...(fin.importTotal > 0
       ? [
-        ['Imposto importação (total)', formatCurrency(importTotal)],
-        ['Peças na entrada', entryPieces || '—'],
-        ['Imposto diluído/peça', `${formatCurrency(importPerUnit)} (${formatCurrency(importTotal)} ÷ ${entryPieces} peças)`],
+        ['Imposto importação (total)', formatCurrency(fin.importTotal)],
+        ['Peças na entrada', fin.entryPieces || '—'],
+        ['Imposto diluído/peça', `${formatCurrency(fin.importPerUnit)} (${formatCurrency(fin.importTotal)} ÷ ${fin.entryPieces} peças)`],
       ]
       : []),
-    ['Custo final/peça', formatCurrency(unitCost)],
+    ['Custo final/peça', formatCurrency(fin.unitCost)],
+    ['Valor pago no lote', `${formatCurrency(fin.totalPaid)} (${formatCurrency(fin.baseCost)} × ${fin.entryPieces} peças${fin.importTotal > 0 ? ` + ${formatCurrency(fin.importTotal)} imposto` : ''})`],
+    ['Retorno esperado (restantes)', `${formatCurrency(fin.expectedReturn)} (${formatCurrency(e.suggestedSalePrice)} × ${fin.currentQty} peças)`],
+    ['Lucro esperado (restantes)', formatCurrency(fin.expectedProfit)],
     ['Preço sugerido', formatCurrency(e.suggestedSalePrice)],
     ['Preço mínimo', formatCurrency(e.minimumSalePrice)],
     ['Origem', e.stockOrigin === 'investidor' ? 'Investidor' : 'Próprio'],
@@ -1152,6 +1231,12 @@ function initEvents() {
   });
 
   qs('#btn-edit-from-view')?.addEventListener('click', () => {
+    if (viewingStockEntryId) {
+      const stockId = viewingStockEntryId;
+      closeModal('view-modal');
+      openEditStockModal(stockId);
+      return;
+    }
     if (viewingId) {
       closeModal('view-modal');
       openEditProductTab(viewingId);

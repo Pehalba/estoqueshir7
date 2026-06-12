@@ -123,8 +123,10 @@ export function validateStockEntry(data) {
   }
 
   const cost = Number(data.costPrice);
-  const entryPieces = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
-  const finalUnitCost = cost + importTaxPerUnit(data.importTaxes, lines);
+  const entryPieces = data.entryQuantity != null && data.entryQuantity !== ''
+    ? Number(data.entryQuantity)
+    : lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
+  const finalUnitCost = cost + importTaxPerUnit(data.importTaxes, entryPieces);
   const suggested = Number(data.suggestedSalePrice);
   const minimum = Number(data.minimumSalePrice);
 
@@ -213,8 +215,13 @@ export function validateSale(data, context = {}) {
   const qty = Number(data.quantity);
   if (!qty || qty < 1) {
     errors.push('Quantidade deve ser pelo menos 1.');
-  } else if (stockAvailable != null && qty > stockAvailable) {
-    errors.push(`Estoque disponível insuficiente (${stockAvailable} peça(s)).`);
+  } else {
+    const available = Number(stockAvailable);
+    if (!Number.isFinite(available) || qty > available) {
+      errors.push(
+        `Estoque disponível insuficiente (${Number.isFinite(available) ? available : 0} peça(s)).`
+      );
+    }
   }
 
   const unitPrice = Number(data.unitPrice);
@@ -241,6 +248,11 @@ export function validateSale(data, context = {}) {
 export function validateQuickSale(data, context = {}) {
   const errors = [];
   const { product, lines, financials } = context;
+  const skipMinimumPriceCheck = !!(
+    context.skipMinimumPriceCheck
+    || data.allowBelowMinimum
+    || data.skipMinimumPriceCheck
+  );
 
   if (!isRequired(data.stockEntryId) && !isRequired(data.productId)) {
     errors.push('Selecione o estoque.');
@@ -262,11 +274,18 @@ export function validateQuickSale(data, context = {}) {
       const price = Number(line.unitPrice);
       if (!price || price <= 0) {
         errors.push(`Preço inválido para ${line.size}.`);
-      } else if (product && price < Number(product.minimumSalePrice)) {
+      } else if (
+        !skipMinimumPriceCheck
+        && product
+        && price < Number(product.minimumSalePrice)
+      ) {
         errors.push(`${line.size}: preço abaixo do mínimo (${product.minimumSalePrice}).`);
       }
-      if (line.available != null && qty > line.available) {
-        errors.push(`${line.size}: só há ${line.available} disponível(is).`);
+      const available = Number(line.available);
+      if (!Number.isFinite(available) || qty > available) {
+        errors.push(
+          `${line.size}: só há ${Number.isFinite(available) ? available : 0} disponível(is).`
+        );
       }
       if (seen.has(line.size)) {
         errors.push(`Tamanho ${line.size} duplicado.`);

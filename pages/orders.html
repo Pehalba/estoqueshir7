@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Pedidos — SHIR7</title>
+  <link rel="stylesheet" href="../src/css/main.css">
+</head>
+<body data-page="orders">
+  <div class="app-layout">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar__brand">
+        <img class="sidebar__logo" src="../src/assets/logo-shir7.png" alt="SHIR7" width="36" height="36">
+        <span class="sidebar__brand-name">SHIR7</span>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="dashboard.html" class="sidebar__link" data-nav="dashboard">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>
+          Dashboard
+        </a>
+        <a href="inventory.html" class="sidebar__link" data-nav="inventory">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+          Estoque
+        </a>
+        <a href="sales.html" class="sidebar__link" data-nav="sales">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
+          Vendas
+        </a>
+        <a href="orders.html" class="sidebar__link sidebar__link--active" data-nav="orders">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+          Pedidos
+        </a>
+        <a href="investors.html" class="sidebar__link" data-nav="investors">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          Investidores
+        </a>
+        <a href="profits.html" class="sidebar__link" data-nav="profits">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+          Lucros
+        </a>
+        <a href="reports.html" class="sidebar__link" data-nav="reports">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+          Relatórios
+        </a>
+      </nav>
+    </aside>
+
+    <div id="sidebar-overlay" class="sidebar__overlay"></div>
+
+    <div class="app-layout__main">
+      <header class="header">
+        <div class="header__left">
+          <button type="button" id="menu-btn" class="header__menu-btn" aria-label="Abrir menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <h1 class="header__title">Pedidos</h1>
+        </div>
+        <div class="header__right">
+          <div class="header__user">
+            <span class="header__user-email" id="user-email"></span>
+          </div>
+          <button type="button" id="logout-btn" class="btn btn--ghost btn--sm">Sair</button>
+        </div>
+      </header>
+
+      <main class="app-layout__content orders-page">
+        <div class="page-header">
+          <h2 class="page-header__title">Pedidos da loja</h2>
+          <p class="page-header__subtitle">Envios, rastreio e acesso rápido ao pedido na Shopify</p>
+        </div>
+
+        <div class="orders-kpis grid grid--4">
+          <div class="orders-kpi orders-kpi--filtered">
+            <p class="orders-kpi__label">Na lista</p>
+            <p class="orders-kpi__value" id="stat-filtered">—</p>
+          </div>
+          <div class="orders-kpi orders-kpi--pending">
+            <p class="orders-kpi__label">Não enviados</p>
+            <p class="orders-kpi__value" id="stat-pending">—</p>
+          </div>
+          <div class="orders-kpi orders-kpi--shipped">
+            <p class="orders-kpi__label">Enviados</p>
+            <p class="orders-kpi__value" id="stat-shipped">—</p>
+          </div>
+          <div class="orders-kpi orders-kpi--pers">
+            <p class="orders-kpi__label">Com personalização</p>
+            <p class="orders-kpi__value" id="stat-personalized">—</p>
+          </div>
+        </div>
+
+        <div class="card orders-panel">
+          <div class="orders-panel__section orders-panel__section--search">
+            <div class="orders-search-row">
+              <input type="search" id="orders-search-input" class="form-input orders-search" placeholder="Buscar pedido, produto ou rastreio...">
+              <button
+                type="button"
+                id="btn-orders-sort"
+                class="orders-sort-btn orders-sort-btn--desc"
+                data-sort="desc"
+                aria-label="Ordem decrescente (# maior → menor)"
+                title="Ordem decrescente (# maior → menor)"
+              >
+                <svg class="orders-sort-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
+                  <path d="M12 5v14M12 19l-5-5M12 19l5-5"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="orders-panel__section orders-panel__section--filters">
+            <div class="orders-filter-group">
+              <span class="orders-filter-group__label">Envio</span>
+              <div class="orders-filter-group__pills" role="group" aria-label="Filtrar envio">
+                <button type="button" class="orders-pill orders-pill--active" data-orders-filter="all">Todos</button>
+                <button type="button" class="orders-pill" data-orders-filter="nao_enviado">Pendentes</button>
+                <button type="button" class="orders-pill" data-orders-filter="enviado">Enviados</button>
+              </div>
+            </div>
+            <div class="orders-filter-group">
+              <span class="orders-filter-group__label">Personalização</span>
+              <div class="orders-filter-group__pills" role="group" aria-label="Filtrar personalização">
+                <button type="button" class="orders-pill orders-pill--active" data-orders-pers-filter="all">Todos</button>
+                <button type="button" class="orders-pill" data-orders-pers-filter="personalized">Com pers.</button>
+                <button type="button" class="orders-pill" data-orders-pers-filter="not_personalized">Sem pers.</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <details class="orders-settings card">
+          <summary class="orders-settings__summary">
+            <span>Configuração Shopify</span>
+            <span class="orders-settings__hint text-sm text-muted">Loja: <strong id="shopify-handle-preview">shir7-2</strong></span>
+          </summary>
+          <div class="orders-settings__body">
+            <label class="form-group__label" for="set-shopify-domain">Handle da loja no admin</label>
+            <div class="orders-settings__row">
+              <input class="form-input" type="text" id="set-shopify-domain" placeholder="shir7-2">
+              <button type="button" class="btn btn--secondary btn--sm" id="btn-save-shopify-domain">Salvar</button>
+            </div>
+            <p class="form-group__hint">Ex.: <code>shir7-2</code> ou cole a URL completa de um pedido do admin.</p>
+          </div>
+        </details>
+
+        <div class="orders-bulk-grid grid grid--2">
+          <details class="orders-bulk card">
+            <summary>Vincular links Shopify em lote</summary>
+            <div class="orders-bulk__body">
+              <p class="text-sm text-muted">Um por linha: pedido + URL do admin.</p>
+              <textarea class="form-input orders-bulk__textarea" id="orders-shopify-batch" rows="3" placeholder="#1152: https://admin.shopify.com/store/shir7-2/orders/6545963941948"></textarea>
+              <button type="button" class="btn btn--secondary btn--sm" id="btn-orders-apply-shopify">Vincular links</button>
+            </div>
+          </details>
+          <details class="orders-bulk card">
+            <summary>Colar rastreios em lote</summary>
+            <div class="orders-bulk__body">
+              <p class="text-sm text-muted">Um por linha: pedido + código de rastreio.</p>
+              <textarea class="form-input orders-bulk__textarea" id="orders-tracking-batch" rows="3" placeholder="1163	BR123456789BR"></textarea>
+              <button type="button" class="btn btn--primary btn--sm" id="btn-orders-apply-tracking">Marcar como enviado</button>
+            </div>
+          </details>
+        </div>
+
+        <div class="card orders-panel orders-panel--table">
+          <div class="card__header orders-table-header">
+            <h3 class="card__title">Pedidos</h3>
+            <p id="orders-count" class="orders-table-header__meta text-sm text-muted">Carregando...</p>
+          </div>
+          <div class="card__body orders-table-body">
+            <p class="scroll-hint">Deslize para ver todas as colunas →</p>
+            <div class="table-wrapper table-wrapper--hint">
+              <table class="table orders-table" id="orders-table">
+                <thead>
+                  <tr>
+                    <th>Pedido</th>
+                    <th>Produto</th>
+                    <th>Total</th>
+                    <th>Envio</th>
+                    <th>Rastreio</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="orders-tbody">
+                  <tr><td colspan="6" class="table__empty">Carregando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="order-detail-modal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog modal__dialog--lg">
+      <div class="modal__header">
+        <h3 class="modal__title" id="order-detail-title">Detalhes do pedido</h3>
+        <button type="button" class="modal__close-btn" data-modal-close aria-label="Fechar">&times;</button>
+      </div>
+      <div class="modal__body" id="order-detail-body"></div>
+      <div class="modal__footer order-detail-footer">
+        <a id="order-detail-shopify" class="btn btn--secondary btn--sm" href="#" target="_blank" rel="noopener noreferrer" hidden>
+          Abrir na Shopify
+        </a>
+        <button type="button" class="btn btn--ghost btn--sm" id="order-detail-edit-btn" hidden>Editar pedido</button>
+        <button type="button" class="btn btn--danger btn--sm" id="order-detail-delete-btn" hidden>Excluir pedido</button>
+        <button type="button" class="btn btn--secondary" data-modal-close>Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="order-edit-modal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog modal__dialog--lg">
+      <form id="order-edit-form">
+        <div class="modal__header">
+          <h3 class="modal__title" id="order-edit-title">Editar pedido</h3>
+          <button type="button" class="modal__close-btn" data-modal-close aria-label="Fechar">&times;</button>
+        </div>
+        <div class="modal__body">
+          <p class="order-edit-meta text-sm text-muted" id="order-edit-meta"></p>
+          <div id="order-edit-lines" class="order-edit-lines"></div>
+          <div class="order-edit-preview" id="order-edit-preview"></div>
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="btn-order-edit-save">Salvar alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="order-delete-modal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog">
+      <div class="modal__header">
+        <h3 class="modal__title">Excluir pedido</h3>
+        <button type="button" class="modal__close-btn" data-modal-close aria-label="Fechar">&times;</button>
+      </div>
+      <div class="modal__body">
+        <p>Tem certeza que deseja excluir <strong id="delete-order-label"></strong>?</p>
+        <p id="delete-order-warning" class="text-sm text-muted" hidden></p>
+        <p class="text-sm text-muted">A venda será removida do sistema. Esta ação não pode ser desfeita.</p>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
+        <button type="button" class="btn btn--danger" id="btn-confirm-delete-order">Excluir pedido</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script type="module" src="../src/js/app.js"></script>
+  <script type="module" src="../src/js/pages/orders.js"></script>
+</body>
+</html>

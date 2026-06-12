@@ -1,6 +1,6 @@
-import { listStockEntries } from '../services/stockEntryService.js';
+import { listStockEntries, getStockEntryById } from '../services/stockEntryService.js';
 import { listInvestors } from '../services/investorService.js';
-import { listSales, createQuickSale } from '../services/salesService.js';
+import { listSales, createQuickSale, recalculateAllSalesPlatformFees } from '../services/salesService.js';
 import {
   getGlobalSettings,
   saveGlobalSettings,
@@ -21,6 +21,9 @@ import {
   DEFAULT_SALE_PRICE,
 } from '../utils/calculations.js';
 import { validateQuickSale, parseSizesQuickInput } from '../utils/validators.js';
+import { parseSalesBatchText, validateOrderWithStockEntry, formatCouponUsedLabel, sanitizeCouponTextInLine } from '../utils/saleTextParser.js';
+import { applyPlatformSettingsToSales } from '../utils/analytics.js';
+import { allocateOrdersByPriority, normalizeOrderSize, collectStockAvailabilityErrors } from '../utils/stockAllocation.js';
 import { formatCurrency, formatPercent } from '../utils/formatCurrency.js';
 import {
   qs,
@@ -37,6 +40,7 @@ let allSales = [];
 let globalSettings = { ...DEFAULT_SETTINGS };
 let couponsDraft = [];
 let persTypesDraft = [];
+let pasteStockOverrides = {};
 
 const saleForm = qs('#sale-form');
 const formErrors = qs('#form-errors');
@@ -400,15 +404,135 @@ function showFormErrors(errors) {
   formErrors.classList.add('form-errors--visible');
 }
 
+function getActiveStockEntries() {
+  return allStockEntries.filter((e) => e.status !== 'inativo' && e.status !== 'esgotado');
+}
+
+/** Colagem: inclui lotes esgotados para escolha manual (ex.: Fedex 03 após 100 peças). */
+function getPasteStockEntries() {
+  return allStockEntries.filter((e) => e.status !== 'inativo');
+}
+
+function stockEntryOptionsHtml() {
+  return getActiveStockEntries()
+    .map((e) => `<option value="${e.id}">${e.name} — ${e.productName}</option>`)
+    .join('');
+}
+
 function populateProductSelect() {
   const select = qs('#field-product');
   const current = select.value;
-  select.innerHTML = `<option value="">Selecione o estoque</option>${allStockEntries
-    .filter((e) => e.status !== 'inativo' && e.status !== 'esgotado')
-    .map((e) => `<option value="${e.id}">${e.name} — ${e.productName}</option>`)
-    .join('')}`;
+  select.innerHTML = `<option value="">Selecione o estoque</option>${stockEntryOptionsHtml()}`;
   select.value = current;
   onStockEntryChange();
+}
+
+function getSelectedPasteStockEntry() {
+  return allStockEntries.find((e) => e.id === qs('#field-paste-stock')?.value) || null;
+}
+
+function populatePasteStockSelect() {
+  const select = qs('#field-paste-stock');
+  if (!select) return;
+  const current = select.value;
+  const options = getPasteStockEntries().map((e) => {
+    const statusTag = e.status === 'esgotado' ? ' · esgotado' : '';
+    return `<option value="${e.id}">${e.name} — ${e.productName}${statusTag}</option>`;
+  });
+  select.innerHTML = `<option value="">Selecione para aplicar a todos</option>${options.join('')}`;
+  select.value = current;
+  onPasteStockChange();
+}
+
+function pasteStockOptionsHtml(selectedId = '') {
+  const options = getPasteStockEntries().map((e) => {
+    const statusTag = e.status === 'esgotado' ? ' · esgotado' : '';
+    return `<option value="${e.id}"${e.id === selectedId ? ' selected' : ''}>${e.name} — ${e.productName}${statusTag}</option>`;
+  });
+  return `<option value=""${!selectedId ? ' selected' : ''}>— Escolher estoque —</option>${options.join('')}`;
+}
+
+function applyPasteStockOverrides(batch) {
+  const orders = allocateOrdersByPriority(
+    batch.orders,
+    allStockEntries,
+    pasteStockOverrides
+  );
+
+  return {
+    ...batch,
+    orders,
+    valid: orders.filter((o) => o.valid),
+    invalid: orders.filter((o) => !o.valid),
+  };
+}
+
+function buildPasteStockGroups(orders) {
+  const groups = new Map();
+
+  orders.forEach((order) => {
+    const key = order.stockEntryId || '__none__';
+    if (!groups.has(key)) {
+      groups.set(key, {
+        stockEntryId: order.stockEntryId || '',
+        label: order.stockLabel || 'Sem estoque',
+        count: 0,
+        valid: 0,
+        orderIds: [],
+      });
+    }
+    const group = groups.get(key);
+    group.count += 1;
+    if (order.valid) group.valid += 1;
+    if (order.orderId) group.orderIds.push(order.orderId);
+  });
+
+  return [...groups.values()].sort((a, b) => b.count - a.count);
+}
+
+function renderPasteStockGroups(orders) {
+  const groups = buildPasteStockGroups(orders);
+  if (!groups.length) return '';
+
+  const items = groups.map((group) => {
+    const warn = !group.stockEntryId ? ' sales-paste-preview__group-item--warn' : '';
+    const ordersText = group.orderIds.length
+      ? ` · pedidos ${group.orderIds.slice(0, 8).join(', ')}${group.orderIds.length > 8 ? '…' : ''}`
+      : '';
+    return `
+      <li class="sales-paste-preview__group-item${warn}">
+        <strong>${group.label}</strong>
+        <span>${group.count} pedido(s) · ${group.valid} pronto(s)${ordersText}</span>
+      </li>
+    `;
+  }).join('');
+
+  return `
+    <div class="sales-paste-preview__groups">
+      <p class="sales-paste-preview__groups-title">Organização por estoque (Fedex 03 → 04 → 05 → LZ)</p>
+      <ul class="sales-paste-preview__group-list">${items}</ul>
+    </div>
+  `;
+}
+
+function onPasteStockChange() {
+  const stockEntry = getSelectedPasteStockEntry();
+  const infoEl = qs('#paste-stock-info');
+  if (!infoEl) return;
+
+  if (!stockEntry) {
+    infoEl.textContent = '';
+    return;
+  }
+
+  const unitCost = getStockEntryUnitCost(stockEntry);
+  const origin = stockEntry.stockOrigin === 'investidor'
+    ? `Investidor: ${getInvestorName(stockEntry.investorId)}`
+    : 'Próprio';
+
+  infoEl.innerHTML = `
+    <strong>${origin}</strong> · Custo ${formatCurrency(unitCost)} · Mín. ${formatCurrency(stockEntry.minimumSalePrice)}
+  `;
 }
 
 function onStockEntryChange() {
@@ -450,9 +574,428 @@ function switchTab(tab) {
     btn.classList.toggle('sales-tabs__btn--active', btn.dataset.tab === tab);
   });
   qs('#tab-quick').hidden = tab !== 'quick';
+  qs('#tab-paste').hidden = tab !== 'paste';
   qs('#tab-history').hidden = tab !== 'history';
   qs('#tab-costs').hidden = tab !== 'costs';
   qs('#tab-personalization').hidden = tab !== 'personalization';
+}
+
+function getPasteParserContext() {
+  return {
+    stockEntries: allStockEntries,
+    stockMatchMode: 'defer',
+    coupons: globalSettings.coupons || [],
+    defaultFreight: globalSettings.defaultFreight,
+  };
+}
+
+function getOrderFallbackUnitPrice(order) {
+  if (order.unitPrice > 0) return order.unitPrice;
+  const entry = allStockEntries.find((e) => e.id === order.stockEntryId);
+  return entry?.suggestedSalePrice || DEFAULT_SALE_PRICE;
+}
+
+function buildLinesFromParsedOrder(order, fallbackUnitPrice = getBasePrice()) {
+  const linePrice = order.unitPrice > 0 ? order.unitPrice : fallbackUnitPrice;
+  const priceAlreadyDiscounted = Number(order.discountedPrice) > 0;
+  const defaultPers = Number(globalSettings.defaultPersonalizationPrice) || 50;
+  const coupon = priceAlreadyDiscounted
+    ? { ...order.coupon, couponPercent: 0 }
+    : order.coupon;
+
+  let unitPriceForLine = linePrice;
+  let persDefaults;
+
+  if (order.isPersonalized) {
+    if (priceAlreadyDiscounted) {
+      unitPriceForLine = Math.max(0, linePrice - defaultPers);
+      persDefaults = {
+        ...resolveLinePersonalization(''),
+        personalizationPerPiece: defaultPers,
+      };
+    } else {
+      persDefaults = resolveLinePersonalization('');
+    }
+  } else {
+    persDefaults = {
+      personalizationTypeId: '',
+      personalizationTypeName: '',
+      personalizationPerPiece: 0,
+      personalizationCostPerPiece: 0,
+    };
+  }
+
+  return order.sizes.map((sizeLine) => ({
+    size: sizeLine.size,
+    quantity: sizeLine.quantity,
+    unitPrice: unitPriceForLine,
+    couponId: coupon.couponId,
+    couponName: coupon.couponName,
+    couponPercent: coupon.couponPercent,
+    freight: order.freight,
+    ads: 0,
+    otherCosts: 0,
+    isPersonalized: order.isPersonalized,
+    ...persDefaults,
+  }));
+}
+
+function renderPastePreview(batch) {
+  const el = qs('#sales-paste-preview');
+  if (!el) return;
+
+  if (!batch.orders.length) {
+    el.innerHTML = '<p class="text-muted">Cole os pedidos acima e clique em Pré-visualizar.</p>';
+    return;
+  }
+
+  const rows = batch.orders.map((order, index) => {
+    const sizesText = order.sizes.map((s) => `${s.quantity} ${s.size}`).join(', ') || '—';
+    const status = order.valid
+      ? '<span class="badge badge--success">OK</span>'
+      : `<span class="badge badge--warning">Revisar</span>`;
+    const errors = order.errors.length
+      ? `<p class="sales-paste-preview__error">${order.errors.join(' ')}</p>`
+      : '';
+
+    return `
+      <div class="sales-paste-preview__item ${order.valid ? '' : 'sales-paste-preview__item--error'}">
+        <div class="sales-paste-preview__head">
+          <strong>#${index + 1}</strong> ${status}
+          <span class="sales-paste-preview__order">${order.orderId || 'auto'}</span>
+        </div>
+        ${order.productName ? `<p class="sales-paste-preview__model"><strong>Modelo:</strong> ${order.productName}</p>` : ''}
+        <div class="sales-paste-preview__stock">
+          <label class="form-group__label" for="paste-stock-${index}">Estoque</label>
+          <select class="form-input form-select paste-order-stock" id="paste-stock-${index}" data-order-index="${index}">
+            ${pasteStockOptionsHtml(order.stockEntryId)}
+          </select>
+        </div>
+        ${order.saleDate ? `<p><strong>Data pedido:</strong> ${order.saleDate}</p>` : ''}
+        <p><strong>Peças:</strong> ${sizesText}</p>
+        ${order.allocationHint ? `<p class="text-sm text-muted"><strong>Saldo no lote:</strong> ${order.allocationHint}</p>` : ''}
+        ${order.splitFromQuantity > 1 ? `<p class="text-sm text-muted">Gerado da qtd ${order.splitFromQuantity} na planilha (pedido ${order.splitPart}/${order.splitFromQuantity})</p>` : ''}
+        ${order.unitPrice > 0 ? `<p><strong>Faturamento:</strong> ${formatCurrency(order.unitPrice)}${order.listPrice > order.unitPrice ? ` <span class="text-muted">(lista ${formatCurrency(order.listPrice)})</span>` : ''}</p>` : ''}
+        <p><strong>Pers.:</strong> ${order.isPersonalized ? 'Sim' : 'Não'}
+          · <strong>Cupom:</strong> ${formatCouponUsedLabel(order.coupon)}
+          · <strong>Frete:</strong> ${formatCurrency(order.freight)}</p>
+        <p class="text-sm text-muted">${sanitizeCouponTextInLine(order.raw)}</p>
+        ${errors}
+      </div>
+    `;
+  }).join('');
+
+  el.innerHTML = `
+    <p class="sales-paste-preview__summary">
+      <strong>${batch.valid.length}</strong> pronto(s) ·
+      <strong>${batch.invalid.length}</strong> com aviso ·
+      <strong>${batch.total}</strong> linha(s) ·
+      <strong>${buildPasteStockGroups(batch.orders).filter((g) => g.stockEntryId).length}</strong> estoque(s)
+    </p>
+    ${renderPasteStockGroups(batch.orders)}
+    <div class="sales-paste-preview__list">${rows}</div>
+  `;
+}
+
+function previewPasteOrders() {
+  const text = qs('#sales-paste-input')?.value || '';
+  const batch = applyPasteStockOverrides(parseSalesBatchText(text, getPasteParserContext()));
+  renderPastePreview(batch);
+  return batch;
+}
+
+function onPasteOrderStockChange(index, stockEntryId) {
+  if (stockEntryId) {
+    pasteStockOverrides[index] = stockEntryId;
+  } else {
+    delete pasteStockOverrides[index];
+  }
+  previewPasteOrders();
+}
+
+function applyPasteStockToAll() {
+  const stockEntry = getSelectedPasteStockEntry();
+  if (!stockEntry) {
+    showToast('Selecione um estoque para aplicar a todos.', 'warning');
+    return;
+  }
+
+  const text = qs('#sales-paste-input')?.value || '';
+  const parsed = parseSalesBatchText(text, getPasteParserContext());
+  if (!parsed.orders.length) {
+    showToast('Cole os pedidos antes de aplicar o estoque.', 'warning');
+    return;
+  }
+
+  parsed.orders.forEach((_, index) => {
+    pasteStockOverrides[index] = stockEntry.id;
+  });
+  previewPasteOrders();
+  showToast(`Estoque "${stockEntry.name}" aplicado a ${parsed.orders.length} pedido(s).`, 'success');
+}
+
+function resetPasteStockMatching() {
+  pasteStockOverrides = {};
+  previewPasteOrders();
+  showToast('Realocado na ordem Fedex 03 → 04 → 05 → LZ.', 'success');
+}
+
+function applyFirstPasteOrderToForm() {
+  const batch = previewPasteOrders();
+  const order = batch.valid[0] || batch.orders[0];
+  if (!order) {
+    showToast('Nenhum pedido para aplicar.', 'warning');
+    return;
+  }
+  if (!order.valid) {
+    showToast(order.errors.join(' '), 'error');
+    return;
+  }
+
+  const stockEntry = allStockEntries.find((e) => e.id === order.stockEntryId);
+  if (!stockEntry) {
+    showToast('Selecione o estoque deste pedido na pré-visualização.', 'warning');
+    return;
+  }
+
+  qs('#field-product').value = stockEntry.id;
+  onStockEntryChange();
+  setSaleLines(buildLinesFromParsedOrder(order, getOrderFallbackUnitPrice(order)));
+  switchTab('quick');
+  showToast('Primeiro pedido aplicado no formulário. Revise e confirme.', 'success');
+}
+
+function orderUsesSpreadsheetPrice(order) {
+  return Number(order.discountedPrice) > 0 || Number(order.unitPrice) > 0;
+}
+
+async function refreshStockEntryInCache(stockEntryId) {
+  const result = await getStockEntryById(stockEntryId);
+  if (!result.success) return;
+  const index = allStockEntries.findIndex((entry) => entry.id === stockEntryId);
+  if (index >= 0) {
+    allStockEntries[index] = result.data;
+  }
+}
+
+async function registerParsedOrder(order) {
+  if (!order?.stockEntryId) {
+    return { success: false, error: 'Selecione o estoque para este pedido.' };
+  }
+
+  const entryResult = await getStockEntryById(order.stockEntryId);
+  if (!entryResult.success) {
+    return { success: false, error: entryResult.error || 'Estoque não encontrado.' };
+  }
+  const stockEntry = entryResult.data;
+
+  const stockErrors = collectStockAvailabilityErrors(stockEntry, order.sizes || []);
+  if (stockErrors.length) {
+    return { success: false, error: stockErrors.join(' ') };
+  }
+
+  const lines = buildLinesFromParsedOrder(order, getOrderFallbackUnitPrice(order));
+  const unitCost = getStockEntryUnitCost(stockEntry);
+  const stockLikeProduct = {
+    name: stockEntry.productName,
+    sizes: stockEntry.sizes,
+    minimumSalePrice: stockEntry.minimumSalePrice,
+    stockOrigin: stockEntry.stockOrigin,
+    investorId: stockEntry.investorId,
+  };
+
+  const linesWithStock = lines.map((line) => {
+    const size = normalizeOrderSize(line.size);
+    const sizeEntry = (stockEntry.sizes || []).find(
+      (s) => normalizeOrderSize(s.size) === size
+    );
+    return {
+      ...line,
+      size,
+      available: sizeEntry ? availableQty(sizeEntry) : 0,
+    };
+  });
+
+  const financials = calculateQuickSaleFinancials({
+    lines,
+    unitCost,
+    defaultPersonalizationCostPerPiece: globalSettings.personalizationCostPerPiece,
+    defaultPersonalizationPrice: globalSettings.defaultPersonalizationPrice,
+    platformCosts: getActivePlatformCosts(),
+  });
+
+  const allowBelowMinimum = orderUsesSpreadsheetPrice(order);
+  const validation = validateQuickSale(
+    { stockEntryId: order.stockEntryId, unitCost, lines, allowBelowMinimum },
+    {
+      product: stockLikeProduct,
+      lines: linesWithStock,
+      financials,
+      skipMinimumPriceCheck: allowBelowMinimum,
+    }
+  );
+
+  if (!validation.valid) {
+    return { success: false, error: validation.errors.join(' ') };
+  }
+
+  return createQuickSale({
+    stockEntryId: order.stockEntryId,
+    productId: stockEntry.productId,
+    unitCost,
+    lines,
+    orderId: order.orderId || undefined,
+    allowBelowMinimum,
+    platformCosts: getActivePlatformCosts(),
+    defaultPersonalizationCostPerPiece: globalSettings.personalizationCostPerPiece,
+    defaultPersonalizationPrice: globalSettings.defaultPersonalizationPrice,
+  });
+}
+
+async function registerFirstPasteOrder() {
+  const batch = previewPasteOrders();
+  const order = batch.valid[0];
+  if (!order) {
+    const first = batch.orders[0];
+    showToast(
+      first?.errors?.join(' ') || 'Nenhum pedido válido. Pré-visualize e confira o estoque.',
+      first ? 'error' : 'warning'
+    );
+    return;
+  }
+
+  const btn = qs('#btn-paste-register-one');
+  setLoading(btn, true);
+  const result = await registerParsedOrder(order);
+  setLoading(btn, false);
+
+  if (result.success) {
+    showToast(
+      `Pedido ${order.orderId} cadastrado · faturamento ${formatCurrency(order.unitPrice)}`,
+      'success'
+    );
+    await loadData();
+    previewPasteOrders();
+  } else {
+    showToast(result.error, 'error');
+  }
+}
+
+async function registerAllPasteOrders() {
+  const initial = previewPasteOrders();
+  if (!initial.valid.length) {
+    showToast('Nenhum pedido válido. Ajuste o estoque de cada linha na pré-visualização.', 'warning');
+    return;
+  }
+
+  const btn = qs('#btn-paste-register-all');
+  setLoading(btn, true);
+
+  let ok = 0;
+  const failures = [];
+  const pendingIds = initial.valid.map((order) => order.orderId);
+
+  for (const orderId of pendingIds) {
+    const batch = previewPasteOrders();
+    const order = batch.orders.find((item) => item.orderId === orderId);
+
+    if (!order) {
+      failures.push(`${orderId}: pedido não encontrado na pré-visualização.`);
+      continue;
+    }
+
+    if (!order.valid) {
+      failures.push(`${order.orderId || order.raw}: ${order.errors.join(' ') || 'Sem estoque disponível.'}`);
+      continue;
+    }
+
+    const result = await registerParsedOrder(order);
+    if (result.success) {
+      ok += 1;
+      await refreshStockEntryInCache(order.stockEntryId);
+    } else {
+      failures.push(`${order.orderId || order.raw}: ${result.error}`);
+    }
+  }
+
+  setLoading(btn, false);
+
+  if (ok > 0) {
+    showToast(`${ok} pedido(s) cadastrado(s)!`, 'success');
+    if (!failures.length) {
+      qs('#sales-paste-input').value = '';
+      pasteStockOverrides = {};
+      renderPastePreview({ orders: [], valid: [], invalid: [], total: 0 });
+    }
+    await loadData();
+  }
+
+  if (failures.length) {
+    showToast(
+      `${failures.length} pedido(s) não cadastrado(s). Confira a lista abaixo.`,
+      'error'
+    );
+    renderPasteBatchFailures(failures);
+    previewPasteOrders();
+  }
+}
+
+function renderPasteBatchFailures(failures) {
+  const el = qs('#sales-paste-preview');
+  if (!el || !failures.length) return;
+
+  const items = failures.map((line) => `<li>${line}</li>`).join('');
+  const block = `
+    <div class="sales-paste-preview__failures">
+      <p class="sales-paste-preview__failures-title">Pedidos não cadastrados (${failures.length})</p>
+      <ul class="sales-paste-preview__failures-list">${items}</ul>
+    </div>
+  `;
+
+  if (el.querySelector('.sales-paste-preview__failures')) {
+    el.querySelector('.sales-paste-preview__failures').outerHTML = block;
+  } else {
+    el.insertAdjacentHTML('afterbegin', block);
+  }
+}
+
+function loadPasteTestExample() {
+  const example = '#1163\t28/05/2026\tVermelha\tGG\t1\tCom personalização\tSim (NAZARIO7)\tR$ 279,90\tR$ 260,31';
+  const input = qs('#sales-paste-input');
+  if (!input) return;
+  input.value = example;
+  switchTab('paste');
+  previewPasteOrders();
+  showToast('Exemplo #1163 carregado. Confira a pré-visualização e cadastre.', 'success');
+}
+
+function startPasteVoiceInput() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    showToast('Ditado não disponível neste navegador. Use Chrome ou Edge.', 'warning');
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'pt-BR';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  const textarea = qs('#sales-paste-input');
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript.trim();
+    if (!textarea) return;
+    textarea.value = textarea.value
+      ? `${textarea.value.trim()}\n${transcript}`
+      : transcript;
+    previewPasteOrders();
+  };
+  recognition.onerror = () => {
+    showToast('Não foi possível captar o áudio.', 'error');
+  };
+
+  recognition.start();
+  showToast('Ouvindo… fale o pedido.', 'info');
 }
 
 function updateCostLabels() {
@@ -612,6 +1155,7 @@ function getPreviewData() {
     lines: data.lines,
     unitCost: data.unitCost,
     defaultPersonalizationCostPerPiece: globalSettings.personalizationCostPerPiece,
+    defaultPersonalizationPrice: globalSettings.defaultPersonalizationPrice,
     platformCosts: getActivePlatformCosts(),
   });
 
@@ -743,6 +1287,13 @@ function filterSales() {
   );
 }
 
+function saleUsedCoupon(sale) {
+  if (sale.couponName || sale.couponId || Number(sale.couponPercent) > 0) return true;
+  return (sale.lines || []).some(
+    (line) => line.couponName || line.couponId || Number(line.couponPercent) > 0
+  );
+}
+
 function renderSalesTable() {
   const filtered = filterSales();
   qs('#sales-count').textContent = `${filtered.length} saída(s) recente(s)`;
@@ -760,9 +1311,7 @@ function renderSalesTable() {
         <div class="text-sm text-muted">${formatSaleLinesSummary(s)}</div>
         ${(Number(s.platformCost) || 0) > 0 ? '<span class="badge badge--info">Site</span>' : ''}
         ${(s.isPersonalized || s.lines?.some((l) => l.isPersonalized)) ? '<span class="badge badge--info">Personalizado</span>' : ''}
-        ${[...new Set((s.lines || []).filter((l) => l.couponName).map((l) => l.couponName))]
-          .map((name) => `<span class="badge badge--neutral">${name}</span>`).join('')}
-        ${!s.lines?.length && s.couponName ? `<span class="badge badge--neutral">${s.couponName}</span>` : ''}
+        ${saleUsedCoupon(s) ? '<span class="badge badge--neutral">Cupom</span>' : ''}
       </td>
       <td>${s.quantity}</td>
       <td>${formatCurrency(s.totalRevenue)}</td>
@@ -780,18 +1329,22 @@ async function loadData() {
 
   allStockEntries = stockResult.success ? stockResult.data : [];
   allInvestors = invResult.success ? invResult.data : [];
-  allSales = salesResult.success ? salesResult.data : [];
+  allSales = salesResult.success
+    ? applyPlatformSettingsToSales(salesResult.data, globalSettings, allInvestors)
+    : [];
 
   if (!salesResult.success) {
     showToast(salesResult.error, 'error');
   }
 
   populateProductSelect();
+  populatePasteStockSelect();
   renderSummary();
   renderSalesTable();
   renderPoolPreview();
   updateCostLabels();
 }
+
 
 function handleAddPersType() {
   const name = qs('#new-pers-name').value.trim();
@@ -873,14 +1426,14 @@ async function handleSavePlatformCosts() {
   const btn = qs('#btn-save-platform-costs');
   setLoading(btn, true);
 
+  const platformCosts = collectPlatformCostsFromForm();
   const result = await saveGlobalSettings({
     ...globalSettings,
-    platformCosts: collectPlatformCostsFromForm(),
+    platformCosts,
   });
 
-  setLoading(btn, false);
-
   if (!result.success) {
+    setLoading(btn, false);
     showToast(result.error, 'error');
     return;
   }
@@ -889,7 +1442,22 @@ async function handleSavePlatformCosts() {
   fillPlatformCostsForm();
   renderPlatformFeesPreview();
   updatePreview();
-  showToast('Taxas do site salvas!', 'success');
+
+  const recalc = await recalculateAllSalesPlatformFees(globalSettings);
+  setLoading(btn, false);
+
+  if (!recalc.success) {
+    showToast(`Taxas salvas, mas falha ao recalcular pedidos: ${recalc.error}`, 'warning');
+    return;
+  }
+
+  await loadData();
+  showToast(
+    recalc.data?.updated
+      ? `Taxas salvas! ${recalc.data.updated} pedido(s) recalculado(s).`
+      : 'Taxas salvas!',
+    'success'
+  );
 }
 
 async function handleCostsForm(e) {
@@ -906,16 +1474,30 @@ async function handleCostsForm(e) {
     coupons: couponsDraft,
   });
 
-  setLoading(btn, false);
-
   if (!result.success) {
+    setLoading(btn, false);
     showToast(result.error, 'error');
     return;
   }
 
   globalSettings = result.data;
   fillSettingsForm();
-  showToast('Custos salvos!', 'success');
+
+  const recalc = await recalculateAllSalesPlatformFees(globalSettings);
+  setLoading(btn, false);
+
+  if (!recalc.success) {
+    showToast(`Custos salvos, mas falha ao recalcular pedidos: ${recalc.error}`, 'warning');
+    return;
+  }
+
+  await loadData();
+  showToast(
+    recalc.data?.updated
+      ? `Custos salvos! ${recalc.data.updated} pedido(s) recalculado(s).`
+      : 'Custos salvos!',
+    'success'
+  );
 }
 
 async function handleSaveCoupons() {
@@ -992,6 +1574,7 @@ async function handleSubmit(e) {
     ...data,
     platformCosts: getActivePlatformCosts(),
     defaultPersonalizationCostPerPiece: globalSettings.personalizationCostPerPiece,
+    defaultPersonalizationPrice: globalSettings.defaultPersonalizationPrice,
   });
   setLoading(btn, false);
 
@@ -1028,6 +1611,27 @@ function initEvents() {
 
   qsa('.sales-tabs__btn').forEach((btn) => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  qs('#field-paste-stock')?.addEventListener('change', onPasteStockChange);
+
+  qs('#btn-paste-apply-stock-all')?.addEventListener('click', applyPasteStockToAll);
+  qs('#btn-paste-auto-match')?.addEventListener('click', resetPasteStockMatching);
+
+  qs('#sales-paste-preview')?.addEventListener('change', (event) => {
+    const select = event.target.closest('.paste-order-stock');
+    if (!select) return;
+    onPasteOrderStockChange(Number(select.dataset.orderIndex), select.value);
+  });
+
+  qs('#btn-paste-preview')?.addEventListener('click', previewPasteOrders);
+  qs('#btn-paste-apply-one')?.addEventListener('click', applyFirstPasteOrderToForm);
+  qs('#btn-paste-register-one')?.addEventListener('click', registerFirstPasteOrder);
+  qs('#btn-paste-register-all')?.addEventListener('click', registerAllPasteOrders);
+  qs('#btn-paste-load-example')?.addEventListener('click', loadPasteTestExample);
+  qs('#btn-paste-voice')?.addEventListener('click', startPasteVoiceInput);
+  qs('#sales-paste-input')?.addEventListener('input', () => {
+    if (qs('#sales-paste-preview')?.dataset.live === '1') previewPasteOrders();
   });
 
   qs('#costs-form')?.addEventListener('submit', handleCostsForm);

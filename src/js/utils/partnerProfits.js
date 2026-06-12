@@ -4,7 +4,11 @@ import {
   getSalePersonalizationStats,
   saleHasPersonalization,
 } from './analytics.js';
-import { investorProfitExcludingPersonalization } from './calculations.js';
+import {
+  buildSaleFinancialsFromSale,
+  calculateShir7ShirtShareForInvestor,
+  resolveSaleUnitCost,
+} from './calculations.js';
 
 export const SHIR7_PARTNERS = [
   { id: 'pedro', name: 'Pedro', share: 0.5 },
@@ -14,18 +18,6 @@ export const SHIR7_PARTNERS = [
 /** Parte SHIR7 do lucro em venda de estoque investidor: 60% do lucro (sem personalização). */
 export const SHIR7_INVESTOR_PROFIT_PERCENT = 60;
 
-function getSaleFinancials(sale) {
-  return {
-    itemsSubtotal: Number(sale.itemsSubtotal) || Number(sale.grossRevenue) || 0,
-    personalizationTotal: Number(sale.personalizationTotal) || 0,
-    grossRevenue: Number(sale.grossRevenue) || 0,
-    totalRevenue: Number(sale.totalRevenue) || 0,
-    productCost: Number(sale.productCost) || Number(sale.unitCost) * (Number(sale.quantity) || 0),
-    variableCosts: Number(sale.variableCosts) || 0,
-    netProfit: Number(sale.netProfit) || 0,
-  };
-}
-
 function getInvestorRepasse(sale) {
   const stored = Number(sale.investorPayout);
   if (Number.isFinite(stored) && stored > 0) {
@@ -34,11 +26,13 @@ function getInvestorRepasse(sale) {
   return 0;
 }
 
-function decomposeSaleProfit(sale) {
+function decomposeSaleProfit(sale, settings = {}, investor = null, stockEntry = null) {
   const net = Number(sale.netProfit) || 0;
-  const pers = getSalePersonalizationStats(sale);
+  const pers = getSalePersonalizationStats(sale, settings);
   const persProfit = pers.revenue - pers.cost;
-  const shirtNetProfit = net - persProfit;
+  const financials = buildSaleFinancialsFromSale(sale, settings, stockEntry);
+  const unitCost = resolveSaleUnitCost(sale, stockEntry);
+  const shirtNetProfit = Math.max(0, net - persProfit);
   const payout = sale.stockOrigin === 'investidor' ? getInvestorRepasse(sale) : 0;
   const isInvestor = sale.stockOrigin === 'investidor';
 
@@ -51,7 +45,14 @@ function decomposeSaleProfit(sale) {
     shirtNetProfit,
     shirtRevenue: Math.max(0, (Number(sale.totalRevenue) || 0) - pers.revenue),
     investorRepasse: payout,
-    shir7ShirtFromInvestor: isInvestor ? Math.max(0, shirtNetProfit - payout) : 0,
+    shir7ShirtFromInvestor: isInvestor && investor
+      ? calculateShir7ShirtShareForInvestor(investor, {
+        unitCost,
+        quantity: sale.quantity,
+        financials,
+        persProfit,
+      })
+      : 0,
     shir7ShirtFromProprio: !isInvestor ? shirtNetProfit : 0,
     quantity: Number(sale.quantity) || 0,
   };
@@ -62,9 +63,10 @@ function decomposeSaleProfit(sale) {
  * - Camisas: repasse investidor, parte SHIR7 (investidor) e estoque próprio — sem personalização
  * - Personalização: faturamento e lucro 100% SHIR7 (investidor não participa)
  */
-export function calculatePartnerDistribution(sales, investors = [], filters = {}) {
+export function calculatePartnerDistribution(sales, investors = [], filters = {}, settings = {}, stockEntries = []) {
   const filtered = filterSalesByPeriod(sales, filters).filter(isSaleActive);
   const investorMap = new Map(investors.map((i) => [i.id, i]));
+  const stockEntryMap = new Map((stockEntries || []).map((entry) => [entry.id, entry]));
   const byInvestor = new Map();
 
   let totalNetProfit = 0;
@@ -84,7 +86,9 @@ export function calculatePartnerDistribution(sales, investors = [], filters = {}
   let persOrderCount = 0;
 
   for (const sale of filtered) {
-    const split = decomposeSaleProfit(sale);
+    const investor = sale.investorId ? investorMap.get(sale.investorId) : null;
+    const stockEntry = sale.stockEntryId ? stockEntryMap.get(sale.stockEntryId) : null;
+    const split = decomposeSaleProfit(sale, settings, investor, stockEntry);
     totalNetProfit += Number(sale.netProfit) || 0;
     shirtNetProfitTotal += split.shirtNetProfit;
     shirtPieces += split.quantity;
@@ -113,14 +117,13 @@ export function calculatePartnerDistribution(sales, investors = [], filters = {}
         profitBase: 0,
       };
 
-      const financials = getSaleFinancials(sale);
       prev.repasse += split.investorRepasse;
       prev.shir7Share += split.shir7ShirtFromInvestor;
       prev.netProfit += split.shirtNetProfit;
       prev.shirtNetProfit += split.shirtNetProfit;
       prev.sales += 1;
       prev.pieces += split.quantity;
-      prev.profitBase += investorProfitExcludingPersonalization(financials);
+      prev.profitBase += split.shirtNetProfit;
       byInvestor.set(invId, prev);
     } else {
       proprioSalesCount += 1;

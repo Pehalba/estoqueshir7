@@ -26,6 +26,10 @@
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
           Vendas
         </a>
+        <a href="orders.html" class="sidebar__link" data-nav="orders">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+          Pedidos
+        </a>
         <a href="investors.html" class="sidebar__link" data-nav="investors">
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
           Investidores
@@ -67,6 +71,7 @@
 
         <nav class="sales-tabs">
           <button type="button" class="sales-tabs__btn sales-tabs__btn--active" data-tab="quick">Saída rápida</button>
+          <button type="button" class="sales-tabs__btn" data-tab="paste">Colar pedidos</button>
           <button type="button" class="sales-tabs__btn" data-tab="history">Saídas recentes</button>
           <button type="button" class="sales-tabs__btn" data-tab="costs">Cupons &amp; Custos</button>
           <button type="button" class="sales-tabs__btn" data-tab="personalization">Custos de Personalização</button>
@@ -148,6 +153,56 @@
 
                 <button type="submit" class="btn btn--primary btn--block btn--lg" id="btn-save-sale">Confirmar saída</button>
               </form>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-paste" class="sales-tab-panel" hidden>
+          <div class="card sales-paste-card">
+            <div class="card__header">
+              <h3 class="card__title">Cadastro rápido por texto</h3>
+            </div>
+            <div class="card__body">
+              <p class="sales-paste__intro">
+                Cole os pedidos da planilha. A baixa segue automaticamente a ordem
+                <strong>Fedex 03 → Fedex 04 → Fedex 05 → LZ</strong> (quando um lote acaba o tamanho, usa o próximo).
+                Confira o resumo e cadastre todos.
+              </p>
+              <div class="form-group sales-paste__bulk-stock">
+                <label class="form-group__label" for="field-paste-stock">Estoque em lote (opcional)</label>
+                <div class="sales-paste__bulk-stock-row">
+                  <select class="form-input form-select" id="field-paste-stock">
+                    <option value="">Selecione para aplicar a todos</option>
+                  </select>
+                  <button type="button" class="btn btn--secondary btn--sm" id="btn-paste-apply-stock-all">Aplicar a todos</button>
+                  <button type="button" class="btn btn--ghost btn--sm" id="btn-paste-auto-match">Realocar Fedex 03→LZ</button>
+                </div>
+                <p id="paste-stock-info" class="sales-product-info"></p>
+              </div>
+              <div class="form-group">
+                <label class="form-group__label" for="sales-paste-input">Pedidos (um por linha)</label>
+                <textarea class="form-input sales-paste__textarea" id="sales-paste-input" rows="8" placeholder="Pedido	Data	Modelo	Tamanho	Qtd	Personalização	Cupom?	Valor do produto	Valor com desconto
+#1163	28/05/2026	Vermelha	GG	1	Com personalização	Sim	R$ 279,90	R$ 260,31"></textarea>
+                <p class="form-group__hint">
+                  <strong>Planilha (tab):</strong> Pedido · Data · Modelo · Tamanho · Qtd · Personalização · Cupom? · Valor · Valor c/ desconto<br>
+                  Ex.: <code>#1163	28/05/2026	Vermelha	GG	1	Com personalização	Sim	R$ 279,90	R$ 260,31</code><br>
+                  Na coluna <strong>Cupom?</strong> use <strong>Sim</strong> ou <strong>Não</strong> (códigos como <code>Sim (NAZARIO7)</code> também são aceitos na colagem, mas não aparecem na prévia).
+                  A linha de cabeçalho pode ser colada — ela é ignorada.
+                  O faturamento usa sempre a coluna <strong>Valor com desconto</strong> (última coluna de valor).
+                  Se a <strong>Qtd</strong> for maior que 1 no mesmo tamanho, o sistema gera pedidos separados
+                  (ex.: qtd 2 → <code>#1275</code> e <code>#1275-2</code>, cada um com 1 peça).
+                  A baixa segue Fedex 03 → 04 → 05 → LZ conforme o estoque disponível.
+                </p>
+              </div>
+              <div class="sales-paste__actions">
+                <button type="button" class="btn btn--secondary btn--sm" id="btn-paste-load-example">Exemplo #1163</button>
+                <button type="button" class="btn btn--secondary btn--sm" id="btn-paste-voice" title="Ditado por voz (Chrome/Edge)">🎤 Ditado</button>
+                <button type="button" class="btn btn--secondary" id="btn-paste-preview">Pré-visualizar</button>
+                <button type="button" class="btn btn--primary" id="btn-paste-register-one">Cadastrar 1º pedido</button>
+                <button type="button" class="btn btn--ghost" id="btn-paste-apply-one">Aplicar 1º no formulário</button>
+                <button type="button" class="btn btn--primary" id="btn-paste-register-all">Cadastrar todos</button>
+              </div>
+              <div id="sales-paste-preview" class="sales-paste-preview"></div>
             </div>
           </div>
         </section>

@@ -33,6 +33,8 @@ export const DEFAULT_SETTINGS = {
   lowStockThreshold: 5,
   minMarginPercent: 10,
   defaultFees: 0,
+  /** Handle da loja no admin Shopify (ex.: shir7-2) */
+  shopifyStoreDomain: 'shir7-2',
 };
 
 function normalizePersonalizationTypes(types) {
@@ -97,6 +99,8 @@ export function normalizeSettings(data = {}) {
       ? Number(data.minMarginPercent)
       : DEFAULT_SETTINGS.minMarginPercent,
     defaultFees: Number(data.defaultFees) || 0,
+    shopifyStoreDomain: String(data.shopifyStoreDomain || '').trim()
+      || DEFAULT_SETTINGS.shopifyStoreDomain,
   };
 }
 

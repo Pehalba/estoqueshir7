@@ -56,6 +56,38 @@ export function getStockEntryUnitCost(entry) {
   return baseUnit + importTaxPerUnit(importTaxes, entryPieces);
 }
 
+/** Custo unitário da peça para repasse/capital (mercadoria + imposto diluído). */
+export function resolveSaleUnitCost(sale, stockEntry = null) {
+  if (stockEntry) {
+    return getStockEntryUnitCost(stockEntry);
+  }
+
+  const base = Number(sale?.baseCostPrice);
+  const importPer = Number(sale?.importTaxPerUnit);
+  if (Number.isFinite(base) && importPer > 0) {
+    return base + importPer;
+  }
+
+  return Number(sale?.unitCost) || 0;
+}
+
+export function getStockEntryCostBreakdown(entry) {
+  if (!entry) {
+    return { baseUnit: 0, importPerUnit: 0, unitCost: 0 };
+  }
+
+  const unitCost = getStockEntryUnitCost(entry);
+  const entryPieces = Number(entry.entryQuantity) || totalQuantity(entry.sizes);
+  const importPerUnit = entry.importTaxPerUnit != null
+    ? Number(entry.importTaxPerUnit) || 0
+    : importTaxPerUnit(Number(entry.importTaxes) || 0, entryPieces);
+  const baseUnit = entry.baseCostPrice != null
+    ? Number(entry.baseCostPrice) || 0
+    : Math.max(0, unitCost - importPerUnit);
+
+  return { baseUnit, importPerUnit, unitCost };
+}
+
 export function totalReserved(sizes) {
   return (sizes || []).reduce((sum, s) => sum + (Number(s.reserved) || 0), 0);
 }
@@ -129,9 +161,46 @@ export const DEFAULT_REPASSE_VALUE = 40;
 export const DEFAULT_SALE_PRICE = 229.9;
 
 /**
+ * Separa receita de camisa e personalização por linha.
+ * Cupom/desconto incide só na camisa; personalização mantém valor cheio.
+ * Preço embutido (pers. R$ 0 na linha): unitPrice = total pago; pers. = defaultPersonalizationPrice.
+ */
+export function resolveLineShirtAndPersonalization(line, defaultPersonalizationPrice = 50) {
+  const qty = Number(line.quantity) || 0;
+  const unitPrice = Number(line.unitPrice) || 0;
+  const defaultPersPrice = Math.max(0, Number(defaultPersonalizationPrice) || 0);
+
+  if (!line.isPersonalized) {
+    const itemsSubtotal = qty * unitPrice;
+    return {
+      qty,
+      shirtUnitPrice: unitPrice,
+      persPerPiece: 0,
+      itemsSubtotal,
+      personalizationTotal: 0,
+    };
+  }
+
+  let persPerPiece = Number(line.personalizationPerPiece) || 0;
+  let shirtUnitPrice = unitPrice;
+
+  if (persPerPiece <= 0 && defaultPersPrice > 0) {
+    persPerPiece = defaultPersPrice;
+    shirtUnitPrice = Math.max(0, unitPrice - persPerPiece);
+  }
+
+  return {
+    qty,
+    shirtUnitPrice,
+    persPerPiece,
+    itemsSubtotal: qty * shirtUnitPrice,
+    personalizationTotal: qty * persPerPiece,
+  };
+}
+
+/**
  * REGRA SHIR7: lucro de personalização é 100% da loja — não entra no repasse do investidor.
- * O desconto de cupom e os custos variáveis são rateados proporcionalmente entre
- * venda de peças e personalização.
+ * Custos variáveis (frete, taxas, ADS) são rateados proporcionalmente entre camisa e personalização.
  */
 export function investorProfitExcludingPersonalization(financials) {
   const {
@@ -165,6 +234,22 @@ export function investorProfitExcludingPersonalization(financials) {
   return Math.max(0, itemNetProfit);
 }
 
+/**
+ * Lucro líquido da camisa para repasse: lucro líquido total − lucro da personalização.
+ * Frete, taxas e demais custos já estão no netProfit.
+ */
+export function resolveShirtNetProfitForRepasse(financials, persProfit = null) {
+  const net = Number(financials?.netProfit) || 0;
+  const pers = persProfit != null
+    ? Number(persProfit) || 0
+    : Math.max(
+      0,
+      (Number(financials?.personalizationTotal) || 0)
+        - (Number(financials?.personalizationCostTotal) || 0)
+    );
+  return Math.max(0, net - pers);
+}
+
 export function investorRevenueExcludingPersonalization(financials) {
   const {
     itemsSubtotal = 0,
@@ -183,8 +268,8 @@ export function investorRevenueExcludingPersonalization(financials) {
 /**
  * Repasse ao investidor com regra de personalização aplicada (vendas rápidas).
  */
-export function calculateInvestorRepasseForSale(investor, { unitCost, quantity, financials }) {
-  const profitBase = investorProfitExcludingPersonalization(financials);
+export function calculateInvestorRepasseForSale(investor, { unitCost, quantity, financials, persProfit }) {
+  const profitBase = resolveShirtNetProfitForRepasse(financials, persProfit);
   const revenueBase = investorRevenueExcludingPersonalization(financials);
 
   return calculateInvestorRepasse(investor, {
@@ -193,6 +278,59 @@ export function calculateInvestorRepasseForSale(investor, { unitCost, quantity, 
     netProfit: profitBase,
     grossRevenue: revenueBase,
   });
+}
+
+/** Monta financials completos a partir de uma venda (linhas + taxas atuais). */
+export function buildSaleFinancialsFromSale(sale, settings = {}, stockEntry = null) {
+  const defaultPersCost = Number(settings.personalizationCostPerPiece) || 10;
+  const defaultPersPrice = Number(settings.defaultPersonalizationPrice) || 50;
+  const unitCost = resolveSaleUnitCost(sale, stockEntry);
+  const lines = getSaleLinesForFinancials(sale);
+
+  const computed = calculateQuickSaleFinancials({
+    lines,
+    unitCost,
+    defaultPersonalizationCostPerPiece: defaultPersCost,
+    defaultPersonalizationPrice: defaultPersPrice,
+    platformCosts: settings.platformCosts || [],
+  });
+
+  return {
+    ...computed,
+    unitCost,
+    netProfit: Number(sale?.netProfit) ?? computed.netProfit,
+    platformCost: Number(sale?.platformCost) ?? computed.platformCost,
+    variableCosts: Number(sale?.variableCosts) ?? computed.variableCosts,
+  };
+}
+
+/**
+ * Parte SHIR7 no lucro da camisa (estoque investidor).
+ * capital_mais_lucro: 60% do lucro sem personalização (espelha o 40% do investidor).
+ */
+export function calculateShir7ShirtShareForInvestor(investor, { unitCost, quantity, financials, persProfit }) {
+  const profitBase = resolveShirtNetProfitForRepasse(financials, persProfit);
+  const qty = Number(quantity) || 0;
+  const cost = Number(unitCost) || 0;
+  const rawPct = Number(investor?.repasseValue);
+  const pct = Number.isFinite(rawPct) ? rawPct : DEFAULT_REPASSE_VALUE;
+
+  if (investor?.repasseType === 'capital_mais_lucro' || investor?.repasseType === 'percent_lucro') {
+    return Math.max(0, profitBase * (1 - pct / 100));
+  }
+
+  const payout = calculateInvestorRepasseForSale(investor, {
+    unitCost: cost,
+    quantity: qty,
+    financials,
+    persProfit,
+  });
+  const capital = cost * qty;
+  const investorProfitShare = investor?.repasseType === 'percent_faturamento'
+    ? payout
+    : Math.max(0, payout - capital);
+
+  return Math.max(0, profitBase - investorProfitShare);
 }
 
 /**
@@ -341,9 +479,11 @@ export function calculateQuickSaleFinancials({
   lines,
   unitCost,
   defaultPersonalizationCostPerPiece = 0,
+  defaultPersonalizationPrice = 50,
   platformCosts = [],
 }) {
   const defaultPersCost = Number(defaultPersonalizationCostPerPiece) || 0;
+  const defaultPersPrice = Number(defaultPersonalizationPrice) || 50;
   const safeLines = (lines || []).map((l) => ({
     quantity: Number(l.quantity) || 0,
     unitPrice: Number(l.unitPrice) || 0,
@@ -359,12 +499,18 @@ export function calculateQuickSaleFinancials({
   }));
 
   const lineTotals = safeLines.map((l) => {
-    const itemsSubtotal = l.quantity * l.unitPrice;
-    const personalization = l.isPersonalized ? l.quantity * l.personalizationPerPiece : 0;
-    const lineGross = itemsSubtotal + personalization;
-    const lineDiscount = lineGross * (l.couponPercent / 100);
-    const lineRevenue = Math.max(0, lineGross - lineDiscount);
-    return { itemsSubtotal, personalization, lineGross, lineDiscount, lineRevenue };
+    const split = resolveLineShirtAndPersonalization(l, defaultPersPrice);
+    const lineDiscount = split.itemsSubtotal * (l.couponPercent / 100);
+    const itemRevenue = Math.max(0, split.itemsSubtotal - lineDiscount);
+    const lineRevenue = itemRevenue + split.personalizationTotal;
+    const lineGross = split.itemsSubtotal + split.personalizationTotal;
+    return {
+      itemsSubtotal: split.itemsSubtotal,
+      personalization: split.personalizationTotal,
+      lineGross,
+      lineDiscount,
+      lineRevenue,
+    };
   });
 
   const totalQty = totalSaleLinesQuantity(safeLines);
@@ -435,6 +581,34 @@ export function piecesSoldInCurrentMonth(sales, extraQty = 0) {
   return monthPieces + (Number(extraQty) || 0);
 }
 
+export function computeStockEntryFinancials(entry) {
+  const currentQty = Number(entry?.quantity) || totalQuantity(entry?.sizes);
+  const entryPieces = Number(entry?.entryQuantity) || currentQty;
+  const unitCost = getStockEntryUnitCost(entry);
+  const importTotal = Number(entry?.importTaxes) || 0;
+  const importPerUnit = Number(entry?.importTaxPerUnit)
+    || importTaxPerUnit(importTotal, entryPieces);
+  const baseCost = entry?.baseCostPrice != null
+    ? Number(entry.baseCostPrice)
+    : Math.max(0, unitCost - importPerUnit);
+  const suggested = Number(entry?.suggestedSalePrice) || 0;
+  const totalPaid = (baseCost * entryPieces) + importTotal;
+  const expectedReturn = suggested * currentQty;
+  const expectedProfit = expectedReturn - (unitCost * currentQty);
+
+  return {
+    entryPieces,
+    currentQty,
+    baseCost,
+    unitCost,
+    importTotal,
+    importPerUnit,
+    totalPaid,
+    expectedReturn,
+    expectedProfit,
+  };
+}
+
 export function formatSaleLinesSummary(sale) {
   if (sale?.lines?.length) {
     return sale.lines.map((l) => `${l.quantity} ${l.size}`).join(', ');
@@ -450,6 +624,77 @@ export function calculateTicketMedio(sales) {
   if (!completed.length) return 0;
   const total = completed.reduce((sum, s) => sum + (Number(s.totalRevenue) || 0), 0);
   return total / completed.length;
+}
+
+function getSaleLinesForFinancials(sale) {
+  if (sale?.lines?.length) {
+    return sale.lines.map((line) => ({ ...line }));
+  }
+
+  return [{
+    size: sale.size || '',
+    quantity: Number(sale.quantity) || 1,
+    unitPrice: Number(sale.unitPrice) || 0,
+    freight: Number(sale.freight) || 0,
+    ads: Number(sale.adsCost ?? sale.poolCost) || 0,
+    otherCosts: Number(sale.fees) || 0,
+    couponId: sale.couponId || '',
+    couponName: sale.couponName || '',
+    couponPercent: Number(sale.couponPercent) || 0,
+    isPersonalized: !!sale.isPersonalized,
+    personalizationPerPiece: Number(sale.personalizationPerPiece) || 0,
+    personalizationCostPerPiece: Number(sale.personalizationCost) || 0,
+  }];
+}
+
+/** Recalcula lucro da venda com as taxas atuais (Shopify, Yampi, Appmax). */
+export function recalculateSaleWithPlatformSettings(sale, settings = {}, investor = null, stockEntry = null) {
+  if (!sale || sale.status === 'cancelada') return sale;
+
+  const platformCosts = settings.platformCosts || [];
+  const defaultPersCost = Number(settings.personalizationCostPerPiece) || 10;
+  const defaultPersPrice = Number(settings.defaultPersonalizationPrice) || 50;
+  const unitCost = resolveSaleUnitCost(sale, stockEntry);
+  const lines = getSaleLinesForFinancials(sale);
+
+  const financials = calculateQuickSaleFinancials({
+    lines,
+    unitCost,
+    defaultPersonalizationCostPerPiece: defaultPersCost,
+    defaultPersonalizationPrice: defaultPersPrice,
+    platformCosts,
+  });
+
+  const platformFees = calculatePlatformFeesBreakdown(
+    platformCosts,
+    financials.totalRevenue
+  );
+
+  let investorPayout = Number(sale.investorPayout) || 0;
+  if (sale.stockOrigin === 'investidor' && investor) {
+    investorPayout = calculateInvestorRepasseForSale(investor, {
+      unitCost,
+      quantity: financials.totalQty,
+      financials,
+    });
+  }
+
+  return {
+    ...sale,
+    unitCost,
+    itemsSubtotal: financials.itemsSubtotal,
+    personalizationTotal: financials.personalizationTotal,
+    grossRevenue: financials.grossRevenue,
+    totalRevenue: financials.totalRevenue,
+    discount: financials.discount,
+    grossProfit: financials.grossProfit,
+    netProfit: financials.netProfit,
+    margin: financials.margin,
+    platformCost: financials.platformCost,
+    platformFees,
+    variableCosts: financials.variableCosts,
+    investorPayout,
+  };
 }
 
 /** Totais de vendas já realizadas por investidor. */

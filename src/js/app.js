@@ -7,6 +7,7 @@ const PROTECTED_PAGES = [
   'dashboard.html',
   'inventory.html',
   'sales.html',
+  'orders.html',
   'investors.html',
   'profits.html',
   'reports.html',
