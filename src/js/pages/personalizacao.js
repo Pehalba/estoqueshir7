@@ -131,7 +131,6 @@ function renderCard(item) {
     <article class="pers-card${done ? ' pers-card--done' : ''}${placeholderClass}" data-id="${escapeHtml(key)}">
       <header class="pers-card__head${accentClass}">
         <span class="pers-card__order">${escapeHtml(item.orderId)}</span>
-        <span class="pers-card__size">${escapeHtml(item.sizeLabel)}</span>
       </header>
 
       <div class="pers-card__main">
@@ -142,6 +141,7 @@ function renderCard(item) {
             alt=""
             loading="lazy"
           >
+          <span class="pers-card__size">${escapeHtml(item.sizeLabel)}</span>
         </div>
         <div class="pers-card__pers">
           ${item.placeholder ? '<span class="pers-card__badge">Aguardando pedido</span>' : ''}
