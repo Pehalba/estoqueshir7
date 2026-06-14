@@ -3,11 +3,12 @@ import { PRODUCTS, ALL_ITEMS } from '../../data/personalization-alba-fedex-03.js
 const SIZE_ORDER = ['P', 'M', 'G', 'GG', 'XG'];
 const STORAGE_KEY = 'shir7-pers-done';
 const PRODUCT_FILTERS = [
+  { id: 'all', label: 'Todos' },
   { id: 'br-tor-vermelha', label: 'Vermelha', tone: 'vermelha' },
   { id: 'br-home-amarela', label: 'Amarela', tone: 'amarela' },
 ];
 
-let activeProduct = 'br-tor-vermelha';
+let activeProduct = 'all';
 let activeSize = 'all';
 let activeStatus = 'pending';
 let searchQuery = '';
@@ -54,6 +55,7 @@ function displayNumber(number) {
 }
 
 function getVisibleItems() {
+  if (activeProduct === 'all') return ALL_ITEMS;
   return ALL_ITEMS.filter((i) => i.productId === activeProduct);
 }
 
@@ -171,7 +173,7 @@ function renderProductFilters() {
 
   document.getElementById('pers-product-filters')?.querySelectorAll('[data-product]').forEach((el) => {
     el.addEventListener('click', () => {
-      activeProduct = el.dataset.product || 'br-tor-vermelha';
+      activeProduct = el.dataset.product || 'all';
       activeSize = 'all';
       updateSubtitle();
       renderProductFilters();
@@ -234,6 +236,11 @@ function renderSizeFilters() {
 function updateSubtitle() {
   const subtitle = document.getElementById('pers-lot-title');
   if (!subtitle) return;
+
+  if (activeProduct === 'all') {
+    subtitle.textContent = `${ALL_ITEMS.length} peças · todas as cores`;
+    return;
+  }
 
   const product = PRODUCTS[activeProduct];
   const count = ALL_ITEMS.filter((i) => i.productId === activeProduct).length;
