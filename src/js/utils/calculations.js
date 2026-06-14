@@ -1,3 +1,7 @@
+import { sortSizes } from './sizes.js';
+
+export const MAX_STOCK_ENTRY_PIECES = 100;
+
 export function totalQuantity(sizes) {
   return (sizes || []).reduce((sum, s) => sum + (Number(s.quantity) || 0), 0);
 }
@@ -12,80 +16,115 @@ function resolvePieceCount(sizesOrQty) {
 
 /** Imposto de importação por peça = total de impostos ÷ quantidade de camisetas do lote */
 export function importTaxPerUnit(importTaxes, sizesOrQty) {
-  const total = resolvePieceCount(sizesOrQty);
-  const taxes = Number(importTaxes) || 0;
-  if (!total || taxes <= 0) return 0;
-  return taxes / total;
+  return diluteLotCostPerUnit(importTaxes, sizesOrQty);
 }
 
-/** Custo final por peça = custo unitário + imposto diluído por peça */
+/** Dilui custo total do lote (imposto, frete internacional, etc.) por peça. */
+export function diluteLotCostPerUnit(totalAmount, sizesOrQty) {
+  const total = resolvePieceCount(sizesOrQty);
+  const amount = Number(totalAmount) || 0;
+  if (!total || amount <= 0) return 0;
+  return amount / total;
+}
+
+/** Custo final por peça = compra + imposto + frete internacional diluídos. */
+export function unitCostWithLotDeductions(baseCost, importTaxes, importFreight, sizesOrQty) {
+  const base = Number(baseCost) || 0;
+  return base
+    + diluteLotCostPerUnit(importTaxes, sizesOrQty)
+    + diluteLotCostPerUnit(importFreight, sizesOrQty);
+}
+
+/** @deprecated Use unitCostWithLotDeductions */
 export function unitCostWithImportTax(costPrice, importTaxes, sizesOrQty) {
-  return (Number(costPrice) || 0) + importTaxPerUnit(importTaxes, sizesOrQty);
+  return unitCostWithLotDeductions(costPrice, importTaxes, 0, sizesOrQty);
 }
 
 /**
- * Custo unitário de um lote de estoque.
- * O imposto de importação é diluído na quantidade de peças na entrada e congelado por peça.
+ * Custo da mercadoria por peça (não inclui imposto/frete internacional — estes são custo operacional).
  */
 export function getStockEntryUnitCost(entry) {
-  if (!entry) return 0;
-
-  const finalCost = Number(entry.costPrice) || 0;
-  const frozenImportPerUnit = entry.importTaxPerUnit != null
-    ? Number(entry.importTaxPerUnit)
-    : null;
-  const baseCost = entry.baseCostPrice != null
-    ? Number(entry.baseCostPrice)
-    : null;
-  const importTaxes = Number(entry.importTaxes) || 0;
-
-  if (frozenImportPerUnit != null && !Number.isNaN(frozenImportPerUnit)) {
-    const base = baseCost != null && !Number.isNaN(baseCost)
-      ? baseCost
-      : Math.max(0, finalCost - frozenImportPerUnit);
-    return Math.max(0, base + frozenImportPerUnit);
-  }
-
-  if (importTaxes <= 0) {
-    return finalCost;
-  }
-
-  const entryPieces = Number(entry.entryQuantity) || resolvePieceCount(entry.sizes);
-  const baseUnit = baseCost != null && !Number.isNaN(baseCost) ? baseCost : finalCost;
-  if (!entryPieces) return baseUnit;
-  return baseUnit + importTaxPerUnit(importTaxes, entryPieces);
+  return getStockEntryCostBreakdown(entry).baseUnit;
 }
 
-/** Custo unitário da peça para repasse/capital (mercadoria + imposto diluído). */
+/** Capital do investidor por peça = custo de compra da mercadoria. */
+export function getStockEntryInvestorCapitalUnit(entry) {
+  return getStockEntryCostBreakdown(entry).investorCapitalUnit;
+}
+
+/** Custo da mercadoria na venda (sem imposto/frete internacional). */
 export function resolveSaleUnitCost(sale, stockEntry = null) {
   if (stockEntry) {
     return getStockEntryUnitCost(stockEntry);
   }
 
   const base = Number(sale?.baseCostPrice);
-  const importPer = Number(sale?.importTaxPerUnit);
-  if (Number.isFinite(base) && importPer > 0) {
-    return base + importPer;
+  if (Number.isFinite(base) && base >= 0) {
+    return base;
   }
 
-  return Number(sale?.unitCost) || 0;
+  const unit = Number(sale?.unitCost) || 0;
+  return Math.max(0, unit - resolveSaleLotOperationalCostPerUnit(sale));
+}
+
+export function resolveSaleLotImportCostPerUnit(sale, stockEntry = null) {
+  if (stockEntry) {
+    return getStockEntryCostBreakdown(stockEntry).importPerUnit;
+  }
+  return Number(sale?.importTaxPerUnit) || 0;
+}
+
+export function resolveSaleLotFreightCostPerUnit(sale, stockEntry = null) {
+  if (stockEntry) {
+    return getStockEntryCostBreakdown(stockEntry).freightPerUnit;
+  }
+  return Number(sale?.importFreightPerUnit) || 0;
+}
+
+/** Imposto + frete internacional diluídos por peça (custo operacional, como taxas Yampi/Appmax). */
+export function resolveSaleLotOperationalCostPerUnit(sale, stockEntry = null) {
+  return resolveSaleLotImportCostPerUnit(sale, stockEntry)
+    + resolveSaleLotFreightCostPerUnit(sale, stockEntry);
+}
+
+/** Capital devolvido ao investidor por peça (só mercadoria). */
+export function resolveInvestorCapitalUnitCost(sale, stockEntry = null) {
+  return resolveSaleUnitCost(sale, stockEntry);
 }
 
 export function getStockEntryCostBreakdown(entry) {
   if (!entry) {
-    return { baseUnit: 0, importPerUnit: 0, unitCost: 0 };
+    return {
+      baseUnit: 0,
+      importPerUnit: 0,
+      freightPerUnit: 0,
+      operationalCostPerUnit: 0,
+      unitCost: 0,
+      investorCapitalUnit: 0,
+    };
   }
 
-  const unitCost = getStockEntryUnitCost(entry);
   const entryPieces = Number(entry.entryQuantity) || totalQuantity(entry.sizes);
   const importPerUnit = entry.importTaxPerUnit != null
     ? Number(entry.importTaxPerUnit) || 0
-    : importTaxPerUnit(Number(entry.importTaxes) || 0, entryPieces);
+    : diluteLotCostPerUnit(Number(entry.importTaxes) || 0, entryPieces);
+  const freightPerUnit = entry.importFreightPerUnit != null
+    ? Number(entry.importFreightPerUnit) || 0
+    : diluteLotCostPerUnit(Number(entry.importFreight) || 0, entryPieces);
+  const storedFinal = Number(entry.costPrice) || 0;
   const baseUnit = entry.baseCostPrice != null
     ? Number(entry.baseCostPrice) || 0
-    : Math.max(0, unitCost - importPerUnit);
+    : Math.max(0, storedFinal - importPerUnit - freightPerUnit);
+  const operationalCostPerUnit = importPerUnit + freightPerUnit;
 
-  return { baseUnit, importPerUnit, unitCost };
+  return {
+    baseUnit,
+    importPerUnit,
+    freightPerUnit,
+    operationalCostPerUnit,
+    unitCost: baseUnit,
+    investorCapitalUnit: baseUnit,
+  };
 }
 
 export function totalReserved(sizes) {
@@ -148,7 +187,7 @@ export function applyMovement(sizeEntry, type, qty, adjustTo = null) {
 }
 
 const REPASSE_LABELS = {
-  capital_mais_lucro: (v) => `Capital de volta + ${v}% do lucro (sem personalização)`,
+  capital_mais_lucro: (v) => `Capital da mercadoria + ${v}% do lucro (sem imposto, frete int. ou pers.)`,
   percent_lucro: (v) => `${v}% do lucro`,
   percent_faturamento: (v) => `${v}% do faturamento`,
   fixo_peca: (v) => `R$ ${v} por peça vendida`,
@@ -267,13 +306,25 @@ export function investorRevenueExcludingPersonalization(financials) {
 
 /**
  * Repasse ao investidor com regra de personalização aplicada (vendas rápidas).
+ * capitalUnitCost = só mercadoria; imposto/frete internacional entram no lucro, não no capital.
  */
-export function calculateInvestorRepasseForSale(investor, { unitCost, quantity, financials, persProfit }) {
+export function calculateInvestorRepasseForSale(investor, {
+  unitCost,
+  capitalUnitCost,
+  quantity,
+  financials,
+  persProfit,
+  sale = null,
+  stockEntry = null,
+}) {
   const profitBase = resolveShirtNetProfitForRepasse(financials, persProfit);
   const revenueBase = investorRevenueExcludingPersonalization(financials);
+  const capitalUnit = capitalUnitCost != null
+    ? Number(capitalUnitCost)
+    : resolveInvestorCapitalUnitCost(sale, stockEntry);
 
   return calculateInvestorRepasse(investor, {
-    unitCost,
+    unitCost: capitalUnit,
     quantity,
     netProfit: profitBase,
     grossRevenue: revenueBase,
@@ -285,33 +336,39 @@ export function buildSaleFinancialsFromSale(sale, settings = {}, stockEntry = nu
   const defaultPersCost = Number(settings.personalizationCostPerPiece) || 10;
   const defaultPersPrice = Number(settings.defaultPersonalizationPrice) || 50;
   const unitCost = resolveSaleUnitCost(sale, stockEntry);
+  const lotImportCostPerUnit = resolveSaleLotImportCostPerUnit(sale, stockEntry);
+  const lotFreightCostPerUnit = resolveSaleLotFreightCostPerUnit(sale, stockEntry);
   const lines = getSaleLinesForFinancials(sale);
 
-  const computed = calculateQuickSaleFinancials({
+  return calculateQuickSaleFinancials({
     lines,
     unitCost,
+    lotImportCostPerUnit,
+    lotFreightCostPerUnit,
     defaultPersonalizationCostPerPiece: defaultPersCost,
     defaultPersonalizationPrice: defaultPersPrice,
     platformCosts: settings.platformCosts || [],
   });
-
-  return {
-    ...computed,
-    unitCost,
-    netProfit: Number(sale?.netProfit) ?? computed.netProfit,
-    platformCost: Number(sale?.platformCost) ?? computed.platformCost,
-    variableCosts: Number(sale?.variableCosts) ?? computed.variableCosts,
-  };
 }
 
 /**
  * Parte SHIR7 no lucro da camisa (estoque investidor).
  * capital_mais_lucro: 60% do lucro sem personalização (espelha o 40% do investidor).
  */
-export function calculateShir7ShirtShareForInvestor(investor, { unitCost, quantity, financials, persProfit }) {
+export function calculateShir7ShirtShareForInvestor(investor, {
+  unitCost,
+  capitalUnitCost,
+  quantity,
+  financials,
+  persProfit,
+  sale = null,
+  stockEntry = null,
+}) {
   const profitBase = resolveShirtNetProfitForRepasse(financials, persProfit);
   const qty = Number(quantity) || 0;
-  const cost = Number(unitCost) || 0;
+  const capitalUnit = capitalUnitCost != null
+    ? Number(capitalUnitCost)
+    : resolveInvestorCapitalUnitCost(sale, stockEntry);
   const rawPct = Number(investor?.repasseValue);
   const pct = Number.isFinite(rawPct) ? rawPct : DEFAULT_REPASSE_VALUE;
 
@@ -320,12 +377,15 @@ export function calculateShir7ShirtShareForInvestor(investor, { unitCost, quanti
   }
 
   const payout = calculateInvestorRepasseForSale(investor, {
-    unitCost: cost,
+    unitCost,
+    capitalUnitCost: capitalUnit,
     quantity: qty,
     financials,
     persProfit,
+    sale,
+    stockEntry,
   });
-  const capital = cost * qty;
+  const capital = capitalUnit * qty;
   const investorProfitShare = investor?.repasseType === 'percent_faturamento'
     ? payout
     : Math.max(0, payout - capital);
@@ -335,7 +395,7 @@ export function calculateShir7ShirtShareForInvestor(investor, { unitCost, quanti
 
 /**
  * Repasse ao investidor por venda.
- * capital_mais_lucro: custo das peças vendidas + % do lucro (sem personalização).
+ * capital_mais_lucro: capital da mercadoria (sem imposto/frete int.) + % do lucro da camisa.
  */
 export function calculateInvestorRepasse(investor, { unitCost, quantity, netProfit, grossRevenue }) {
   const qty = Number(quantity) || 0;
@@ -365,19 +425,18 @@ export function calculateInvestorRepasse(investor, { unitCost, quantity, netProf
   }
 }
 
-/** Estimativa de repasse (1 peça ou lote) com lucro = preço − custo, sem taxas da venda. */
+/** Estimativa de repasse (1 peça ou lote) com lucro = preço − mercadoria − custos operacionais do lote. */
 export function estimateRepasseAtPrice(investor, product, quantity = 1) {
   const qty = Number(quantity) || 1;
-  const unitCost = unitCostWithImportTax(
-    product.costPrice,
-    product.importTaxes,
-    product.sizes
-  );
+  const baseCost = Number(product.baseCostPrice) || Number(product.costPrice) || 0;
+  const pieces = product.sizes || product.entryQuantity || qty;
+  const importPerUnit = diluteLotCostPerUnit(product.importTaxes, pieces);
+  const freightPerUnit = diluteLotCostPerUnit(product.importFreight, pieces);
   const unitPrice = Number(product.suggestedSalePrice) || 0;
-  const netProfit = (unitPrice - unitCost) * qty;
+  const netProfit = (unitPrice - baseCost - importPerUnit - freightPerUnit) * qty;
 
   return calculateInvestorRepasse(investor, {
-    unitCost,
+    unitCost: baseCost,
     quantity: qty,
     netProfit,
     grossRevenue: unitPrice * qty,
@@ -478,6 +537,8 @@ export function calculatePlatformFeesBreakdown(platforms, totalRevenue) {
 export function calculateQuickSaleFinancials({
   lines,
   unitCost,
+  lotImportCostPerUnit = 0,
+  lotFreightCostPerUnit = 0,
   defaultPersonalizationCostPerPiece = 0,
   defaultPersonalizationPrice = 50,
   platformCosts = [],
@@ -531,12 +592,17 @@ export function calculateQuickSaleFinancials({
     safeLines.filter((l) => l.couponPercent > 0).map((l) => l.couponPercent)
   )];
   const cost = Number(unitCost) || 0;
+  const importPerUnit = Number(lotImportCostPerUnit) || 0;
+  const lotFreightPerUnit = Number(lotFreightCostPerUnit) || 0;
   const productCost = cost * totalQty;
+  const lotImportCostTotal = importPerUnit * totalQty;
+  const lotFreightCostTotal = lotFreightPerUnit * totalQty;
+  const lotOperationalCostTotal = lotImportCostTotal + lotFreightCostTotal;
   const freightCost = safeLines.reduce((sum, l) => sum + l.freight, 0);
   const adsCostTotal = safeLines.reduce((sum, l) => sum + l.ads, 0);
   const extraFees = safeLines.reduce((sum, l) => sum + l.otherCosts, 0);
   const platformCost = calculateTotalPlatformFees(platformCosts, totalRevenue);
-  const variableCosts = freightCost + adsCostTotal + extraFees + platformCost;
+  const variableCosts = freightCost + adsCostTotal + extraFees + platformCost + lotOperationalCostTotal;
   const grossProfit = totalRevenue - productCost;
   const netProfit = grossProfit - variableCosts - personalizationCostTotal;
   const margin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
@@ -551,6 +617,11 @@ export function calculateQuickSaleFinancials({
     couponPercent: couponPercents.length === 1 ? couponPercents[0] : 0,
     totalRevenue,
     productCost,
+    lotImportCostPerUnit: importPerUnit,
+    lotFreightCostPerUnit,
+    lotImportCostTotal,
+    lotFreightCostTotal,
+    lotOperationalCostTotal,
     freightCost,
     adsCostTotal,
     poolCostTotal: adsCostTotal,
@@ -581,28 +652,134 @@ export function piecesSoldInCurrentMonth(sales, extraQty = 0) {
   return monthPieces + (Number(extraQty) || 0);
 }
 
+export function getStockEntryPieces(entry) {
+  if (entry?.entrySizes?.length) {
+    return totalQuantity(entry.entrySizes);
+  }
+  const stored = Number(entry?.entryQuantity);
+  if (stored > 0) return stored;
+  return Number(entry?.quantity) || totalQuantity(entry?.sizes);
+}
+
+/** Entrada inicial do lote (cadastro), não estorno de pedido. */
+export function isStockLotInitialMovement(movement) {
+  if (movement?.type !== 'entrada') return false;
+  if (movement?.relatedSaleId) return false;
+  const obs = String(movement?.observation || '').toLowerCase();
+  return !obs.includes('estorno');
+}
+
+function sumSizesFromMovements(movements, filterFn) {
+  const map = new Map();
+  (movements || []).filter(filterFn).forEach((movement) => {
+    const qty = Number(movement.quantity) || 0;
+    if (!movement.size || qty <= 0) return;
+    map.set(movement.size, (map.get(movement.size) || 0) + qty);
+  });
+  return map;
+}
+
+function mapToSizeList(sizeMap) {
+  return sortSizes([...sizeMap.entries()].map(([size, quantity]) => ({ size, quantity })));
+}
+
+/**
+ * Contagem unificada do lote: entrada inicial pelas peças cadastradas (entrySizes ou
+ * movimentos de entrada), vendidas = entrada − saldo atual.
+ */
+export function buildStockEntryQuantityStats(entry, movements = []) {
+  const currentSizes = sortSizes((entry?.sizes || []).map((s) => ({
+    size: s.size,
+    quantity: Number(s.quantity) || 0,
+  })));
+  const currentQty = Number(entry?.quantity) || totalQuantity(currentSizes);
+  const lotMovements = movements || [];
+
+  let initialSizes = null;
+  let initialSource = 'stored';
+
+  if (entry?.entrySizes?.length) {
+    initialSizes = sortSizes(entry.entrySizes.map((s) => ({
+      size: s.size,
+      quantity: Number(s.quantity) || 0,
+    })));
+  } else {
+    const initialMap = sumSizesFromMovements(lotMovements, isStockLotInitialMovement);
+    if (initialMap.size > 0) {
+      initialSizes = mapToSizeList(initialMap);
+      initialSource = 'movements';
+    }
+  }
+
+  const soldMap = sumSizesFromMovements(lotMovements, (m) => m.type === 'saida');
+  const grossSoldQty = [...soldMap.values()].reduce((sum, qty) => sum + qty, 0);
+
+  let entryPieces;
+  if (initialSizes?.length) {
+    entryPieces = totalQuantity(initialSizes);
+  } else {
+    entryPieces = getStockEntryPieces(entry);
+    initialSizes = currentSizes;
+    initialSource = 'fallback';
+  }
+
+  const soldQty = Math.max(0, entryPieces - currentQty);
+  const soldPercent = entryPieces > 0 ? Math.round((soldQty / entryPieces) * 100) : 0;
+  const oversoldQty = Math.max(0, grossSoldQty - entryPieces);
+  const storedEntryQty = Number(entry?.entryQuantity) || 0;
+  const entryQuantityMismatch = storedEntryQty > 0 && storedEntryQty !== entryPieces;
+  const hasMovementOversell = grossSoldQty > entryPieces;
+
+  return {
+    currentSizes,
+    currentQty,
+    initialSizes,
+    initialSource,
+    entryPieces,
+    soldQty,
+    soldPercent,
+    grossSoldQty,
+    oversoldQty,
+    storedEntryQty,
+    entryQuantityMismatch,
+    hasMovementOversell,
+    hasRecordedEntry: entryPieces > 0,
+  };
+}
+
 export function computeStockEntryFinancials(entry) {
   const currentQty = Number(entry?.quantity) || totalQuantity(entry?.sizes);
-  const entryPieces = Number(entry?.entryQuantity) || currentQty;
-  const unitCost = getStockEntryUnitCost(entry);
+  const entryPieces = getStockEntryPieces(entry);
+  const breakdown = getStockEntryCostBreakdown(entry);
+  const {
+    baseCost: baseUnit,
+    unitCost,
+    importPerUnit,
+    freightPerUnit,
+  } = {
+    baseCost: breakdown.baseUnit,
+    unitCost: breakdown.unitCost,
+    importPerUnit: breakdown.importPerUnit,
+    freightPerUnit: breakdown.freightPerUnit,
+  };
   const importTotal = Number(entry?.importTaxes) || 0;
-  const importPerUnit = Number(entry?.importTaxPerUnit)
-    || importTaxPerUnit(importTotal, entryPieces);
-  const baseCost = entry?.baseCostPrice != null
-    ? Number(entry.baseCostPrice)
-    : Math.max(0, unitCost - importPerUnit);
+  const freightTotal = Number(entry?.importFreight) || 0;
   const suggested = Number(entry?.suggestedSalePrice) || 0;
-  const totalPaid = (baseCost * entryPieces) + importTotal;
+  const totalPaid = (baseUnit * entryPieces) + importTotal + freightTotal;
   const expectedReturn = suggested * currentQty;
-  const expectedProfit = expectedReturn - (unitCost * currentQty);
+  const operationalPerUnit = importPerUnit + freightPerUnit;
+  const expectedProfit = expectedReturn - ((baseUnit + operationalPerUnit) * currentQty);
 
   return {
     entryPieces,
     currentQty,
-    baseCost,
-    unitCost,
+    baseCost: baseUnit,
+    unitCost: baseUnit,
     importTotal,
     importPerUnit,
+    freightTotal,
+    freightPerUnit,
+    operationalPerUnit,
     totalPaid,
     expectedReturn,
     expectedProfit,
@@ -655,11 +832,16 @@ export function recalculateSaleWithPlatformSettings(sale, settings = {}, investo
   const defaultPersCost = Number(settings.personalizationCostPerPiece) || 10;
   const defaultPersPrice = Number(settings.defaultPersonalizationPrice) || 50;
   const unitCost = resolveSaleUnitCost(sale, stockEntry);
+  const capitalUnitCost = resolveInvestorCapitalUnitCost(sale, stockEntry);
+  const lotImportCostPerUnit = resolveSaleLotImportCostPerUnit(sale, stockEntry);
+  const lotFreightCostPerUnit = resolveSaleLotFreightCostPerUnit(sale, stockEntry);
   const lines = getSaleLinesForFinancials(sale);
 
   const financials = calculateQuickSaleFinancials({
     lines,
     unitCost,
+    lotImportCostPerUnit,
+    lotFreightCostPerUnit,
     defaultPersonalizationCostPerPiece: defaultPersCost,
     defaultPersonalizationPrice: defaultPersPrice,
     platformCosts,
@@ -674,8 +856,11 @@ export function recalculateSaleWithPlatformSettings(sale, settings = {}, investo
   if (sale.stockOrigin === 'investidor' && investor) {
     investorPayout = calculateInvestorRepasseForSale(investor, {
       unitCost,
+      capitalUnitCost,
       quantity: financials.totalQty,
       financials,
+      sale,
+      stockEntry,
     });
   }
 

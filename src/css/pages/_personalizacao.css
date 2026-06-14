@@ -1,0 +1,526 @@
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.pers-page {
+  min-height: 100vh;
+  background: var(--color-bg, #f0edf6);
+}
+
+/* —— Toolbar —— */
+.pers-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--color-surface, #fff);
+  border-bottom: 1px solid var(--color-border, #e5e1ef);
+  box-shadow: 0 4px 24px rgb(94 23 235 / 8%);
+}
+
+.pers-toolbar__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.25rem 0.65rem;
+}
+
+.pers-toolbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pers-toolbar__logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.pers-toolbar__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.pers-toolbar__lot {
+  margin: 0.1rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-primary, #5e17eb);
+}
+
+.pers-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  padding: 0 1.25rem 0.75rem;
+}
+
+.pers-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem 0.35rem;
+  background: var(--color-bg, #f0edf6);
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--color-border, #e5e1ef);
+}
+
+.pers-stat__value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.pers-stat__label {
+  margin-top: 0.15rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted, #6b6280);
+}
+
+.pers-stat--pending .pers-stat__value { color: #c77700; }
+.pers-stat--done .pers-stat__value { color: #1a8f5a; }
+.pers-stat--progress .pers-stat__value { color: var(--color-primary, #5e17eb); }
+
+.pers-toolbar__controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.65rem 1.25rem 0.85rem;
+  border-top: 1px solid var(--color-border, #e5e1ef);
+  background: #faf9fc;
+}
+
+.pers-toolbar__search .form-input {
+  width: 100%;
+}
+
+.pers-toolbar__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.65rem 0;
+  width: 100%;
+}
+
+.pers-toolbar__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.pers-toolbar__section-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted, #6b6280);
+  white-space: nowrap;
+}
+
+.pers-toolbar__divider {
+  flex: 0 0 1px;
+  align-self: stretch;
+  width: 1px;
+  min-height: 2.75rem;
+  margin: 0 0.65rem;
+  background: var(--color-border, #d8d2e6);
+}
+
+.pers-toolbar__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.pers-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.125rem;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--color-border, #e5e1ef);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+}
+
+.pers-pill:hover {
+  border-color: var(--color-primary, #5e17eb);
+}
+
+.pers-pill--active {
+  background: var(--color-primary, #5e17eb);
+  border-color: var(--color-primary, #5e17eb);
+  color: #fff;
+}
+
+.pers-pill:active {
+  transform: scale(0.97);
+}
+
+#pers-product-filters .pers-pill--vermelha:hover {
+  border-color: var(--color-primary, #5e17eb);
+  color: var(--color-primary, #5e17eb);
+}
+
+#pers-product-filters .pers-pill--vermelha.pers-pill--active {
+  background: var(--color-primary, #5e17eb);
+  border-color: var(--color-primary, #5e17eb);
+  color: #fff;
+}
+
+#pers-product-filters .pers-pill--amarela:hover {
+  border-color: #c9a227;
+  color: #7a5c00;
+}
+
+#pers-product-filters .pers-pill--amarela.pers-pill--active {
+  background: linear-gradient(135deg, #c9a227 0%, #e8b923 100%);
+  border-color: #c9a227;
+  color: #1a1333;
+}
+
+/* —— Grid —— */
+.pers-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.pers-empty {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--color-text-muted, #6b6280);
+  font-size: 0.9375rem;
+}
+
+.pers-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+
+/* —— Card (ficha de produção) —— */
+.pers-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface, #fff);
+  border: 2px solid var(--color-border, #e5e1ef);
+  border-radius: var(--radius-lg, 14px);
+  overflow: hidden;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  transition: border-color 0.2s, opacity 0.2s, box-shadow 0.2s;
+}
+
+.pers-card--done {
+  border-color: #22a06b;
+  background: #f6fdf9;
+  opacity: 0.88;
+}
+
+.pers-card--placeholder {
+  border-style: dashed;
+  border-color: #d4a017;
+  background: #fffdf5;
+}
+
+.pers-card__head--yellow {
+  background: linear-gradient(135deg, #c9a227 0%, #e8b923 100%);
+  color: #1a1333;
+}
+
+.pers-card__head--yellow .pers-card__size {
+  background: rgb(26 19 51 / 12%);
+  color: #1a1333;
+}
+
+.pers-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  background: var(--color-primary, #5e17eb);
+  color: #fff;
+}
+
+.pers-card--done .pers-card__head {
+  background: #22a06b;
+}
+
+.pers-card__order {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pers-card__size {
+  padding: 0.2rem 0.55rem;
+  background: rgb(255 255 255 / 18%);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pers-card__main {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 0;
+  min-height: 120px;
+}
+
+.pers-card__thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: #f8f6fc;
+  border-right: 1px solid var(--color-border, #e5e1ef);
+}
+
+.pers-card__image {
+  width: 100%;
+  max-height: 100px;
+  object-fit: contain;
+}
+
+.pers-card__pers {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
+
+.pers-card__name {
+  font-size: clamp(1.25rem, 4vw, 1.65rem);
+  font-weight: 800;
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  word-break: break-word;
+  color: var(--color-text, #1a1333);
+}
+
+.pers-card__number {
+  font-size: clamp(2rem, 7vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-primary, #5e17eb);
+}
+
+.pers-card--done .pers-card__number {
+  color: #1a8f5a;
+}
+
+.pers-card__badge {
+  margin-bottom: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #fff3cd;
+  border: 1px solid #e8b923;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #7a5c00;
+}
+
+.pers-card__queue {
+  display: none;
+}
+
+.pers-card__foot {
+  padding: 0.55rem 0.85rem 0.7rem;
+  border-top: 1px solid var(--color-border, #e5e1ef);
+  background: #faf9fc;
+}
+
+.pers-done-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.55rem 1rem;
+  border: 2px solid var(--color-border, #d8d2e6);
+  border-radius: var(--radius-md, 10px);
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text-muted, #6b6280);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+}
+
+.pers-done-btn__icon {
+  position: relative;
+  flex-shrink: 0;
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 2px solid #b8b0c8;
+  border-radius: 5px;
+  background: #fff;
+}
+
+.pers-done-btn__icon::after {
+  content: none;
+}
+
+.pers-done-btn:hover {
+  background: #f6fdf9;
+  border-color: #22a06b;
+  color: #1a8f5a;
+}
+
+.pers-done-btn:hover .pers-done-btn__icon {
+  border-color: #22a06b;
+}
+
+.pers-done-btn:active {
+  transform: scale(0.98);
+}
+
+.pers-done-btn--active {
+  background: #22a06b;
+  border-color: #22a06b;
+  color: #fff;
+}
+
+.pers-done-btn--active .pers-done-btn__icon {
+  background: #fff;
+  border-color: #fff;
+}
+
+.pers-done-btn--active .pers-done-btn__icon::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #22a06b;
+}
+
+.pers-done-btn--active:hover {
+  background: #1a8f5a;
+  border-color: #1a8f5a;
+  color: #fff;
+}
+
+@media (min-width: 540px) {
+  .pers-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 639px) {
+  .pers-toolbar__filters {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .pers-toolbar__divider {
+    flex: 0 0 auto;
+    width: 100%;
+    height: 1px;
+    min-height: 0;
+    margin: 0;
+  }
+}
+
+@media (min-width: 900px) {
+  .pers-toolbar__controls {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem 1rem;
+  }
+
+  .pers-toolbar__search {
+    flex: 1 1 220px;
+    min-width: 200px;
+  }
+
+  .pers-toolbar__filters {
+    flex: 2 1 480px;
+  }
+
+  .pers-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .pers-card__main {
+    grid-template-columns: 110px 1fr;
+  }
+}
+
+@media (min-width: 1100px) {
+  .pers-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .pers-toolbar {
+    position: static;
+    box-shadow: none;
+  }
+
+  .pers-page {
+    background: #fff;
+  }
+
+  .pers-main {
+    max-width: none;
+    padding: 0.5rem;
+  }
+
+  .pers-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+  }
+
+  .pers-card {
+    border: 1px solid #999;
+  }
+
+  .pers-card--done {
+    opacity: 1;
+  }
+}

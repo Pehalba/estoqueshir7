@@ -1,8 +1,10 @@
 export function isRequired(value) {
-  return value !== null && value !== undefined && String(value).trim() !== '';
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'number' && Number.isNaN(value)) return false;
+  return String(value).trim() !== '';
 }
 
-import { importTaxPerUnit } from './calculations.js';
+import { diluteLotCostPerUnit, MAX_STOCK_ENTRY_PIECES } from './calculations.js';
 
 export function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -82,15 +84,18 @@ export function validateProduct(data) {
 export function validateStockEntry(data) {
   const errors = [];
 
-  if (!isRequired(data.stockEntryName)) {
-    errors.push('Nome do estoque é obrigatório.');
-  }
-  if (!isRequired(data.productId)) {
+  if (!data.isEdit && !isRequired(data.productId)) {
     errors.push('Selecione o produto.');
   }
 
+  if (!isRequired(data.stockEntryName) && !data.isEdit) {
+    errors.push('Nome do estoque é obrigatório.');
+  }
+
   const lines = (data.lines || []).filter((l) => l.size && Number(l.quantity) > 0);
-  if (!lines.length) {
+  const isEdit = !!data.isEdit;
+
+  if (!lines.length && !isEdit) {
     errors.push('Informe pelo menos um tamanho com quantidade.');
   }
 
@@ -102,15 +107,15 @@ export function validateStockEntry(data) {
     seen.add(line.size);
   });
 
-  if (!isRequired(data.costPrice)) {
+  if (!isRequired(data.costPrice) || Number.isNaN(Number(data.costPrice))) {
     errors.push('Custo por peça é obrigatório.');
   }
 
-  if (!isRequired(data.suggestedSalePrice)) {
+  if (!isRequired(data.suggestedSalePrice) || Number.isNaN(Number(data.suggestedSalePrice))) {
     errors.push('Preço sugerido é obrigatório.');
   }
 
-  if (!isRequired(data.minimumSalePrice)) {
+  if (!isRequired(data.minimumSalePrice) || Number.isNaN(Number(data.minimumSalePrice))) {
     errors.push('Preço mínimo é obrigatório.');
   }
 
@@ -122,11 +127,15 @@ export function validateStockEntry(data) {
     errors.push('Investidor é obrigatório quando a origem é investidor.');
   }
 
+  const totalPieces = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
+  if (!isEdit && totalPieces > MAX_STOCK_ENTRY_PIECES) {
+    errors.push(`Cada lote pode ter no máximo ${MAX_STOCK_ENTRY_PIECES} peças.`);
+  }
+
   const cost = Number(data.costPrice);
   const entryPieces = data.entryQuantity != null && data.entryQuantity !== ''
     ? Number(data.entryQuantity)
-    : lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
-  const finalUnitCost = cost + importTaxPerUnit(data.importTaxes, entryPieces);
+    : totalPieces;
   const suggested = Number(data.suggestedSalePrice);
   const minimum = Number(data.minimumSalePrice);
 
@@ -134,13 +143,20 @@ export function validateStockEntry(data) {
     errors.push('Preço mínimo não pode ser maior que o preço sugerido.');
   }
 
-  if (!isNaN(minimum) && entryPieces > 0 && minimum < finalUnitCost) {
-    errors.push('Preço mínimo não pode ser menor que o custo final por peça (com impostos).');
+  if (!isNaN(minimum) && !isNaN(cost) && minimum < cost) {
+    errors.push('Preço mínimo não pode ser menor que o custo da mercadoria por peça.');
   }
 
-  const importTaxes = Number(data.importTaxes);
-  if (data.importTaxes !== '' && data.importTaxes != null && (isNaN(importTaxes) || importTaxes < 0)) {
+  const importTaxesRaw = data.importTaxes;
+  const importTaxes = Number(importTaxesRaw);
+  if (importTaxesRaw !== '' && importTaxesRaw != null && (Number.isNaN(importTaxes) || importTaxes < 0)) {
     errors.push('Impostos de importação deve ser zero ou maior.');
+  }
+
+  const importFreightRaw = data.importFreight;
+  const importFreight = Number(importFreightRaw);
+  if (importFreightRaw !== '' && importFreightRaw != null && (Number.isNaN(importFreight) || importFreight < 0)) {
+    errors.push('Frete internacional deve ser zero ou maior.');
   }
 
   return { valid: errors.length === 0, errors };

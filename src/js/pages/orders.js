@@ -14,8 +14,10 @@ import {
   recalculateSaleWithPlatformSettings,
   buildSaleFinancialsFromSale,
   calculateShir7ShirtShareForInvestor,
-  getStockEntryCostBreakdown,
   resolveSaleUnitCost,
+  resolveInvestorCapitalUnitCost,
+  resolveSaleLotImportCostPerUnit,
+  resolveSaleLotFreightCostPerUnit,
 } from '../utils/calculations.js';
 import { applyPlatformSettingsToSales, getSalePersonalizationStats } from '../utils/analytics.js';
 import {
@@ -36,6 +38,7 @@ let allStockEntries = [];
 let globalSettings = { ...DEFAULT_SETTINGS };
 let ordersShippingFilter = 'all';
 let ordersPersFilter = 'all';
+let ordersStockFilter = '';
 let ordersSortDir = 'desc';
 let editingSaleId = null;
 let deletingSaleId = null;
@@ -154,11 +157,18 @@ function filterOrders() {
     orders = orders.filter((sale) => !isSalePersonalized(sale));
   }
 
+  if (ordersStockFilter === '__none__') {
+    orders = orders.filter((sale) => !sale.stockEntryId);
+  } else if (ordersStockFilter) {
+    orders = orders.filter((sale) => sale.stockEntryId === ordersStockFilter);
+  }
+
   if (search) {
     orders = orders.filter((sale) => {
       const hay = [
         sale.orderId,
         sale.productName,
+        sale.stockEntryName,
         sale.trackingCode,
         formatSaleLinesSummary(sale),
       ].filter(Boolean).join(' ').toLowerCase();
@@ -204,6 +214,8 @@ function getOrderFinancialBreakdown(sale) {
       quantity: recalc.quantity,
       financials,
       persProfit,
+      sale: recalc,
+      stockEntry,
     })
     : recalc.stockOrigin === 'investidor'
       ? 0
@@ -273,18 +285,16 @@ function buildOrderDetailHtml(sale) {
     renderDetailField('Pagamento', recalc.paymentMethod || '—'),
   ].join(''));
 
-  const costBreakdown = getStockEntryCostBreakdown(stockEntry);
-  const costUnitLabel = costBreakdown.importPerUnit > 0
-    ? `${formatCurrency(costBreakdown.baseUnit)} + ${formatCurrency(costBreakdown.importPerUnit)} imp.`
-    : formatCurrency(unitCost);
-  const capitalTotal = unitCost * (Number(recalc.quantity) || 1);
+  const costUnitLabel = formatCurrency(unitCost);
+  const capitalUnitCost = resolveInvestorCapitalUnitCost(recalc, stockEntry);
+  const capitalTotal = capitalUnitCost * (Number(recalc.quantity) || 1);
 
   const estoqueSection = renderOrderDetailSection('Produto e lote', [
     renderDetailField('Produto', recalc.productName || '—'),
     renderDetailField('Lote / estoque', recalc.stockEntryName || '—'),
     renderDetailField('Peças', formatSaleLinesSummary(recalc)),
     renderDetailField('Origem', originLabel),
-    renderDetailField('Custo unitário (mercadoria + imp.)', costUnitLabel),
+    renderDetailField('Custo unitário (mercadoria)', costUnitLabel),
     renderDetailField('Custo total peças', formatCurrency(financials.productCost)),
     renderDetailField('Personalização', hasPers ? 'Sim' : 'Não'),
   ].join(''));
@@ -306,8 +316,14 @@ function buildOrderDetailHtml(sale) {
   );
 
   const custosFields = [
-    renderDetailField('Custo das peças', formatCurrency(financials.productCost), 'order-detail-field--cost'),
+    renderDetailField('Custo das peças (mercadoria)', formatCurrency(financials.productCost), 'order-detail-field--cost'),
   ];
+  if (financials.lotImportCostTotal > 0) {
+    custosFields.push(renderDetailField('Imposto importação (operacional)', formatCurrency(financials.lotImportCostTotal), 'order-detail-field--cost'));
+  }
+  if (financials.lotFreightCostTotal > 0) {
+    custosFields.push(renderDetailField('Frete internacional (operacional)', formatCurrency(financials.lotFreightCostTotal), 'order-detail-field--cost'));
+  }
   if (pers.cost > 0) {
     custosFields.push(renderDetailField('Custo personalização', formatCurrency(pers.cost), 'order-detail-field--cost'));
   }
@@ -347,7 +363,7 @@ function buildOrderDetailHtml(sale) {
           <div class="order-detail-split__card order-detail-split__card--investor">
             <h4>${escapeHtml(investor?.name || 'Investidor')}</h4>
             <dl>
-              <dt>Capital devolvido (custo + imposto)</dt>
+              <dt>Capital devolvido (só mercadoria)</dt>
               <dd>${formatCurrency(capitalTotal)}</dd>
               <dt>Repasse neste pedido</dt>
               <dd>${formatCurrency(investorPayout)}</dd>
@@ -366,7 +382,7 @@ function buildOrderDetailHtml(sale) {
             </dl>
           </div>
         </div>
-        <p class="order-detail-note">Personalização não entra no repasse ao investidor — fica 100% com a SHIR7.</p>
+        <p class="order-detail-note">Imposto e frete internacional são custos operacionais (como Yampi/Appmax): abatem o lucro, mas não entram no custo do produto nem no capital do investidor. Personalização não entra no repasse — fica 100% com a SHIR7.</p>
       </section>
     `;
   } else {
@@ -689,6 +705,8 @@ function updateOrderEditPreview() {
   const financials = calculateQuickSaleFinancials({
     lines,
     unitCost: Number(sale.unitCost) || 0,
+    lotImportCostPerUnit: resolveSaleLotImportCostPerUnit(sale),
+    lotFreightCostPerUnit: resolveSaleLotFreightCostPerUnit(sale),
     defaultPersonalizationCostPerPiece: globalSettings.personalizationCostPerPiece,
     defaultPersonalizationPrice: globalSettings.defaultPersonalizationPrice,
     platformCosts: globalSettings.platformCosts || [],
@@ -709,6 +727,9 @@ function updateOrderEditPreview() {
   }
   if (financials.platformCost > 0) {
     parts.push(`Taxas −${formatCurrency(financials.platformCost)}`);
+  }
+  if (financials.lotOperationalCostTotal > 0) {
+    parts.push(`Imp.+frete lote −${formatCurrency(financials.lotOperationalCostTotal)}`);
   }
 
   parts.push(`<strong>Lucro líquido:</strong> ${formatCurrency(financials.netProfit)}`);
@@ -911,6 +932,54 @@ function setOrdersPersFilter(filter) {
   renderOrdersTable();
 }
 
+function populateOrdersStockFilter() {
+  const select = qs('#orders-stock-filter');
+  if (!select) return;
+
+  const previous = ordersStockFilter;
+  const shopOrders = getShopOrders();
+  const countByEntry = new Map();
+  let withoutStock = 0;
+
+  shopOrders.forEach((sale) => {
+    if (!sale.stockEntryId) {
+      withoutStock += 1;
+      return;
+    }
+    countByEntry.set(
+      sale.stockEntryId,
+      (countByEntry.get(sale.stockEntryId) || 0) + 1
+    );
+  });
+
+  const entries = allStockEntries
+    .filter((entry) => countByEntry.has(entry.id))
+    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'));
+
+  const options = ['<option value="">Todos os estoques</option>'];
+  entries.forEach((entry) => {
+    const count = countByEntry.get(entry.id);
+    options.push(
+      `<option value="${escapeHtml(entry.id)}">${escapeHtml(entry.name || 'Sem nome')} (${count})</option>`
+    );
+  });
+
+  if (withoutStock > 0) {
+    options.push(`<option value="__none__">Sem lote vinculado (${withoutStock})</option>`);
+  }
+
+  select.innerHTML = options.join('');
+  select.value = previous;
+  if (select.value !== previous) {
+    ordersStockFilter = '';
+  }
+}
+
+function setOrdersStockFilter(stockEntryId) {
+  ordersStockFilter = stockEntryId || '';
+  renderOrdersTable();
+}
+
 function updateSortButtonUI() {
   const btn = qs('#btn-orders-sort');
   if (!btn) return;
@@ -1002,6 +1071,7 @@ async function loadData() {
     showToast(salesResult.error, 'error');
   }
 
+  populateOrdersStockFilter();
   renderOrdersTable();
 }
 
@@ -1016,6 +1086,10 @@ function initEvents() {
 
   qsa('[data-orders-pers-filter]').forEach((btn) => {
     btn.addEventListener('click', () => setOrdersPersFilter(btn.dataset.ordersPersFilter));
+  });
+
+  qs('#orders-stock-filter')?.addEventListener('change', (event) => {
+    setOrdersStockFilter(event.target.value);
   });
 
   qs('#orders-tbody')?.addEventListener('click', (event) => {

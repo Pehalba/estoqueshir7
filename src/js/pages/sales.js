@@ -10,6 +10,8 @@ import { waitForAuth } from '../services/authService.js';
 import {
   availableQty,
   getStockEntryUnitCost,
+  getStockEntryInvestorCapitalUnit,
+  getStockEntryCostBreakdown,
   calculateQuickSaleFinancials,
   calculateInvestorRepasseForSale,
   calculatePoolCostPerPiece,
@@ -796,6 +798,7 @@ async function registerParsedOrder(order) {
 
   const lines = buildLinesFromParsedOrder(order, getOrderFallbackUnitPrice(order));
   const unitCost = getStockEntryUnitCost(stockEntry);
+  const costBreakdown = getStockEntryCostBreakdown(stockEntry);
   const stockLikeProduct = {
     name: stockEntry.productName,
     sizes: stockEntry.sizes,
@@ -819,6 +822,8 @@ async function registerParsedOrder(order) {
   const financials = calculateQuickSaleFinancials({
     lines,
     unitCost,
+    lotImportCostPerUnit: costBreakdown.importPerUnit,
+    lotFreightCostPerUnit: costBreakdown.freightPerUnit,
     defaultPersonalizationCostPerPiece: globalSettings.personalizationCostPerPiece,
     defaultPersonalizationPrice: globalSettings.defaultPersonalizationPrice,
     platformCosts: getActivePlatformCosts(),
@@ -1154,6 +1159,8 @@ function getPreviewData() {
   const financials = calculateQuickSaleFinancials({
     lines: data.lines,
     unitCost: data.unitCost,
+    lotImportCostPerUnit: getStockEntryCostBreakdown(stockEntry).importPerUnit,
+    lotFreightCostPerUnit: getStockEntryCostBreakdown(stockEntry).freightPerUnit,
     defaultPersonalizationCostPerPiece: globalSettings.personalizationCostPerPiece,
     defaultPersonalizationPrice: globalSettings.defaultPersonalizationPrice,
     platformCosts: getActivePlatformCosts(),
@@ -1165,8 +1172,10 @@ function getPreviewData() {
     if (investor) {
       investorPayout = calculateInvestorRepasseForSale(investor, {
         unitCost: data.unitCost,
+        capitalUnitCost: getStockEntryInvestorCapitalUnit(stockEntry),
         quantity: financials.totalQty,
         financials,
+        stockEntry,
       });
     }
   }

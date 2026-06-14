@@ -79,10 +79,19 @@
         <section id="tab-stock-entries" class="inventory-tab-panel">
         <div class="inventory-toolbar">
           <input type="search" id="stock-search-input" class="form-input inventory-toolbar__search" placeholder="Buscar estoque ou produto...">
-          <button type="button" id="btn-register-stock" class="btn btn--primary">+ Cadastrar estoque</button>
+          <div class="inventory-toolbar__actions">
+            <button type="button" id="btn-stock-history" class="btn btn--secondary">Ver histórico de estoque</button>
+            <button type="button" id="btn-register-stock" class="btn btn--primary">+ Cadastrar estoque</button>
+          </div>
         </div>
 
         <div class="inventory-filters">
+          <div class="inventory-filters__group">
+            <label class="inventory-filters__label" for="stock-filter-product">Produto</label>
+            <select id="stock-filter-product" class="inventory-filters__select form-select">
+              <option value="">Todos</option>
+            </select>
+          </div>
           <div class="inventory-filters__group">
             <label class="inventory-filters__label" for="stock-filter-size">Tamanho</label>
             <select id="stock-filter-size" class="inventory-filters__select form-select">
@@ -131,7 +140,7 @@
                 <th>Nome do estoque</th>
                 <th>Produto</th>
                 <th>Tamanhos</th>
-                <th>Qtd total</th>
+                <th>Saldo</th>
                 <th>Custo/peça</th>
                 <th>Preço</th>
                 <th>Origem</th>
@@ -313,6 +322,12 @@
 
           <div class="inventory-filters stock-filters">
             <div class="inventory-filters__group">
+              <label class="inventory-filters__label" for="hist-filter-product">Produto</label>
+              <select id="hist-filter-product" class="inventory-filters__select form-select">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div class="inventory-filters__group">
               <label class="inventory-filters__label" for="hist-filter-stock">Estoque</label>
               <select id="hist-filter-stock" class="inventory-filters__select form-select">
                 <option value="">Todos</option>
@@ -393,7 +408,7 @@
         <h3 class="modal__title">Cadastrar estoque</h3>
         <button type="button" class="modal__close-btn" data-modal-close aria-label="Fechar">&times;</button>
       </div>
-      <form id="stock-form">
+      <form id="stock-form" novalidate>
         <div class="modal__body">
           <div id="stock-form-errors" class="form-errors"></div>
 
@@ -446,11 +461,16 @@
             </div>
           </div>
 
-          <div class="form-row">
+          <div class="form-row form-row--3">
             <div class="form-group">
               <label class="form-group__label" for="stock-importTaxes">Impostos de importação total (R$)</label>
-              <input class="form-input" type="number" id="stock-importTaxes" min="0" step="0.01" placeholder="Opcional">
-              <p class="form-group__hint">Valor total do lote. Ao registrar, divide automaticamente pelo número de camisetas entrando e soma ao custo de cada peça.</p>
+              <input class="form-input" type="text" inputmode="decimal" id="stock-importTaxes" placeholder="Opcional">
+              <p class="form-group__hint">Valor total do lote. Diluído por peça e abate o lucro na venda (custo operacional, como Yampi/Appmax).</p>
+            </div>
+            <div class="form-group">
+              <label class="form-group__label" for="stock-importFreight">Frete internacional total (R$)</label>
+              <input class="form-input" type="text" inputmode="decimal" id="stock-importFreight" placeholder="Opcional">
+              <p class="form-group__hint">Frete até o Brasil. Custo operacional na venda — não entra no custo do produto nem volta ao investidor.</p>
             </div>
             <div class="form-group">
               <label class="form-group__label" for="stock-importTaxesPaidAt">Data pagamento impostos</label>
@@ -496,6 +516,36 @@
       <div class="modal__footer">
         <button type="button" class="btn btn--secondary" data-modal-close>Fechar</button>
         <button type="button" class="btn btn--primary" id="btn-edit-from-view">Editar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal histórico de estoque -->
+  <div id="stock-history-modal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog modal__dialog--lg">
+      <div class="modal__header">
+        <h3 class="modal__title">Histórico de estoque</h3>
+        <button type="button" class="modal__close-btn" data-modal-close aria-label="Fechar">&times;</button>
+      </div>
+      <div class="modal__body">
+        <div class="stock-history-modal__filters inventory-filters">
+          <div class="inventory-filters__group">
+            <label class="inventory-filters__label" for="stock-history-filter-product">Produto</label>
+            <select id="stock-history-filter-product" class="inventory-filters__select form-select">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="inventory-filters__group inventory-filters__group--grow">
+            <label class="inventory-filters__label" for="stock-history-search">Buscar</label>
+            <input type="search" id="stock-history-search" class="form-input" placeholder="Nome do estoque...">
+          </div>
+        </div>
+        <p id="stock-history-count" class="inventory-stats">Carregando...</p>
+        <div id="stock-history-list" class="stock-history-list"></div>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--secondary" data-modal-close>Fechar</button>
       </div>
     </div>
   </div>

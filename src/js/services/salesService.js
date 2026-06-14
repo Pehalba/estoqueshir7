@@ -28,6 +28,9 @@ import {
   calculatePlatformFeesBreakdown,
   calculateInvestorRepasse,
   calculateInvestorRepasseForSale,
+  resolveInvestorCapitalUnitCost,
+  resolveSaleLotImportCostPerUnit,
+  resolveSaleLotFreightCostPerUnit,
   totalSaleLinesQuantity,
   recalculateSaleWithPlatformSettings,
 } from '../utils/calculations.js';
@@ -165,6 +168,7 @@ export async function createSale(input) {
     const stockAvailable = sizeEntry ? availableQty(sizeEntry) : 0;
     const unitCost = getStockEntryUnitCost(stockEntry);
     const costBreakdown = getStockEntryCostBreakdown(stockEntry);
+    const capitalUnitCost = costBreakdown.investorCapitalUnit;
 
     const financials = calculateSaleFinancials({
       quantity,
@@ -174,6 +178,14 @@ export async function createSale(input) {
       fees: input.fees,
       trafficCost: input.trafficCost,
     });
+    const lotOperationalTotal = (costBreakdown.importPerUnit + costBreakdown.freightPerUnit) * quantity;
+    if (lotOperationalTotal > 0) {
+      financials.variableCosts = (Number(financials.variableCosts) || 0) + lotOperationalTotal;
+      financials.netProfit = (Number(financials.netProfit) || 0) - lotOperationalTotal;
+      financials.margin = financials.totalRevenue > 0
+        ? (financials.netProfit / financials.totalRevenue) * 100
+        : 0;
+    }
 
     const validation = validateSale(
       { ...input, orderId, unitCost, stockEntryId },
@@ -192,7 +204,7 @@ export async function createSale(input) {
       if (invResult.success) {
         investor = invResult.data;
         investorPayout = calculateInvestorRepasse(investor, {
-          unitCost,
+          unitCost: capitalUnitCost,
           quantity,
           netProfit: financials.netProfit,
           grossRevenue: financials.totalRevenue,
@@ -226,6 +238,7 @@ export async function createSale(input) {
       unitCost,
       baseCostPrice: costBreakdown.baseUnit,
       importTaxPerUnit: costBreakdown.importPerUnit,
+      importFreightPerUnit: costBreakdown.freightPerUnit,
       discount: Number(input.discount) || 0,
       fees: Number(input.fees) || 0,
       trafficCost: Number(input.trafficCost) || 0,
@@ -317,6 +330,7 @@ export async function createQuickSale(input) {
 
     const unitCost = getStockEntryUnitCost(stockEntry);
     const costBreakdown = getStockEntryCostBreakdown(stockEntry);
+    const capitalUnitCost = costBreakdown.investorCapitalUnit;
 
     const stockLikeProduct = {
       ...product,
@@ -346,6 +360,8 @@ export async function createQuickSale(input) {
     const financials = calculateQuickSaleFinancials({
       lines,
       unitCost,
+      lotImportCostPerUnit: costBreakdown.importPerUnit,
+      lotFreightCostPerUnit: costBreakdown.freightPerUnit,
       defaultPersonalizationCostPerPiece: input.defaultPersonalizationCostPerPiece,
       defaultPersonalizationPrice: input.defaultPersonalizationPrice,
       platformCosts,
@@ -372,8 +388,10 @@ export async function createQuickSale(input) {
         investor = invResult.data;
         investorPayout = calculateInvestorRepasseForSale(investor, {
           unitCost,
+          capitalUnitCost,
           quantity: financials.totalQty,
           financials,
+          stockEntry,
         });
       }
     }
@@ -424,6 +442,7 @@ export async function createQuickSale(input) {
       unitCost,
       baseCostPrice: costBreakdown.baseUnit,
       importTaxPerUnit: costBreakdown.importPerUnit,
+      importFreightPerUnit: costBreakdown.freightPerUnit,
       discount: financials.discount,
       couponPercent: financials.couponPercent,
       couponId: '',
@@ -915,11 +934,15 @@ export async function updateSaleOrder(saleId, input = {}) {
 
     const sale = saleResult.data;
     const unitCost = Number(sale.unitCost) || 0;
+    const lotImportCostPerUnit = resolveSaleLotImportCostPerUnit(sale);
+    const lotFreightCostPerUnit = resolveSaleLotFreightCostPerUnit(sale);
     const lines = normalizeInputLines(input.lines, defaultPersCost);
 
     const financials = calculateQuickSaleFinancials({
       lines,
       unitCost,
+      lotImportCostPerUnit,
+      lotFreightCostPerUnit,
       defaultPersonalizationCostPerPiece: defaultPersCost,
       defaultPersonalizationPrice: defaultPersPrice,
       platformCosts,
@@ -938,8 +961,10 @@ export async function updateSaleOrder(saleId, input = {}) {
       if (invResult.success) {
         investorPayout = calculateInvestorRepasseForSale(invResult.data, {
           unitCost,
+          capitalUnitCost: resolveInvestorCapitalUnitCost(sale),
           quantity: financials.totalQty,
           financials,
+          sale,
         });
       }
     }

@@ -129,6 +129,16 @@
   gap: 6px;
 }
 
+.orders-filter-group--stock {
+  flex: 1;
+  min-width: 200px;
+  max-width: 320px;
+}
+
+.orders-filter-group__select {
+  width: 100%;
+}
+
 .orders-pill {
   padding: 0.35rem 0.9rem;
   border-radius: 999px;

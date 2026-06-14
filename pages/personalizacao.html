@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Personalização — Alba Fedex 03 — SHIR7</title>
+  <link rel="stylesheet" href="../src/css/main.css">
+</head>
+<body class="pers-page">
+  <header class="pers-toolbar no-print">
+    <div class="pers-toolbar__top">
+      <div class="pers-toolbar__brand">
+        <img class="pers-toolbar__logo" src="../src/assets/logo-shir7.png" alt="SHIR7">
+        <div>
+          <h1 class="pers-toolbar__title">Personalização</h1>
+          <p class="pers-toolbar__lot" id="pers-lot-title">Alba - Fedex 03</p>
+        </div>
+      </div>
+      <button type="button" class="btn btn--secondary btn--sm" id="pers-print-btn">Imprimir</button>
+    </div>
+
+    <div class="pers-stats" id="pers-stats" aria-live="polite"></div>
+
+    <div class="pers-toolbar__controls">
+      <label class="pers-toolbar__search">
+        <span class="visually-hidden">Buscar pedido ou nome</span>
+        <input type="search" id="pers-search" class="form-input" placeholder="Buscar pedido, nome ou número…" autocomplete="off">
+      </label>
+
+      <div class="pers-toolbar__filters">
+        <div class="pers-toolbar__section">
+          <span class="pers-toolbar__section-label">Cor</span>
+          <div class="pers-toolbar__group" id="pers-product-filters" role="group" aria-label="Filtrar cor"></div>
+        </div>
+
+        <div class="pers-toolbar__divider" role="separator" aria-hidden="true"></div>
+
+        <div class="pers-toolbar__section">
+          <span class="pers-toolbar__section-label">Status</span>
+          <div class="pers-toolbar__group" id="pers-status-filters" role="group" aria-label="Filtrar status"></div>
+        </div>
+
+        <div class="pers-toolbar__divider" role="separator" aria-hidden="true"></div>
+
+        <div class="pers-toolbar__section">
+          <span class="pers-toolbar__section-label">Tamanho</span>
+          <div class="pers-toolbar__group" id="pers-size-filters" role="group" aria-label="Filtrar tamanho"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pers-main">
+    <div class="pers-grid" id="pers-grid" aria-live="polite"></div>
+  </main>
+
+  <script type="module" src="../src/js/pages/personalizacao.js"></script>
+</body>
+</html>

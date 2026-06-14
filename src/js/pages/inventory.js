@@ -25,11 +25,11 @@ import {
 } from '../services/stockService.js';
 import {
   availableQty,
-  importTaxPerUnit,
-  unitCostWithImportTax,
+  diluteLotCostPerUnit,
   getStockEntryUnitCost,
   totalQuantity,
   computeStockEntryFinancials,
+  buildStockEntryQuantityStats,
   DEFAULT_SALE_PRICE,
 } from '../utils/calculations.js';
 import { validateProduct, validateStockEntry, parseSizesQuickInput } from '../utils/validators.js';
@@ -55,6 +55,7 @@ let editingId = null;
 let viewingId = null;
 let viewingStockEntryId = null;
 let editingStockEntryId = null;
+let editingStockProductId = '';
 let editingEntryQuantity = null;
 let deletingId = null;
 let deletingTarget = null;
@@ -168,6 +169,7 @@ function syncStockNameFromProduct() {
 function resetStockForm() {
   stockForm?.reset();
   editingStockEntryId = null;
+  editingStockProductId = '';
   editingEntryQuantity = null;
   qs('#stock-name').value = '';
   qs('#stock-observation').value = '';
@@ -176,6 +178,7 @@ function resetStockForm() {
   qs('#stock-investorId').value = '';
   qs('#stock-suggestedSalePrice').value = DEFAULT_SALE_PRICE;
   qs('#stock-importTaxes').value = '';
+  qs('#stock-importFreight').value = '';
   qs('#stock-importTaxesPaidAt').value = '';
   showStockFormErrors([]);
   setStockSizeRows([]);
@@ -190,12 +193,17 @@ function setStockModalMode(mode = 'create') {
   const submitBtn = qs('#btn-save-stock');
   const sizesEditor = qs('#stock-sizes-editor');
   const productSelect = qs('#stock-product');
+  const nameInput = qs('#stock-name');
   const isEdit = mode === 'edit';
 
   if (title) title.textContent = isEdit ? 'Editar estoque' : 'Cadastrar estoque';
   if (submitBtn) submitBtn.textContent = isEdit ? 'Salvar alterações' : 'Registrar estoque';
   if (sizesEditor) sizesEditor.hidden = isEdit;
-  if (productSelect) productSelect.disabled = isEdit;
+  if (productSelect) {
+    productSelect.disabled = isEdit;
+    productSelect.required = !isEdit;
+  }
+  if (nameInput) nameInput.required = !isEdit;
 }
 
 function openStockModal(productId = '') {
@@ -217,17 +225,20 @@ async function openEditStockModal(id) {
 
   const entry = result.data;
   const importPerUnit = Number(entry.importTaxPerUnit)
-    || importTaxPerUnit(Number(entry.importTaxes) || 0, entry.entryQuantity || entry.quantity);
+    || diluteLotCostPerUnit(Number(entry.importTaxes) || 0, entry.entryQuantity || entry.quantity);
+  const freightPerUnit = Number(entry.importFreightPerUnit)
+    || diluteLotCostPerUnit(Number(entry.importFreight) || 0, entry.entryQuantity || entry.quantity);
   const baseCost = entry.baseCostPrice != null
     ? Number(entry.baseCostPrice)
-    : Math.max(0, getStockEntryUnitCost(entry) - importPerUnit);
+    : Math.max(0, getStockEntryUnitCost(entry) - importPerUnit - freightPerUnit);
 
   resetStockForm();
   editingStockEntryId = id;
+  editingStockProductId = entry.productId || '';
   editingEntryQuantity = Number(entry.entryQuantity) || totalQuantity(entry.sizes);
   setStockModalMode('edit');
 
-  qs('#stock-name').value = entry.name || '';
+  qs('#stock-name').value = entry.name || entry.productName || '';
   populateStockProductSelect(entry.productId);
   qs('#stock-stockOrigin').value = entry.stockOrigin || 'proprio';
   qs('#stock-investorId').value = entry.investorId || '';
@@ -236,6 +247,7 @@ async function openEditStockModal(id) {
   qs('#stock-suggestedSalePrice').value = entry.suggestedSalePrice ?? DEFAULT_SALE_PRICE;
   qs('#stock-minimumSalePrice').value = entry.minimumSalePrice ?? '';
   qs('#stock-importTaxes').value = entry.importTaxes ? entry.importTaxes : '';
+  qs('#stock-importFreight').value = entry.importFreight ? entry.importFreight : '';
   qs('#stock-importTaxesPaidAt').value = entry.importTaxesPaidAt || '';
   qs('#stock-observation').value = entry.notes || '';
   setStockSizeRows((entry.sizes || []).map((s) => ({
@@ -273,12 +285,27 @@ function applyStockQuickSizes() {
   showToast(`${parsed.length} tamanho(s) aplicado(s)!`, 'success');
 }
 
+function parseDecimalInput(value) {
+  const str = String(value ?? '').trim();
+  if (!str) return '';
+  const normalized = str.includes(',') && !str.includes('.') ? str.replace(',', '.') : str;
+  const num = Number(normalized);
+  return Number.isFinite(num) ? num : NaN;
+}
+
+function readStockDecimalField(selector) {
+  const raw = qs(selector)?.value;
+  if (raw === '' || raw == null) return '';
+  return parseDecimalInput(raw);
+}
+
 function getStockPricingData() {
   return {
-    costPrice: qs('#stock-costPrice')?.value,
-    suggestedSalePrice: qs('#stock-suggestedSalePrice')?.value,
-    minimumSalePrice: qs('#stock-minimumSalePrice')?.value,
-    importTaxes: qs('#stock-importTaxes')?.value || 0,
+    costPrice: readStockDecimalField('#stock-costPrice'),
+    suggestedSalePrice: readStockDecimalField('#stock-suggestedSalePrice'),
+    minimumSalePrice: readStockDecimalField('#stock-minimumSalePrice'),
+    importTaxes: readStockDecimalField('#stock-importTaxes'),
+    importFreight: readStockDecimalField('#stock-importFreight'),
     importTaxesPaidAt: qs('#stock-importTaxesPaidAt')?.value || '',
   };
 }
@@ -288,38 +315,54 @@ function updateStockImportCostPreview() {
   if (!preview) return;
 
   const lines = collectStockSizesFromRows().filter((s) => s.size && Number(s.quantity) > 0);
-  const { costPrice, importTaxes } = getStockPricingData();
+  const { costPrice, importTaxes, importFreight } = getStockPricingData();
+  const safeCost = Number.isFinite(Number(costPrice)) ? Number(costPrice) : 0;
+  const safeTax = Number.isFinite(Number(importTaxes)) ? Number(importTaxes) : 0;
+  const safeFreight = Number.isFinite(Number(importFreight)) ? Number(importFreight) : 0;
   const lineTotal = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
   const total = editingEntryQuantity || lineTotal;
-  const taxPerUnit = importTaxPerUnit(importTaxes, total || lineTotal);
-  const finalCost = unitCostWithImportTax(costPrice, importTaxes, total || lineTotal);
+  const pieces = total || lineTotal;
+  const taxPerUnit = diluteLotCostPerUnit(safeTax, pieces);
+  const freightPerUnit = diluteLotCostPerUnit(safeFreight, pieces);
+  const operationalPerUnit = taxPerUnit + freightPerUnit;
+  const hasLotCosts = safeTax > 0 || safeFreight > 0;
 
   if (editingStockEntryId) {
-    preview.textContent = total
-      ? `Edição usa ${total} peça(s) na entrada original para diluir imposto → custo final ${formatCurrency(finalCost)}/peça`
-      : 'Informe o imposto para recalcular o custo final por peça.';
+    preview.textContent = pieces
+      ? `Edição usa ${pieces} peça(s) na entrada original. Mercadoria: ${formatCurrency(safeCost)}/peça. Operacional (imp.+frete): ${formatCurrency(operationalPerUnit)}/peça.`
+      : 'Informe imposto/frete para ver o custo operacional por peça.';
     return;
   }
 
   if (!lineTotal) {
-    preview.textContent = 'Informe as peças entrando para calcular o custo final por peça deste lote.';
+    preview.textContent = 'Informe as peças entrando para calcular o custo operacional por peça.';
     return;
   }
 
-  if (!importTaxes || Number(importTaxes) <= 0) {
-    preview.textContent = `Custo deste lote: ${formatCurrency(costPrice || 0)} por peça (sem impostos).`;
+  if (!hasLotCosts) {
+    preview.textContent = `Custo da mercadoria: ${formatCurrency(safeCost)}/peça. Sem imposto ou frete internacional.`;
     return;
   }
 
+  const parts = [];
+  if (taxPerUnit > 0) {
+    parts.push(`imposto ${formatCurrency(taxPerUnit)}/peça (${formatCurrency(safeTax)} ÷ ${lineTotal})`);
+  }
+  if (freightPerUnit > 0) {
+    parts.push(`frete ${formatCurrency(freightPerUnit)}/peça (${formatCurrency(safeFreight)} ÷ ${lineTotal})`);
+  }
   preview.textContent =
-    `Imposto por peça: ${formatCurrency(taxPerUnit)} (${formatCurrency(importTaxes)} ÷ ${lineTotal} peças) → ` +
-    `Custo final do lote: ${formatCurrency(finalCost)} por peça`;
+    `Mercadoria ${formatCurrency(safeCost)}/peça. Custo operacional: ${parts.join(' + ')} — abate o lucro na venda (como Yampi/Appmax), não entra no custo do produto.`;
 }
 
 async function handleStockSubmit(e) {
   e.preventDefault();
-  const stockName = qs('#stock-name').value.trim();
-  const productId = qs('#stock-product').value;
+  const isEdit = !!editingStockEntryId;
+  const stockName = qs('#stock-name').value.trim()
+    || (isEdit ? qs('#stock-product')?.selectedOptions?.[0]?.textContent?.trim() : '');
+  const productId = isEdit
+    ? editingStockProductId
+    : qs('#stock-product').value;
   const lines = collectStockSizesFromRows();
   const pricing = getStockPricingData();
 
@@ -330,11 +373,16 @@ async function handleStockSubmit(e) {
     investorId: qs('#stock-investorId')?.value || '',
     lines,
     entryQuantity: editingEntryQuantity,
+    isEdit,
     ...pricing,
   });
 
   showStockFormErrors(validation.errors);
-  if (!validation.valid) return;
+  if (!validation.valid) {
+    stockFormErrors?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    showToast(validation.errors[0] || 'Corrija os erros no formulário.', 'warning');
+    return;
+  }
 
   const observation = qs('#stock-observation').value.trim();
   const btn = qs('#btn-save-stock');
@@ -374,6 +422,7 @@ async function handleStockSubmit(e) {
   pendingStockProductId = '';
   pendingStockName = '';
   editingStockEntryId = null;
+  editingStockProductId = '';
   editingEntryQuantity = null;
   await loadStockEntries({ fresh: true });
   if (movementsLoaded) {
@@ -388,7 +437,11 @@ function formatCostCell(entry) {
   }
   const hasImport = (Number(entry.importTaxes) || 0) > 0
     || (Number(entry.importTaxPerUnit) || 0) > 0;
-  const suffix = hasImport ? '<br><span class="text-sm text-muted">c/ imposto diluído</span>' : '';
+  const hasFreight = (Number(entry.importFreight) || 0) > 0
+    || (Number(entry.importFreightPerUnit) || 0) > 0;
+  const suffix = hasImport || hasFreight
+    ? '<br><span class="text-sm text-muted">+ custo operacional na venda</span>'
+    : '';
   return `<strong>${formatCurrency(cost)}</strong>${suffix}`;
 }
 
@@ -473,6 +526,7 @@ function getOriginBadge(origin) {
 function getStockFilterValues() {
   return {
     search: stockSearchInput?.value.trim().toLowerCase() || '',
+    product: qs('#stock-filter-product')?.value || '',
     size: qs('#stock-filter-size')?.value || '',
     origin: qs('#stock-filter-origin')?.value || '',
     investor: qs('#stock-filter-investor')?.value || '',
@@ -487,6 +541,7 @@ function entryHasSize(entry, size) {
 function filterStockEntries(entries) {
   const f = getStockFilterValues();
   return entries.filter((e) => {
+    if (f.product && e.productId !== f.product) return false;
     if (f.size && !entryHasSize(e, f.size)) return false;
     if (f.origin && e.stockOrigin !== f.origin) return false;
     if (f.investor && e.investorId !== f.investor) return false;
@@ -548,8 +603,270 @@ async function loadInvestorsForSelect() {
   }
 }
 
+function populateStockProductFilterSelects() {
+  const productMap = new Map();
+  allStockEntries.forEach((entry) => {
+    if (!entry.productId) return;
+    const name = entry.productName || allProducts.find((p) => p.id === entry.productId)?.name || entry.productId;
+    productMap.set(entry.productId, name);
+  });
+
+  const options = [...productMap.entries()]
+    .sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'pt-BR'))
+    .map(([id, name]) => `<option value="${id}">${escapeHtml(name)}</option>`)
+    .join('');
+
+  ['#stock-filter-product', '#stock-history-filter-product', '#hist-filter-product'].forEach((sel) => {
+    const select = qs(sel);
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = `<option value="">Todos</option>${options}`;
+    select.value = current;
+  });
+}
+
 function entryHasLowStock(entry) {
   return (entry.sizes || []).some((s) => availableQty(s) <= lowStockThreshold);
+}
+
+function getStockEntryQuantitySummary(entry) {
+  return buildStockEntryQuantityStats(entry, []);
+}
+
+function formatStockQuantityCell(entry) {
+  const { currentQty, entryPieces, hasRecordedEntry } = getStockEntryQuantitySummary(entry);
+
+  if (!hasRecordedEntry || entryPieces === currentQty) {
+    return `<strong>${currentQty}</strong>`;
+  }
+
+  return `
+    <strong>${currentQty}</strong>
+    <br><span class="text-sm text-muted">de ${entryPieces} na entrada</span>
+  `;
+}
+
+function formatSizesLine(sizes) {
+  const list = sortSizes(sizes || []);
+  if (!list.length) return '—';
+  return list.map((s) => `${Number(s.quantity) || 0} ${s.size}`).join(', ');
+}
+
+function renderStockEntryWarningsHtml(stats) {
+  const warnings = [];
+
+  if (stats.entryQuantityMismatch) {
+    warnings.push(
+      `O campo "entrada" salvo no lote (${stats.storedEntryQty}) não bate com as peças cadastradas (${stats.entryPieces}). Os números abaixo usam o cadastro real.`,
+    );
+  }
+
+  if (stats.hasMovementOversell) {
+    warnings.push(
+      `${stats.grossSoldQty} saída(s) no histórico para um lote de ${stats.entryPieces} peça(s) (${stats.oversoldQty} a mais). Verifique pedidos duplicados ou tamanhos errados.`,
+    );
+  }
+
+  if (!warnings.length) return '';
+
+  return `
+    <div class="stock-view-alert" role="status">
+      ${warnings.map((text) => `<p class="stock-view-alert__text">${text}</p>`).join('')}
+    </div>
+  `;
+}
+
+function renderStockSizesComparisonHtml(stats) {
+  const { initialSizes, currentSizes, soldQty } = stats;
+  const initialLine = formatSizesLine(initialSizes);
+  const currentLine = formatSizesLine(currentSizes);
+  const initialTotal = stats.entryPieces;
+  const currentTotal = stats.currentQty;
+
+  return `
+    <div class="stock-size-compare">
+      <div class="stock-size-compare__row">
+        <span class="stock-size-compare__label">Estoque inicial</span>
+        <span class="stock-size-compare__value">${initialLine}</span>
+        <span class="stock-size-compare__total">${initialTotal} peça(s)</span>
+      </div>
+      <div class="stock-size-compare__row stock-size-compare__row--current">
+        <span class="stock-size-compare__label">Estoque final (saldo)</span>
+        <span class="stock-size-compare__value">${currentLine}</span>
+        <span class="stock-size-compare__total">${currentTotal} peça(s)</span>
+      </div>
+      ${soldQty > 0 ? `<p class="stock-size-compare__note text-sm text-muted">${soldQty} peça(s) vendida(s) deste lote.</p>` : ''}
+    </div>
+  `;
+}
+
+function groupMovementsByStockEntry(movements) {
+  const map = new Map();
+  (movements || []).forEach((movement) => {
+    const entryId = movement.stockEntryId;
+    if (!entryId) return;
+    if (!map.has(entryId)) map.set(entryId, []);
+    map.get(entryId).push(movement);
+  });
+  return map;
+}
+
+function renderStockHistoryItemHtml(entry, stats) {
+  const currentLine = formatSizesLine(stats.currentSizes);
+  const initialLine = formatSizesLine(stats.initialSizes);
+  const soldNote = stats.soldQty > 0
+    ? `<p class="stock-history-item__sold">${stats.soldQty} peça(s) vendida(s)</p>`
+    : '';
+
+  return `
+    <article class="stock-history-item" data-stock-name="${escapeHtml(entry.name || '')}" data-product-name="${escapeHtml(entry.productName || '')}" data-product-id="${escapeHtml(entry.productId || '')}">
+      <div class="stock-history-item__header">
+        <span class="stock-history-item__name">${escapeHtml(entry.name || '—')}</span>
+        <span class="stock-history-item__product">${escapeHtml(entry.productName || '—')}</span>
+        <span class="stock-history-item__meta">${getStatusBadge(entry.status)}</span>
+      </div>
+      <div class="stock-history-item__compare">
+        <div class="stock-history-item__col stock-history-item__col--initial">
+          <span class="stock-history-item__label">Estoque inicial</span>
+          <span class="stock-history-item__value">${initialLine}</span>
+          <span class="stock-history-item__total">${stats.entryPieces} peça(s)</span>
+        </div>
+        <div class="stock-history-item__col stock-history-item__col--current">
+          <span class="stock-history-item__label">Estoque atual</span>
+          <span class="stock-history-item__value">${currentLine}</span>
+          <span class="stock-history-item__total">${stats.currentQty} peça(s)</span>
+        </div>
+      </div>
+      ${soldNote}
+    </article>
+  `;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function getStockHistoryFilterValues() {
+  return {
+    search: qs('#stock-history-search')?.value.trim().toLowerCase() || '',
+    product: qs('#stock-history-filter-product')?.value || '',
+  };
+}
+
+function filterStockHistoryItems() {
+  const f = getStockHistoryFilterValues();
+  const items = qsa('.stock-history-item', qs('#stock-history-list'));
+  let visible = 0;
+
+  items.forEach((item) => {
+    const hay = `${item.dataset.stockName} ${item.dataset.productName}`.toLowerCase();
+    const matchesSearch = !f.search || hay.includes(f.search);
+    const matchesProduct = !f.product || item.dataset.productId === f.product;
+    const show = matchesSearch && matchesProduct;
+    item.hidden = !show;
+    if (show) visible += 1;
+  });
+
+  const countEl = qs('#stock-history-count');
+  if (countEl) {
+    const hasFilter = f.search || f.product;
+    countEl.textContent = hasFilter
+      ? `${visible} de ${items.length} estoque(s)`
+      : `${items.length} estoque(s)`;
+  }
+}
+
+function renderStockHistoryList(entries, movementsByEntry) {
+  const listEl = qs('#stock-history-list');
+  const countEl = qs('#stock-history-count');
+  if (!listEl) return;
+
+  const sorted = [...entries].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'));
+
+  if (!sorted.length) {
+    listEl.innerHTML = '<p class="table__empty">Nenhum estoque cadastrado.</p>';
+    if (countEl) countEl.textContent = '0 estoque(s)';
+    return;
+  }
+
+  listEl.innerHTML = sorted.map((entry) => {
+    const entryMovements = movementsByEntry.get(entry.id) || [];
+    const stats = buildStockEntryQuantityStats(entry, entryMovements);
+    return renderStockHistoryItemHtml(entry, stats);
+  }).join('');
+
+  filterStockHistoryItems();
+}
+
+async function loadMovementsForHistory() {
+  const result = await getMovementHistory({}, { fresh: true });
+  if (!result.success) {
+    showToast(result.error, 'error');
+    return false;
+  }
+
+  allMovements = result.data;
+  movementsLoaded = true;
+  return true;
+}
+
+async function openStockHistoryModal() {
+  const listEl = qs('#stock-history-list');
+  const countEl = qs('#stock-history-count');
+  if (!listEl) return;
+
+  listEl.innerHTML = '<p class="table__empty">Carregando histórico...</p>';
+  if (countEl) countEl.textContent = 'Carregando...';
+  openModal('stock-history-modal');
+
+  const loaded = await loadMovementsForHistory();
+  if (!loaded) {
+    listEl.innerHTML = '<p class="table__empty">Não foi possível carregar o histórico.</p>';
+    if (countEl) countEl.textContent = 'Erro ao carregar';
+    return;
+  }
+
+  const movementsByEntry = groupMovementsByStockEntry(allMovements);
+  populateStockProductFilterSelects();
+  renderStockHistoryList(allStockEntries, movementsByEntry);
+}
+
+function renderStockQuantitySummaryHtml(summary) {
+  const { currentQty, entryPieces, soldQty, soldPercent, hasRecordedEntry } = summary;
+
+  if (!hasRecordedEntry) {
+    return `
+      <div class="stock-view-summary stock-view-summary--single">
+        <div class="stock-view-summary__card">
+          <span class="stock-view-summary__label">Peças no estoque</span>
+          <strong class="stock-view-summary__value">${currentQty}</strong>
+        </div>
+        <p class="stock-view-summary__note text-sm text-muted">Entrada original não registrada neste lote (cadastro antigo).</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="stock-view-summary">
+      <div class="stock-view-summary__card">
+        <span class="stock-view-summary__label">Entrada original</span>
+        <strong class="stock-view-summary__value">${entryPieces}</strong>
+      </div>
+      <div class="stock-view-summary__card stock-view-summary__card--sold">
+        <span class="stock-view-summary__label">Vendidas</span>
+        <strong class="stock-view-summary__value">${soldQty}</strong>
+        <span class="stock-view-summary__meta">${soldPercent}%</span>
+      </div>
+      <div class="stock-view-summary__card stock-view-summary__card--current">
+        <span class="stock-view-summary__label">Restantes</span>
+        <strong class="stock-view-summary__value">${currentQty}</strong>
+      </div>
+    </div>
+  `;
 }
 
 function renderStockEntriesTable(entries) {
@@ -569,7 +886,7 @@ function renderStockEntriesTable(entries) {
       <td><strong>${e.name}</strong></td>
       <td>${e.productName || '—'}</td>
       <td>${formatSizesBadges(e.sizes)}</td>
-      <td>${e.quantity ?? 0}</td>
+      <td>${formatStockQuantityCell(e)}</td>
       <td>${formatCostCell(e)}</td>
       <td>${formatPriceCell(e)}</td>
       <td>${getOriginBadge(e.stockOrigin)}${e.stockOrigin === 'investidor' ? `<br><span class="text-sm text-muted">${getInvestorName(e.investorId)}</span>` : ''}</td>
@@ -769,24 +1086,40 @@ async function openStockEntryViewModal(id) {
   viewingId = null;
   qs('.modal__title', qs('#view-modal')).textContent = 'Detalhes do estoque';
 
-  const sizesText = sortSizes(e.sizes).map((s) => `${s.quantity} ${s.size}`).join(', ') || '—';
   const fin = computeStockEntryFinancials(e);
+  const movResult = await getMovementHistory({ stockEntryId: e.id });
+  const movements = movResult.success ? movResult.data : [];
+  const qtySummary = buildStockEntryQuantityStats(e, movements);
+  const finWithStats = {
+    ...fin,
+    entryPieces: qtySummary.entryPieces,
+    importPerUnit: diluteLotCostPerUnit(Number(e.importTaxes) || 0, qtySummary.entryPieces),
+    freightPerUnit: diluteLotCostPerUnit(Number(e.importFreight) || 0, qtySummary.entryPieces),
+  };
+  finWithStats.operationalPerUnit = finWithStats.importPerUnit + finWithStats.freightPerUnit;
+  finWithStats.totalPaid = (fin.baseCost * finWithStats.entryPieces)
+    + (Number(e.importTaxes) || 0)
+    + (Number(e.importFreight) || 0);
 
   const fields = [
     ['Nome do estoque', e.name],
     ['Produto', e.productName],
-    ['Tamanhos', sizesText],
-    ['Quantidade total', e.quantity ?? 0],
-    ['Custo compra/peça', formatCurrency(fin.baseCost)],
-    ...(fin.importTotal > 0
+    ['Custo mercadoria/peça', formatCurrency(finWithStats.baseCost)],
+    ...(finWithStats.importTotal > 0
       ? [
-        ['Imposto importação (total)', formatCurrency(fin.importTotal)],
-        ['Peças na entrada', fin.entryPieces || '—'],
-        ['Imposto diluído/peça', `${formatCurrency(fin.importPerUnit)} (${formatCurrency(fin.importTotal)} ÷ ${fin.entryPieces} peças)`],
+        ['Imposto importação (total)', formatCurrency(finWithStats.importTotal)],
+        ['Peças na entrada', finWithStats.entryPieces || '—'],
+        ['Imposto diluído/peça', `${formatCurrency(finWithStats.importPerUnit)} (${formatCurrency(finWithStats.importTotal)} ÷ ${finWithStats.entryPieces} peças)`],
       ]
       : []),
-    ['Custo final/peça', formatCurrency(fin.unitCost)],
-    ['Valor pago no lote', `${formatCurrency(fin.totalPaid)} (${formatCurrency(fin.baseCost)} × ${fin.entryPieces} peças${fin.importTotal > 0 ? ` + ${formatCurrency(fin.importTotal)} imposto` : ''})`],
+    ...(finWithStats.freightTotal > 0
+      ? [
+        ['Frete internacional (total)', formatCurrency(finWithStats.freightTotal)],
+        ['Frete diluído/peça', `${formatCurrency(finWithStats.freightPerUnit)} (${formatCurrency(finWithStats.freightTotal)} ÷ ${finWithStats.entryPieces} peças)`],
+      ]
+      : []),
+    ['Custo operacional/peça (imp.+frete)', formatCurrency(finWithStats.operationalPerUnit)],
+    ['Valor pago no lote', `${formatCurrency(finWithStats.totalPaid)} (${formatCurrency(finWithStats.baseCost)} × ${finWithStats.entryPieces} peças${finWithStats.importTotal > 0 ? ` + ${formatCurrency(finWithStats.importTotal)} imposto` : ''}${finWithStats.freightTotal > 0 ? ` + ${formatCurrency(finWithStats.freightTotal)} frete` : ''})`],
     ['Retorno esperado (restantes)', `${formatCurrency(fin.expectedReturn)} (${formatCurrency(e.suggestedSalePrice)} × ${fin.currentQty} peças)`],
     ['Lucro esperado (restantes)', formatCurrency(fin.expectedProfit)],
     ['Preço sugerido', formatCurrency(e.suggestedSalePrice)],
@@ -798,7 +1131,10 @@ async function openStockEntryViewModal(id) {
   ];
 
   qs('#view-modal-body').innerHTML = `
-    <div class="product-view__fields">
+    ${renderStockEntryWarningsHtml(qtySummary)}
+    ${renderStockQuantitySummaryHtml(qtySummary)}
+    ${renderStockSizesComparisonHtml(qtySummary)}
+    <div class="product-view__fields stock-view-fields">
       ${fields.map(([label, value]) => `
         <div>
           <div class="product-view__field-label">${label}</div>
@@ -1030,6 +1366,7 @@ function renderLowStockAlerts() {
 
 function getHistoryFilters() {
   return {
+    productId: qs('#hist-filter-product')?.value || '',
     stockEntryId: qs('#hist-filter-stock')?.value || '',
     type: qs('#hist-filter-type')?.value || '',
     size: qs('#hist-filter-size')?.value || '',
@@ -1041,6 +1378,7 @@ function getHistoryFilters() {
 function filterMovements(movements) {
   const f = getHistoryFilters();
   return movements.filter((m) => {
+    if (f.productId && m.productId !== f.productId) return false;
     if (f.stockEntryId && m.stockEntryId !== f.stockEntryId) return false;
     if (f.type && m.type !== f.type) return false;
     if (f.size && m.size !== f.size) return false;
@@ -1096,6 +1434,7 @@ async function loadMovements(options = {}) {
 function refreshStockUI() {
   populateMovementStockSelect();
   populateStockProductSelect();
+  populateStockProductFilterSelects();
   renderStockSummary();
   renderLowStockAlerts();
   renderStockEntriesTable(allStockEntries);
@@ -1147,11 +1486,12 @@ function initStockEvents() {
   qs('#mov-type')?.addEventListener('change', toggleMovementTypeFields);
   qs('#movement-form')?.addEventListener('submit', handleMovementSubmit);
 
-  ['#hist-filter-stock', '#hist-filter-type', '#hist-filter-size', '#hist-filter-origin', '#hist-filter-investor'].forEach((sel) => {
+  ['#hist-filter-product', '#hist-filter-stock', '#hist-filter-type', '#hist-filter-size', '#hist-filter-origin', '#hist-filter-investor'].forEach((sel) => {
     qs(sel)?.addEventListener('change', renderMovementsTable);
   });
 
   qs('#btn-clear-hist-filters')?.addEventListener('click', () => {
+    qs('#hist-filter-product').value = '';
     qs('#hist-filter-stock').value = '';
     qs('#hist-filter-type').value = '';
     qs('#hist-filter-size').value = '';
@@ -1166,9 +1506,13 @@ function initStockEvents() {
 function initEvents() {
   setupModalClose('stock-modal');
   setupModalClose('view-modal');
+  setupModalClose('stock-history-modal');
   setupModalClose('delete-modal');
 
   qs('#btn-register-stock')?.addEventListener('click', () => openStockModal());
+  qs('#btn-stock-history')?.addEventListener('click', openStockHistoryModal);
+  qs('#stock-history-search')?.addEventListener('input', filterStockHistoryItems);
+  qs('#stock-history-filter-product')?.addEventListener('change', filterStockHistoryItems);
   qs('#btn-go-product-register')?.addEventListener('click', openProductRegisterFromStock);
   qs('#btn-reset-product-form')?.addEventListener('click', resetForm);
   qs('#stock-product')?.addEventListener('change', syncStockNameFromProduct);
@@ -1184,16 +1528,17 @@ function initEvents() {
   productForm?.addEventListener('submit', handleSave);
   qs('#field-imageUrl')?.addEventListener('input', (e) => updateImagePreview(e.target.value.trim()));
   stockOriginField?.addEventListener('change', toggleStockInvestorField);
-  ['#stock-costPrice', '#stock-importTaxes', '#stock-suggestedSalePrice', '#stock-minimumSalePrice'].forEach((sel) => {
+  ['#stock-costPrice', '#stock-importTaxes', '#stock-importFreight', '#stock-suggestedSalePrice', '#stock-minimumSalePrice'].forEach((sel) => {
     qs(sel)?.addEventListener('input', updateStockImportCostPreview);
   });
 
   stockSearchInput?.addEventListener('input', () => renderStockEntriesTable(allStockEntries));
-  ['#stock-filter-size', '#stock-filter-origin', '#stock-filter-investor', '#stock-filter-status'].forEach((sel) => {
+  ['#stock-filter-product', '#stock-filter-size', '#stock-filter-origin', '#stock-filter-investor', '#stock-filter-status'].forEach((sel) => {
     qs(sel)?.addEventListener('change', () => renderStockEntriesTable(allStockEntries));
   });
   qs('#btn-clear-stock-filters')?.addEventListener('click', () => {
     stockSearchInput.value = '';
+    qs('#stock-filter-product').value = '';
     qs('#stock-filter-size').value = '';
     qs('#stock-filter-origin').value = '';
     qs('#stock-filter-investor').value = '';

@@ -51,6 +51,8 @@ function decomposeSaleProfit(sale, settings = {}, investor = null, stockEntry = 
         quantity: sale.quantity,
         financials,
         persProfit,
+        sale,
+        stockEntry,
       })
       : 0,
     shir7ShirtFromProprio: !isInvestor ? shirtNetProfit : 0,

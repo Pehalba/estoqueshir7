@@ -24,7 +24,8 @@ import {
   applyMovement,
   totalQuantity,
   importTaxPerUnit,
-  unitCostWithImportTax,
+  diluteLotCostPerUnit,
+  MAX_STOCK_ENTRY_PIECES,
 } from '../utils/calculations.js';
 import { cachedFetch, invalidateCache, CACHE_KEYS } from '../utils/dataCache.js';
 
@@ -86,11 +87,7 @@ export async function migrateLegacyProductStock(products, existingEntries = null
 
     const entryPieces = totalQuantity(product.sizes);
     const importPerUnit = importTaxPerUnit(product.importTaxes, entryPieces);
-    const unitFinal = unitCostWithImportTax(
-      product.costPrice,
-      product.importTaxes,
-      entryPieces
-    );
+    const unitFinal = Number(product.costPrice) || 0;
 
     const createResult = await createStockEntry({
       name: `${product.name} — estoque legado`,
@@ -275,14 +272,23 @@ export async function registerStockEntry({
     return { success: false, error: 'Produto e peças são obrigatórios.' };
   }
 
+  const entryPiecesPreview = safeLines.reduce((sum, l) => sum + l.quantity, 0);
+  if (entryPiecesPreview > MAX_STOCK_ENTRY_PIECES) {
+    return {
+      success: false,
+      error: `Cada lote pode ter no máximo ${MAX_STOCK_ENTRY_PIECES} peças.`,
+    };
+  }
+
   const costPrice = Number(pricing.costPrice) || 0;
   const suggestedSalePrice = Number(pricing.suggestedSalePrice) || 0;
   const minimumSalePrice = Number(pricing.minimumSalePrice) || 0;
   const importTaxes = Number(pricing.importTaxes) || 0;
+  const importFreight = Number(pricing.importFreight) || 0;
   const importTaxesPaidAt = pricing.importTaxesPaidAt || '';
   const entryPieces = safeLines.reduce((sum, l) => sum + l.quantity, 0);
-  const importPerUnit = importTaxPerUnit(importTaxes, entryPieces);
-  const entryUnitFinal = unitCostWithImportTax(costPrice, importTaxes, entryPieces);
+  const importPerUnit = diluteLotCostPerUnit(importTaxes, entryPieces);
+  const freightPerUnit = diluteLotCostPerUnit(importFreight, entryPieces);
   const origin = stockOrigin === 'investidor' ? 'investidor' : 'proprio';
 
   try {
@@ -309,10 +315,13 @@ export async function registerStockEntry({
           stockOrigin: origin,
           investorId: origin === 'investidor' ? investorId : '',
           sizes,
+          entrySizes: sizes.map((s) => ({ size: s.size, quantity: s.quantity })),
           baseCostPrice: costPrice,
-          costPrice: entryUnitFinal,
+          costPrice,
           importTaxes,
           importTaxPerUnit: importPerUnit,
+          importFreight,
+          importFreightPerUnit: freightPerUnit,
           entryQuantity: entryPieces,
           importTaxesPaidAt,
           suggestedSalePrice,
@@ -348,7 +357,7 @@ export async function registerStockEntry({
           minimumSalePrice,
           importTaxes,
           importTaxesPaidAt,
-          entryUnitFinal,
+          entryUnitFinal: costPrice,
           userId: user.uid,
           userEmail: user.email || '',
           relatedSaleId: '',
@@ -365,7 +374,7 @@ export async function registerStockEntry({
         stockEntryId: entryRef.id,
         movementIds,
         entryPieces,
-        entryUnitFinal,
+        entryUnitFinal: costPrice,
       },
     };
   } catch (error) {
@@ -401,9 +410,10 @@ export async function updateStockEntryDetails(id, {
     const suggestedSalePrice = Number(pricing.suggestedSalePrice);
     const minimumSalePrice = Number(pricing.minimumSalePrice);
     const importTaxes = Number(pricing.importTaxes) || 0;
+    const importFreight = Number(pricing.importFreight) || 0;
     const importTaxesPaidAt = pricing.importTaxesPaidAt || '';
-    const importPerUnit = importTaxPerUnit(importTaxes, entryPieces);
-    const entryUnitFinal = unitCostWithImportTax(baseCost, importTaxes, entryPieces);
+    const importPerUnit = diluteLotCostPerUnit(importTaxes, entryPieces);
+    const freightPerUnit = diluteLotCostPerUnit(importFreight, entryPieces);
     const origin = stockOrigin === 'investidor' ? 'investidor' : 'proprio';
 
     const result = await updateStockEntry(id, {
@@ -414,10 +424,15 @@ export async function updateStockEntryDetails(id, {
       investorId: origin === 'investidor' ? (investorId || '') : '',
       sizes: entry.sizes,
       baseCostPrice: baseCost,
-      costPrice: entryUnitFinal,
+      costPrice: baseCost,
       importTaxes,
       importTaxPerUnit: importPerUnit,
+      importFreight,
+      importFreightPerUnit: freightPerUnit,
       entryQuantity: entryPieces,
+      ...(entry.entrySizes?.length
+        ? { entrySizes: entry.entrySizes }
+        : {}),
       importTaxesPaidAt,
       suggestedSalePrice: Number.isFinite(suggestedSalePrice)
         ? suggestedSalePrice
@@ -440,8 +455,9 @@ export async function updateStockEntryDetails(id, {
       success: true,
       data: {
         id,
-        entryUnitFinal,
+        entryUnitFinal: baseCost,
         importPerUnit,
+        freightPerUnit,
       },
     };
   } catch (error) {

@@ -39,6 +39,10 @@ export function buildStockEntryPayload(data) {
   }));
 
   const qty = totalQuantity(sizes);
+  const entrySizes = (data.entrySizes || []).map((s) => ({
+    size: s.size,
+    quantity: Number(s.quantity) || 0,
+  }));
 
   return {
     name: data.name || data.stockEntryName || '',
@@ -48,12 +52,20 @@ export function buildStockEntryPayload(data) {
     investorId: data.stockOrigin === 'investidor' ? (data.investorId || '') : '',
     sizes,
     quantity: qty,
+    ...(entrySizes.length ? { entrySizes } : {}),
     baseCostPrice: data.baseCostPrice != null
       ? Number(data.baseCostPrice) || 0
-      : (data.importTaxPerUnit != null ? Number(data.costPrice) - Number(data.importTaxPerUnit) : Number(data.costPrice)) || 0,
+      : Math.max(
+        0,
+        Number(data.costPrice)
+          - (Number(data.importTaxPerUnit) || 0)
+          - (Number(data.importFreightPerUnit) || 0)
+      ),
     costPrice: Number(data.costPrice) || 0,
     importTaxes: Number(data.importTaxes) || 0,
+    importFreight: Number(data.importFreight) || 0,
     ...(data.importTaxPerUnit != null ? { importTaxPerUnit: Number(data.importTaxPerUnit) || 0 } : {}),
+    ...(data.importFreightPerUnit != null ? { importFreightPerUnit: Number(data.importFreightPerUnit) || 0 } : {}),
     ...(data.entryQuantity != null ? { entryQuantity: Number(data.entryQuantity) || qty } : {}),
     importTaxesPaidAt: data.importTaxesPaidAt || '',
     suggestedSalePrice: Number(data.suggestedSalePrice) || 0,
@@ -180,7 +192,10 @@ export function entriesAsStockItems(entries) {
     costPrice: e.costPrice,
     importTaxes: e.importTaxes,
     importTaxPerUnit: e.importTaxPerUnit,
+    importFreight: e.importFreight,
+    importFreightPerUnit: e.importFreightPerUnit,
     entryQuantity: e.entryQuantity,
+    entrySizes: e.entrySizes,
     suggestedSalePrice: e.suggestedSalePrice,
     minimumSalePrice: e.minimumSalePrice,
     stockOrigin: e.stockOrigin,
