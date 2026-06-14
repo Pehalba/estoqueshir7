@@ -8,6 +8,11 @@ const PRODUCT_FILTERS = [
   { id: 'br-home-amarela', label: 'Amarela', tone: 'amarela' },
 ];
 
+const PRODUCT_SORT_ORDER = {
+  'br-home-amarela': 0,
+  'br-tor-vermelha': 1,
+};
+
 let activeProduct = 'all';
 let activeSize = 'all';
 let activeStatus = 'pending';
@@ -54,8 +59,17 @@ function displayNumber(number) {
   return trimmed || '—';
 }
 
+function sortItemsForDisplay(items) {
+  if (activeProduct !== 'all') return items;
+  return [...items].sort((a, b) => {
+    const orderA = PRODUCT_SORT_ORDER[a.productId] ?? 99;
+    const orderB = PRODUCT_SORT_ORDER[b.productId] ?? 99;
+    return orderA - orderB;
+  });
+}
+
 function getVisibleItems() {
-  if (activeProduct === 'all') return ALL_ITEMS;
+  if (activeProduct === 'all') return sortItemsForDisplay(ALL_ITEMS);
   return ALL_ITEMS.filter((i) => i.productId === activeProduct);
 }
 
