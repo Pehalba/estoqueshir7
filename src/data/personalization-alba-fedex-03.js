@@ -48,6 +48,7 @@ const ALBA_FEDEX_03_ITEMS = [
   { orderId: '#1194', size: 'M', sizeLabel: 'M (M)', name: 'Larissa', number: '13' },
   { orderId: '#1199', size: 'XG', sizeLabel: 'XGG (2XL)', name: 'BECH', number: '26' },
   { orderId: '#1200', size: 'P', sizeLabel: 'P (S)', name: 'Thauana', number: '10' },
+  { orderId: '#1201', size: 'P', sizeLabel: 'P (S)', name: 'K. Spósito', number: '9' },
   { orderId: '#1204', size: 'G', sizeLabel: 'G (L)', name: 'Guidi', number: '12' },
   { orderId: '#1207', size: 'M', sizeLabel: 'M (M)', name: 'J.iMports', number: '71' },
   { orderId: '#1208', size: 'M', sizeLabel: 'M (M)', name: 'Bru', number: '2' },
