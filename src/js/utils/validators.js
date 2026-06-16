@@ -264,10 +264,22 @@ export function validateSale(data, context = {}) {
 export function validateQuickSale(data, context = {}) {
   const errors = [];
   const { product, lines, financials } = context;
+  const allowZeroPrice = !!(
+    context.allowZeroPrice
+    || data.allowZeroPrice
+    || data.isSample
+  );
   const skipMinimumPriceCheck = !!(
     context.skipMinimumPriceCheck
     || data.allowBelowMinimum
     || data.skipMinimumPriceCheck
+    || allowZeroPrice
+  );
+  const skipNegativeProfitCheck = !!(
+    context.skipNegativeProfitCheck
+    || data.skipNegativeProfitCheck
+    || data.allowBelowMinimum
+    || allowZeroPrice
   );
 
   if (!isRequired(data.stockEntryId) && !isRequired(data.productId)) {
@@ -288,9 +300,11 @@ export function validateQuickSale(data, context = {}) {
         errors.push(`Quantidade inválida para ${line.size}.`);
       }
       const price = Number(line.unitPrice);
-      if (!price || price <= 0) {
+      if ((!price || price <= 0) && !allowZeroPrice) {
         errors.push(`Preço inválido para ${line.size}.`);
       } else if (
+        price > 0
+        &&
         !skipMinimumPriceCheck
         && product
         && price < Number(product.minimumSalePrice)
@@ -342,7 +356,7 @@ export function validateQuickSale(data, context = {}) {
     errors.push('Custo do produto ausente ou inválido.');
   }
 
-  if (financials?.netProfit < 0) {
+  if (financials?.netProfit < 0 && !skipNegativeProfitCheck) {
     errors.push('Lucro líquido negativo — ajuste preços ou desconto.');
   }
 

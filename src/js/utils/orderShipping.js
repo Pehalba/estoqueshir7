@@ -6,11 +6,12 @@ export function normalizeShopOrderId(orderId) {
     .toUpperCase();
 }
 
-/** Pedidos da loja (#1163, 1177-2). Ignora IDs automáticos S20260611-123456. */
+/** Pedidos da loja (#1163, 1177-2) e externos (#EXT-PE). Ignora IDs automáticos S20260611-123456. */
 export function isShopOrderNumber(orderId) {
   const id = normalizeShopOrderId(orderId);
   if (!id) return false;
   if (/^S\d{8}-\d{6,}$/i.test(id)) return false;
+  if (/^EXT-[A-Z0-9-]+$/i.test(id)) return true;
   return /^\d{3,}(-\d+)?$/i.test(id);
 }
 

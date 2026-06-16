@@ -6,7 +6,7 @@ Tamanho XGG da planilha = XG no estoque.
 
 Alba - Fedex 03
 Capacidade: 100 peças | P: 10 | M: 30 | G: 35 | GG: 20 | XG: 5
-Total do lote usado: 100 peças | P: 10 | M: 30 | G: 35 | GG: 20 | XG: 5
+Total do lote usado: 101 peças | P: 11 | M: 30 | G: 35 | GG: 20 | XG: 5
 #1152	23/05/2026	Vermelha	GG	1	Com personalização	Não	R$ 279,90	R$ 279,90
 #1153	24/05/2026	Vermelha	M	1	Com personalização	Não	R$ 279,90	R$ 279,90
 #1155	24/05/2026	Vermelha	GG	1	Com personalização	Não	R$ 279,90	R$ 279,90
@@ -40,6 +40,7 @@ Total do lote usado: 100 peças | P: 10 | M: 30 | G: 35 | GG: 20 | XG: 5
 #1198	31/05/2026	Vermelha	P	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1199	31/05/2026	Vermelha	XG	1	Com personalização	Não	R$ 279,90	R$ 279,90
 #1200	31/05/2026	Vermelha	P	1	Com personalização	Sim	R$ 279,90	R$ 260,31
+#1201	31/05/2026	Vermelha	P	1	Com personalização	Sim	R$ 279,90	R$ 260,31
 #1202	31/05/2026	Vermelha	P	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
 #1203	31/05/2026	Vermelha	P	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
 #1204	31/05/2026	Vermelha	G	1	Com personalização	Sim	R$ 279,90	R$ 260,31
@@ -84,14 +85,17 @@ Total do lote usado: 100 peças | P: 10 | M: 30 | G: 35 | GG: 20 | XG: 5
 #1267	02/06/2026	Vermelha	GG	1	Com personalização	Sim	R$ 279,90	R$ 253,48
 #1268	02/06/2026	Vermelha	M	1	Sem personalização	Sim	R$ 229,90	R$ 207,35
 #1272	03/06/2026	Vermelha	G	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
-#1273	03/06/2026	Vermelha	GG	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1274	03/06/2026	Vermelha	M	1	Sem personalização	Sim	R$ 229,90	R$ 192,84
+#1275	03/06/2026	Vermelha	G	1	Sem personalização	Sim	R$ 229,90	R$ 196,57
+#1275-2	03/06/2026	Vermelha	G	1	Sem personalização	Sim	R$ 229,90	R$ 196,57
+#1275-3	03/06/2026	Vermelha	GG	1	Sem personalização	Sim	R$ 229,90	R$ 196,57
 #1276	03/06/2026	Vermelha	M	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1278	03/06/2026	Vermelha	G	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1285	04/06/2026	Vermelha	G	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1286	04/06/2026	Vermelha	M	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1287	04/06/2026	Vermelha	G	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
 #1289	04/06/2026	Vermelha	G	1	Sem personalização	Não	R$ 229,90	R$ 229,90
+#1290	04/06/2026	Vermelha	M	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
 #1292	04/06/2026	Vermelha	G	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
 #1298	04/06/2026	Vermelha	G	1	Com personalização	Não	R$ 279,90	R$ 279,90
 #1309	05/06/2026	Vermelha	G	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
@@ -104,14 +108,10 @@ Total do lote usado: 100 peças | P: 10 | M: 30 | G: 35 | GG: 20 | XG: 5
 #1338	05/06/2026	Vermelha	G	1	Com personalização	Sim	R$ 279,90	R$ 260,31
 #1350	06/06/2026	Vermelha	G	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1375	07/06/2026	Vermelha	G	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
-#1378	07/06/2026	Vermelha	G	1	Sem personalização	Não	R$ 229,90	R$ 229,90
-#1497	11/06/2026	Vermelha	G	1	Sem personalização	Sim	R$ 229,90	R$ 204,90
-#1497-2	11/06/2026	Vermelha	M	1	Sem personalização	Sim	R$ 229,90	R$ 204,90
 
 Fedex 04
 Capacidade: 80 peças | P: 10 | M: 20 | G: 25 | GG: 20 | XG: 5
-Total do lote usado: 77 peças | P: 10 | M: 20 | G: 22 | GG: 20 | XG: 5
-#1201	31/05/2026	Vermelha	P	1	Com personalização	Sim	R$ 279,90	R$ 260,31
+Total do lote usado: 77 peças | P: 9 | M: 21 | G: 22 | GG: 20 | XG: 5
 #1205	31/05/2026	Vermelha	P	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1206	31/05/2026	Vermelha	G	1	Com personalização	Sim	R$ 279,90	R$ 237,05
 #1206-2	31/05/2026	Vermelha	P	1	Com personalização	Sim	R$ 279,90	R$ 237,05
@@ -125,9 +125,7 @@ Total do lote usado: 77 peças | P: 10 | M: 20 | G: 22 | GG: 20 | XG: 5
 #1254	02/06/2026	Vermelha	P	1	Com personalização	Sim	R$ 279,90	R$ 260,31
 #1259	02/06/2026	Vermelha	P	1	Com personalização	Não	R$ 279,90	R$ 279,90
 #1262	02/06/2026	Vermelha	P	1	Com personalização	Sim	R$ 279,90	R$ 260,31
-#1275	03/06/2026	Vermelha	G	1	Sem personalização	Sim	R$ 229,90	R$ 196,57
-#1275-2	03/06/2026	Vermelha	G	1	Sem personalização	Sim	R$ 229,90	R$ 196,57
-#1275-3	03/06/2026	Vermelha	GG	1	Sem personalização	Sim	R$ 229,90	R$ 196,57
+#1273	03/06/2026	Vermelha	GG	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1277	03/06/2026	Vermelha	GG	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1281	04/06/2026	Vermelha	GG	1	Com personalização	Sim	R$ 279,90	R$ 260,31
 #1288	04/06/2026	Vermelha	G	1	Com personalização	Sim	R$ 279,90	R$ 244,81
@@ -164,6 +162,7 @@ Total do lote usado: 77 peças | P: 10 | M: 20 | G: 22 | GG: 20 | XG: 5
 #1356	06/06/2026	Vermelha	GG	1	Com personalização	Não	R$ 279,90	R$ 279,90
 #1364	06/06/2026	Vermelha	GG	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
 #1370	06/06/2026	Vermelha	GG	1	Sem personalização	Não	R$ 229,90	R$ 229,90
+#1378	07/06/2026	Vermelha	G	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1383	07/06/2026	Vermelha	GG	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
 #1388	07/06/2026	Vermelha	G	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1392	07/06/2026	Vermelha	GG	1	Sem personalização	Não	R$ 229,90	R$ 229,90
@@ -186,12 +185,14 @@ Total do lote usado: 77 peças | P: 10 | M: 20 | G: 22 | GG: 20 | XG: 5
 #1470	10/06/2026	Vermelha	G	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1471	10/06/2026	Vermelha	G	1	Com personalização	Não	R$ 279,90	R$ 279,90
 #1496	11/06/2026	Vermelha	G	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
+#1497	11/06/2026	Vermelha	G	1	Sem personalização	Sim	R$ 229,90	R$ 204,90
+#1497-2	11/06/2026	Vermelha	M	1	Sem personalização	Sim	R$ 229,90	R$ 204,90
 #1498	11/06/2026	Vermelha	G	1	Com personalização	Não	R$ 279,90	R$ 279,90
 #1499	11/06/2026	Vermelha	G	1	Com personalização	Sim	R$ 279,90	R$ 260,31
 
 Fedex 05
 Capacidade: 78 peças | P: 15 | M: 25 | G: 20 | GG: 18 | XG: 0
-Total do lote usado: 49 peças | P: 15 | M: 25 | G: 1 | GG: 8
+Total do lote usado: 49 peças | P: 15 | M: 25 | G: 1 | GG: 8 | XG: 0
 #1317	05/06/2026	Vermelha	P	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
 #1322	05/06/2026	Vermelha	P	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
 #1323	05/06/2026	Vermelha	P	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
@@ -244,10 +245,9 @@ Total do lote usado: 49 peças | P: 15 | M: 25 | G: 1 | GG: 8
 
 LZ vermelhas
 Capacidade: 54 peças | P: 26 | M: 12 | G: 4 | GG: 4 | XG: 8
-Total do lote usado: 46 peças | P: 26 | M: 7 | XG: 8
+Total do lote usado: 45 peças | P: 26 | M: 6 | G: 4 | GG: 1 | XG: 8
 #1257	02/06/2026	Vermelha	XG	1	Com personalização	Não	R$ 279,90	R$ 279,90
 #1271	03/06/2026	Vermelha	XG	1	Com personalização	Sim	R$ 279,90	R$ 229,90
-#1290	04/06/2026	Vermelha	M	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
 #1314	05/06/2026	Vermelha	XG	1	Com personalização	Sim	R$ 279,90	R$ 237,05
 #1333	05/06/2026	Vermelha	XG	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
 #1334	05/06/2026	Vermelha	XG	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
@@ -293,7 +293,7 @@ Total do lote usado: 46 peças | P: 26 | M: 7 | XG: 8
 #1501	11/06/2026	Vermelha	P	1	Com personalização	Sim	R$ 279,90	R$ 260,31
 
 SEM ESTOQUE / FALTANTES
-Total faltante: 9 peças | P: 1 | XG: 8
+Total faltante: 9 peças | P: 1 | M: 0 | G: 0 | GG: 0 | XG: 8
 #1376	07/06/2026	Vermelha	XG	1	Com personalização	Não	R$ 279,90	R$ 279,90
 #1397	07/06/2026	Vermelha	XG	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1439	09/06/2026	Vermelha	XG	1	Sem personalização	Não	R$ 229,90	R$ 229,90
@@ -305,7 +305,7 @@ Total faltante: 9 peças | P: 1 | XG: 8
 #1502	11/06/2026	Vermelha	P	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 
 SOBRA APÓS ABATER AS VENDAS
-Alba - Fedex 03: P: 0 | M: 0 | G: 0 | GG: 0 | XG: 0 | Total 0
-Fedex 04: P: 0 | M: 0 | G: 3 | GG: 0 | XG: 0 | Total 3
+Alba - Fedex 03: P: -1 | M: 0 | G: 0 | GG: 0 | XG: 0 | Total -1
+Fedex 04: P: 1 | M: -1 | G: 3 | GG: 0 | XG: 0 | Total 3
 Fedex 05: P: 0 | M: 0 | G: 19 | GG: 10 | XG: 0 | Total 29
-LZ vermelhas: P: 0 | M: 5 | G: 0 | GG: 3 | XG: 0 | Total 8
+LZ vermelhas: P: 0 | M: 6 | G: 0 | GG: 3 | XG: 0 | Total 9

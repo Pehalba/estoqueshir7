@@ -598,7 +598,9 @@ function getOrderFallbackUnitPrice(order) {
 }
 
 function buildLinesFromParsedOrder(order, fallbackUnitPrice = getBasePrice()) {
-  const linePrice = order.unitPrice > 0 ? order.unitPrice : fallbackUnitPrice;
+  const linePrice = order.isSample
+    ? 0
+    : (order.unitPrice > 0 ? order.unitPrice : fallbackUnitPrice);
   const priceAlreadyDiscounted = Number(order.discountedPrice) > 0;
   const defaultPers = Number(globalSettings.defaultPersonalizationPrice) || 50;
   const coupon = priceAlreadyDiscounted
@@ -677,7 +679,8 @@ function renderPastePreview(batch) {
         <p><strong>Peças:</strong> ${sizesText}</p>
         ${order.allocationHint ? `<p class="text-sm text-muted"><strong>Saldo no lote:</strong> ${order.allocationHint}</p>` : ''}
         ${order.splitFromQuantity > 1 ? `<p class="text-sm text-muted">Gerado da qtd ${order.splitFromQuantity} na planilha (pedido ${order.splitPart}/${order.splitFromQuantity})</p>` : ''}
-        ${order.unitPrice > 0 ? `<p><strong>Faturamento:</strong> ${formatCurrency(order.unitPrice)}${order.listPrice > order.unitPrice ? ` <span class="text-muted">(lista ${formatCurrency(order.listPrice)})</span>` : ''}</p>` : ''}
+        ${order.isSample ? '<p><strong>Faturamento:</strong> <span class="badge badge--neutral">Amostra</span> R$ 0,00</p>' : ''}
+        ${!order.isSample && order.unitPrice > 0 ? `<p><strong>Faturamento:</strong> ${formatCurrency(order.unitPrice)}${order.listPrice > order.unitPrice ? ` <span class="text-muted">(lista ${formatCurrency(order.listPrice)})</span>` : ''}</p>` : ''}
         <p><strong>Pers.:</strong> ${order.isPersonalized ? 'Sim' : 'Não'}
           · <strong>Cupom:</strong> ${formatCouponUsedLabel(order.coupon)}
           · <strong>Frete:</strong> ${formatCurrency(order.freight)}</p>
@@ -768,7 +771,7 @@ function applyFirstPasteOrderToForm() {
 }
 
 function orderUsesSpreadsheetPrice(order) {
-  return Number(order.discountedPrice) > 0 || Number(order.unitPrice) > 0;
+  return !!order.isSample || Number(order.discountedPrice) > 0 || Number(order.unitPrice) > 0;
 }
 
 async function refreshStockEntryInCache(stockEntryId) {
@@ -831,12 +834,22 @@ async function registerParsedOrder(order) {
 
   const allowBelowMinimum = orderUsesSpreadsheetPrice(order);
   const validation = validateQuickSale(
-    { stockEntryId: order.stockEntryId, unitCost, lines, allowBelowMinimum },
+    {
+      stockEntryId: order.stockEntryId,
+      unitCost,
+      lines,
+      allowBelowMinimum,
+      isSample: !!order.isSample,
+      allowZeroPrice: !!order.isSample,
+      skipNegativeProfitCheck: allowBelowMinimum || !!order.isSample,
+    },
     {
       product: stockLikeProduct,
       lines: linesWithStock,
       financials,
       skipMinimumPriceCheck: allowBelowMinimum,
+      allowZeroPrice: !!order.isSample,
+      skipNegativeProfitCheck: allowBelowMinimum || !!order.isSample,
     }
   );
 
@@ -851,6 +864,9 @@ async function registerParsedOrder(order) {
     lines,
     orderId: order.orderId || undefined,
     allowBelowMinimum,
+    isSample: !!order.isSample,
+    allowZeroPrice: !!order.isSample,
+    skipNegativeProfitCheck: allowBelowMinimum || !!order.isSample,
     platformCosts: getActivePlatformCosts(),
     defaultPersonalizationCostPerPiece: globalSettings.personalizationCostPerPiece,
     defaultPersonalizationPrice: globalSettings.defaultPersonalizationPrice,
@@ -876,11 +892,12 @@ async function registerFirstPasteOrder() {
 
   if (result.success) {
     showToast(
-      `Pedido ${order.orderId} cadastrado · faturamento ${formatCurrency(order.unitPrice)}`,
+      `Pedido ${order.orderId} cadastrado · faturamento ${order.isSample ? 'amostra R$ 0,00' : formatCurrency(order.unitPrice)}`,
       'success'
     );
-    await loadData();
+    await loadData({ freshSales: true });
     previewPasteOrders();
+    switchTab('history');
   } else {
     showToast(result.error, 'error');
   }
@@ -898,16 +915,14 @@ async function registerAllPasteOrders() {
 
   let ok = 0;
   const failures = [];
-  const pendingIds = initial.valid.map((order) => order.orderId);
+  const pendingIndices = initial.orders
+    .map((order, index) => ({ order, index }))
+    .filter(({ order }) => order.valid)
+    .map(({ index }) => index);
 
-  for (const orderId of pendingIds) {
+  for (const index of pendingIndices) {
     const batch = previewPasteOrders();
-    const order = batch.orders.find((item) => item.orderId === orderId);
-
-    if (!order) {
-      failures.push(`${orderId}: pedido não encontrado na pré-visualização.`);
-      continue;
-    }
+    const order = batch.orders[index];
 
     if (!order.valid) {
       failures.push(`${order.orderId || order.raw}: ${order.errors.join(' ') || 'Sem estoque disponível.'}`);
@@ -926,13 +941,19 @@ async function registerAllPasteOrders() {
   setLoading(btn, false);
 
   if (ok > 0) {
-    showToast(`${ok} pedido(s) cadastrado(s)!`, 'success');
+    showToast(
+      `${ok} pedido(s) cadastrado(s)! Veja em Saídas recentes ou Pedidos (#EXT também aparece).`,
+      'success'
+    );
     if (!failures.length) {
       qs('#sales-paste-input').value = '';
       pasteStockOverrides = {};
       renderPastePreview({ orders: [], valid: [], invalid: [], total: 0 });
     }
-    await loadData();
+    await loadData({ freshSales: true });
+    if (!failures.length) {
+      switchTab('history');
+    }
   }
 
   if (failures.length) {
@@ -1292,6 +1313,7 @@ function filterSales() {
   if (!search) return allSales;
   return allSales.filter((s) =>
     (s.productName || '').toLowerCase().includes(search)
+    || String(s.orderId || '').toLowerCase().includes(search)
     || formatSaleLinesSummary(s).toLowerCase().includes(search)
   );
 }
@@ -1316,8 +1338,10 @@ function renderSalesTable() {
     <tr>
       <td class="text-sm">${formatDate(s.createdAt)}</td>
       <td>
+        ${s.orderId ? `<div class="text-sm text-muted">${s.orderId}</div>` : ''}
         <strong>${s.productName}</strong>
         <div class="text-sm text-muted">${formatSaleLinesSummary(s)}</div>
+        ${s.isSample ? '<span class="badge badge--neutral">Amostra</span>' : ''}
         ${(Number(s.platformCost) || 0) > 0 ? '<span class="badge badge--info">Site</span>' : ''}
         ${(s.isPersonalized || s.lines?.some((l) => l.isPersonalized)) ? '<span class="badge badge--info">Personalizado</span>' : ''}
         ${saleUsedCoupon(s) ? '<span class="badge badge--neutral">Cupom</span>' : ''}
@@ -1329,11 +1353,11 @@ function renderSalesTable() {
   `).join('');
 }
 
-async function loadData() {
+async function loadData(options = {}) {
   const [stockResult, invResult, salesResult] = await Promise.all([
     listStockEntries(),
     listInvestors(),
-    listSales(),
+    listSales({}, options.freshSales ? { fresh: true } : {}),
   ]);
 
   allStockEntries = stockResult.success ? stockResult.data : [];

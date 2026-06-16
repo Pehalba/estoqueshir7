@@ -270,7 +270,8 @@ function parseExtendedStructuredLine(cols, context, raw) {
   const couponText = cols[6] || '';
   const listPrice = parseMoneyValue(cols[7]);
   const discountedPrice = parseMoneyValue(cols[8]);
-  const unitPrice = discountedPrice > 0 ? discountedPrice : listPrice;
+  const isSample = listPrice === 0 && discountedPrice === 0;
+  const unitPrice = isSample ? 0 : (discountedPrice > 0 ? discountedPrice : listPrice);
 
   const sizes = buildSizesFromColumns(sizeText, qtyText);
   const isPersonalized = extractPersonalization(persText || raw);
@@ -301,6 +302,7 @@ function parseExtendedStructuredLine(cols, context, raw) {
     unitPrice,
     listPrice,
     discountedPrice,
+    isSample,
     sizes,
   };
 }

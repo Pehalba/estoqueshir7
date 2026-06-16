@@ -369,10 +369,36 @@ export async function createQuickSale(input) {
 
     const platformFees = calculatePlatformFeesBreakdown(platformCosts, financials.totalRevenue);
 
-    const skipMinimumPriceCheck = !!input.allowBelowMinimum;
+    const skipMinimumPriceCheck = !!(
+      input.allowBelowMinimum
+      || input.skipMinimumPriceCheck
+      || input.allowZeroPrice
+      || input.isSample
+    );
+    const skipNegativeProfitCheck = !!(
+      input.skipNegativeProfitCheck
+      || input.allowBelowMinimum
+      || input.allowZeroPrice
+      || input.isSample
+    );
     const validation = validateQuickSale(
-      { ...input, unitCost, productId: stockEntryId, allowBelowMinimum: skipMinimumPriceCheck },
-      { product: stockLikeProduct, lines: linesWithStock, financials, skipMinimumPriceCheck }
+      {
+        ...input,
+        unitCost,
+        productId: stockEntryId,
+        allowBelowMinimum: skipMinimumPriceCheck,
+        allowZeroPrice: !!(input.allowZeroPrice || input.isSample),
+        isSample: !!input.isSample,
+        skipNegativeProfitCheck,
+      },
+      {
+        product: stockLikeProduct,
+        lines: linesWithStock,
+        financials,
+        skipMinimumPriceCheck,
+        allowZeroPrice: !!(input.allowZeroPrice || input.isSample),
+        skipNegativeProfitCheck,
+      }
     );
 
     if (!validation.valid) {
@@ -461,7 +487,8 @@ export async function createQuickSale(input) {
       trafficCost: 0,
       channel: 'site',
       paymentMethod: input.paymentMethod || 'pix',
-      customer: '',
+      customer: input.customer || '',
+      isSample: !!input.isSample,
       stockOrigin: stockEntry.stockOrigin || 'proprio',
       investorId: stockEntry.investorId || '',
       investorPayout,
