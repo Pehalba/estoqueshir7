@@ -121,6 +121,58 @@ export async function orderIdExists(orderId) {
   }
 }
 
+/** Próximo ID livre quando o pedido já existe (ex.: EXT-AMOSTRA-P → EXT-AMOSTRA-P-2). */
+export async function resolveUniqueOrderId(orderId) {
+  const base = String(orderId || '').trim();
+  if (!base) return generateQuickOrderId();
+  if (!(await orderIdExists(base))) return base;
+
+  for (let n = 2; n <= 99; n += 1) {
+    const candidate = `${base}-${n}`;
+    if (!(await orderIdExists(candidate))) return candidate;
+  }
+
+  return `${base}-${Date.now()}`;
+}
+
+/** Próximo sufixo livre para pedidos numéricos (#1678 → #1678-2 se #1678 já existe). */
+export async function resolveShopOrderIdSuffix(orderId) {
+  const raw = String(orderId || '').trim().replace(/^#/, '');
+  const baseNum = raw.match(/^(\d+)/)?.[1];
+  if (!baseNum) return resolveUniqueOrderId(raw);
+
+  if (!(await orderIdExists(baseNum))) return baseNum;
+
+  for (let n = 2; n <= 99; n += 1) {
+    const candidate = `${baseNum}-${n}`;
+    if (!(await orderIdExists(candidate))) return candidate;
+  }
+
+  return `${baseNum}-${Date.now()}`;
+}
+
+export async function getSaleByOrderId(orderId) {
+  const id = String(orderId || '').trim();
+  if (!id) {
+    return { success: false, error: 'Número do pedido inválido.' };
+  }
+
+  try {
+    const q = query(
+      collection(db, COLLECTION),
+      where('orderId', '==', id),
+      limit(1)
+    );
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+      return { success: false, error: 'Pedido não encontrado.' };
+    }
+    return { success: true, data: mapSale(snapshot.docs[0]) };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
 export async function createSale(input) {
   const user = getCurrentUser();
   if (!user) {
@@ -422,11 +474,12 @@ export async function createQuickSale(input) {
       }
     }
 
-    const orderId = String(input.orderId || '').trim() || generateQuickOrderId();
+    let orderId = String(input.orderId || '').trim() || generateQuickOrderId();
     if (input.orderId) {
-      const duplicate = await orderIdExists(orderId);
-      if (duplicate) {
-        return { success: false, error: `Pedido ${orderId} já foi registrado.` };
+      if (/^EXT-/i.test(orderId)) {
+        orderId = await resolveUniqueOrderId(orderId);
+      } else if (await orderIdExists(orderId)) {
+        orderId = await resolveShopOrderIdSuffix(orderId);
       }
     }
 

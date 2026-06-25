@@ -107,6 +107,8 @@
               <p class="profits-card__label">Total repasse investidores</p>
               <p class="profits-card__value" id="tab-inv-total">R$ 0,00</p>
               <p class="profits-card__hint" id="tab-inv-hint">0 venda(s) · capital + 40% lucro em camisas</p>
+              <dl class="profits-inv-breakdown" id="tab-inv-breakdown"></dl>
+              <p class="profits-card__hint profits-card__hint--status" id="tab-inv-payment-status"></p>
             </div>
           </div>
           <p class="scroll-hint">Deslize a tabela para ver todas as colunas →</p>
@@ -117,11 +119,17 @@
                   <th>Investidor</th>
                   <th>Vendas</th>
                   <th>Peças</th>
+                  <th>Capital devolvido</th>
+                  <th>Parte do lucro</th>
                   <th>Repasse</th>
+                  <th>Pago</th>
+                  <th>Restante</th>
+                  <th>Status</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody id="tbody-investidores">
-                <tr><td colspan="4" class="table__empty">Carregando...</td></tr>
+                <tr><td colspan="10" class="table__empty">Carregando...</td></tr>
               </tbody>
             </table>
           </div>
@@ -246,6 +254,45 @@
           </div>
         </section>
       </main>
+    </div>
+  </div>
+
+  <div id="payout-modal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog modal__dialog--sm">
+      <div class="modal__header">
+        <h3 class="modal__title" id="payout-modal-title">Registrar pagamento</h3>
+        <button type="button" class="modal__close" data-modal-close aria-label="Fechar">&times;</button>
+      </div>
+      <form id="payout-form">
+        <div class="modal__body">
+          <p class="profits-payout-intro" id="payout-modal-intro"></p>
+          <dl class="profits-payout-summary">
+            <div><dt>Total devido</dt><dd id="payout-due">R$ 0,00</dd></div>
+            <div><dt>Já pago</dt><dd id="payout-paid">R$ 0,00</dd></div>
+            <div><dt>Restante</dt><dd id="payout-remaining">R$ 0,00</dd></div>
+          </dl>
+          <div class="form-group">
+            <label class="form-group__label form-group__label--required" for="payout-amount">Valor deste pagamento</label>
+            <input class="form-input" type="number" id="payout-amount" name="amount" min="0.01" step="0.01" required>
+            <p class="form-group__hint">
+              <button type="button" class="profits-payout-link" id="btn-payout-fill-remaining">Usar valor restante</button>
+            </p>
+          </div>
+          <div class="form-group">
+            <label class="form-group__label" for="payout-note">Observação (opcional)</label>
+            <input class="form-input" type="text" id="payout-note" name="note" placeholder="Ex.: PIX parcial">
+          </div>
+          <div id="payout-history" class="profits-payout-history" hidden>
+            <p class="profits-payout-history__title">Pagamentos registrados</p>
+            <ul class="profits-payout-history__list" id="payout-history-list"></ul>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn--ghost" data-modal-close>Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="btn-payout-submit">Registrar pagamento</button>
+        </div>
+      </form>
     </div>
   </div>
 

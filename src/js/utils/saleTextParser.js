@@ -217,6 +217,132 @@ function isStructuredHeaderRow(cols) {
 
 const SIZE_ONLY = /^(PP|P|M|G|GG|XG|XGG)$/i;
 
+const COMPACT_PERS_MARKERS = /^(cp|sp|c\s*p|com\s*pers?|pers?|personalizacao|personalização)$/i;
+
+const COMPACT_EXT_MARKERS = /^(ext|externo|externa)$/i;
+
+export const EXT_AUTO_ORDER_ID = '__EXT_AUTO__';
+
+const COMPACT_PRODUCT_HINTS = [
+  'amarela',
+  'vermelha',
+  'azul',
+  'feminina',
+  'masculina',
+  'torcedor',
+  'jogador',
+  'brasil',
+  'copa',
+];
+
+function isCompactProductHint(token) {
+  const norm = normalizeSaleText(token || '');
+  if (!norm || SIZE_ONLY.test(token) || COMPACT_PERS_MARKERS.test(token)) return false;
+  if (/^\d+(?:[.,]\d+)?$/.test(String(token || '').trim())) return false;
+  return COMPACT_PRODUCT_HINTS.some((hint) => norm.includes(hint));
+}
+
+function looksLikeCompactSaleLine(raw) {
+  const text = String(raw || '').trim();
+  if (!text || text.includes('\t')) return false;
+
+  const tokens = text.split(/\s+/).filter(Boolean);
+  if (tokens.length < 3 || tokens.length > 6) return false;
+
+  const last = tokens[tokens.length - 1];
+  const hasPrice = /^amostra$/i.test(last) || last === '0' || parseMoneyValue(last) > 0;
+  if (!hasPrice) return false;
+
+  if (COMPACT_EXT_MARKERS.test(tokens[0])) {
+    return tokens.length >= 3;
+  }
+
+  return true;
+}
+
+/**
+ * Formato curto (um por linha):
+ *   1682 p 229
+ *   1678 amarela p 229
+ *   1678 p cp 300
+ *   ext p 0          → amostra externa (0 = amostra; ID automático EXT-AMOSTRA-…)
+ * O último número é o valor pago. Com CP, usa o preço fixo de personalização das configurações.
+ */
+export function parseCompactSaleLine(lineText, context = {}) {
+  const raw = String(lineText || '').trim();
+  if (!looksLikeCompactSaleLine(raw)) return null;
+
+  const tokens = raw.split(/\s+/).filter(Boolean);
+  let idx = 0;
+  let orderId = '';
+  let productName = '';
+
+  if (COMPACT_EXT_MARKERS.test(tokens[0])) {
+    orderId = EXT_AUTO_ORDER_ID;
+    idx = 1;
+  } else {
+    orderId = extractOrderId(tokens[0]) || tokens[0].replace(/^#/, '').trim().toUpperCase();
+    idx = 1;
+  }
+
+  if (tokens[idx] && isCompactProductHint(tokens[idx])) {
+    productName = tokens[idx];
+    idx += 1;
+  }
+
+  const sizeToken = tokens[idx];
+  const size = parseSizeOnly(sizeToken);
+  if (!size) return null;
+  idx += 1;
+
+  let isPersonalized = false;
+  if (tokens[idx] && COMPACT_PERS_MARKERS.test(tokens[idx])) {
+    const marker = normalizeSaleText(tokens[idx]);
+    isPersonalized = marker !== 'sp';
+    idx += 1;
+  }
+
+  const priceToken = tokens[idx];
+  if (!priceToken) return null;
+
+  const isSample = /^amostra$/i.test(priceToken) || priceToken === '0';
+  const paid = isSample ? 0 : parseMoneyValue(priceToken);
+  if (!isSample && paid <= 0) return null;
+  if (tokens.length > idx + 1) return null;
+
+  const sizes = [{ size, quantity: 1 }];
+  const matchText = productName || raw;
+  const { entry: stockEntry, error: stockError } = resolveStockEntry(context, matchText);
+
+  const errors = [];
+  if (!orderId) errors.push('Número do pedido inválido.');
+  if (stockError) errors.push(stockError);
+  appendSizeErrors(stockEntry, sizes, errors);
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    raw,
+    format: 'compact',
+    orderId: String(orderId).toUpperCase(),
+    saleDate: '',
+    productName,
+    stockEntry,
+    stockEntryId: stockEntry?.id || '',
+    stockLabel: stockEntry
+      ? `${stockEntry.name} — ${stockEntry.productName}`
+      : (productName || '—'),
+    coupon: { couponId: '', couponName: '', couponPercent: 0 },
+    isPersonalized,
+    freight: extractFreight(raw, context.defaultFreight),
+    unitPrice: paid,
+    listPrice: 0,
+    discountedPrice: isSample ? 0 : paid,
+    isSample,
+    sizes,
+  };
+}
+
 export function parseMoneyValue(text) {
   const raw = String(text || '').trim();
   if (!raw) return 0;
@@ -505,6 +631,9 @@ export function parseSaleTextLine(lineText, context = {}) {
   }
   if (structured) return structured;
 
+  const compact = parseCompactSaleLine(lineText, context);
+  if (compact) return compact;
+
   const errors = [];
   const raw = String(lineText || '').trim();
   if (!raw) {
@@ -592,17 +721,99 @@ export function splitOrdersByQuantity(orders = []) {
   return orders.flatMap((order) => splitSingleOrderByQuantity(order));
 }
 
-/** Várias linhas = vários pedidos (um por linha). */
+/**
+ * 1 pedido = 1 peça. Vários tamanhos ou qtd > 1 viram linhas separadas (sem renumerar ainda).
+ */
+export function expandOrdersToOnePiece(orders = []) {
+  const pieces = [];
+
+  for (const order of orders || []) {
+    if (!order || order.skip) continue;
+
+    const sizes = order.sizes?.length
+      ? order.sizes
+      : [{ size: '', quantity: 1 }];
+
+    for (const sizeLine of sizes) {
+      const qty = Math.max(1, Math.floor(Number(sizeLine.quantity) || 1));
+      for (let q = 0; q < qty; q += 1) {
+        pieces.push({
+          ...order,
+          sizes: [{ ...sizeLine, quantity: 1 }],
+        });
+      }
+    }
+  }
+
+  return pieces;
+}
+
+/** @deprecated Use expandOrdersToOnePiece + assignSequentialOrderIdSuffixes */
+export function splitOrdersOnePieceEach(orders = []) {
+  return assignSequentialOrderIdSuffixes(expandOrdersToOnePiece(orders));
+}
+
+/** Numeração #1678, #1678-2 quando o mesmo pedido aparece mais de uma vez no lote. */
+export function assignSequentialOrderIdSuffixes(orders = []) {
+  const counters = new Map();
+
+  return orders.map((order) => {
+    const rawId = String(order.orderId || '').trim().toUpperCase().replace(/^#/, '');
+    if (
+      !rawId
+      || rawId === EXT_AUTO_ORDER_ID
+      || /^EXT-(AMOSTRA|VENDA)-/i.test(rawId)
+    ) {
+      return order;
+    }
+
+    const baseMatch = rawId.match(/^(\d+)(?:-(\d+))?$/);
+    const baseNum = baseMatch ? baseMatch[1] : rawId;
+
+    const n = (counters.get(baseNum) || 0) + 1;
+    counters.set(baseNum, n);
+
+    const orderId = n === 1 ? baseNum : `${baseNum}-${n}`;
+    if (orderId === rawId) return order;
+    return { ...order, orderId };
+  });
+}
+
+/** Gera IDs para linhas curtas `ext p 0` → EXT-AMOSTRA-P, EXT-AMOSTRA-P-2… */
+export function assignExtOrderIds(orders = []) {
+  const counters = new Map();
+
+  return orders.map((order) => {
+    if (order.orderId !== EXT_AUTO_ORDER_ID) return order;
+
+    const size = order.sizes?.[0]?.size || 'P';
+    const prefix = order.isSample ? 'EXT-AMOSTRA' : 'EXT-VENDA';
+    const key = `${prefix}-${size}`;
+    const n = (counters.get(key) || 0) + 1;
+    counters.set(key, n);
+
+    return {
+      ...order,
+      orderId: n === 1 ? key : `${key}-${n}`,
+    };
+  });
+}
+
+/** Várias linhas = vários pedidos (um por linha, uma peça por pedido). */
 export function parseSalesBatchText(text, context = {}) {
   const lines = String(text || '')
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
 
-  const orders = splitOrdersByQuantity(
-    lines
-      .map((line) => parseSaleTextLine(line, context))
-      .filter((order) => !order.skip)
+  const orders = assignSequentialOrderIdSuffixes(
+    assignExtOrderIds(
+      expandOrdersToOnePiece(
+        lines
+          .map((line) => parseSaleTextLine(line, context))
+          .filter((order) => !order.skip)
+      )
+    )
   );
 
   const valid = orders.filter((o) => o.valid);

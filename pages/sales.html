@@ -178,19 +178,25 @@
                   <button type="button" class="btn btn--ghost btn--sm" id="btn-paste-auto-match">Realocar Fedex 03→LZ</button>
                 </div>
                 <p id="paste-stock-info" class="sales-product-info"></p>
+                <p class="form-group__hint">O estoque selecionado acima vale para <strong>todos</strong> os pedidos da lista (não precisa repetir em cada linha).</p>
               </div>
               <div class="form-group">
                 <label class="form-group__label" for="sales-paste-input">Pedidos (um por linha)</label>
-                <textarea class="form-input sales-paste__textarea" id="sales-paste-input" rows="8" placeholder="Pedido	Data	Modelo	Tamanho	Qtd	Personalização	Cupom?	Valor do produto	Valor com desconto
-#1163	28/05/2026	Vermelha	GG	1	Com personalização	Sim	R$ 279,90	R$ 260,31"></textarea>
+                <textarea class="form-input sales-paste__textarea" id="sales-paste-input" rows="8" placeholder="#1163	28/05/2026	Vermelha	GG	1	Com personalização	Sim	R$ 279,90	R$ 260,31
+1682 p 229
+1678 amarela p cp 300
+ext p 0"></textarea>
                 <p class="form-group__hint">
                   <strong>Planilha (tab):</strong> Pedido · Data · Modelo · Tamanho · Qtd · Personalização · Cupom? · Valor · Valor c/ desconto<br>
                   Ex.: <code>#1163	28/05/2026	Vermelha	GG	1	Com personalização	Sim	R$ 279,90	R$ 260,31</code><br>
+                  <strong>Formato curto:</strong> <code>1682 p 229</code> · <code>1678 amarela p cp 300</code> · <code>ext p 0</code> (amostra externa, ID automático)<br>
+                  <strong><code>0</code> = amostra</strong> (R$ 0, grátis). Ex.: <code>1682 p 0</code> ou <code>ext p 0</code>. Também aceita a palavra <code>amostra</code> no lugar do <code>0</code>.<br>
                   Na coluna <strong>Cupom?</strong> use <strong>Sim</strong> ou <strong>Não</strong> (códigos como <code>Sim (NAZARIO7)</code> também são aceitos na colagem, mas não aparecem na prévia).
                   A linha de cabeçalho pode ser colada — ela é ignorada.
                   O faturamento usa sempre a coluna <strong>Valor com desconto</strong> (última coluna de valor).
-                  Se a <strong>Qtd</strong> for maior que 1 no mesmo tamanho, o sistema gera pedidos separados
-                  (ex.: qtd 2 → <code>#1275</code> e <code>#1275-2</code>, cada um com 1 peça).
+                  Se a <strong>Qtd</strong> for maior que 1, ou o mesmo pedido tiver mais de uma linha/tamanho, o sistema gera pedidos separados
+                  (ex.: <code>#1678</code> GG + <code>#1678</code> G → <code>#1678</code> e <code>#1678-2</code>; qtd 2 → <code>#1275</code> e <code>#1275-2</code>).
+                  Sempre <strong>1 pedido = 1 camisa</strong>.
                   A baixa segue Fedex 03 → 04 → 05 → LZ conforme o estoque disponível.
                 </p>
               </div>

@@ -55,7 +55,153 @@
 }
 
 .profits-summary--compact {
-  max-width: 28rem;
+  max-width: 36rem;
+}
+
+.profits-inv-breakdown {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm) var(--space-lg);
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+}
+
+.profits-inv-breakdown dt {
+  color: var(--color-text-muted);
+}
+
+.profits-inv-breakdown dd {
+  font-weight: 700;
+  margin: 0;
+}
+
+.profits-card__hint--status {
+  margin-top: var(--space-md);
+  font-weight: 600;
+}
+
+.profits-row__rule {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.profits-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.profits-status--pending {
+  background: rgba(201, 162, 39, 0.15);
+  color: #8a6d12;
+}
+
+.profits-status--paid {
+  background: rgba(34, 150, 90, 0.12);
+  color: var(--color-success);
+}
+
+.profits-row--paid td {
+  opacity: 0.92;
+}
+
+.profits-status--partial {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+}
+
+.profits-row--partial td:nth-child(8) {
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.profits-row--paid td:nth-child(8) {
+  color: var(--color-success);
+  font-weight: 700;
+}
+
+.profits-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.profits-payout-intro {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-md);
+  line-height: 1.5;
+}
+
+.profits-payout-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.profits-payout-summary dt {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.profits-payout-summary dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.profits-payout-link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.profits-payout-history {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.profits-payout-history__title {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0 0 var(--space-sm);
+}
+
+.profits-payout-history__list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .profits-payout-summary {
+    grid-template-columns: 1fr;
+  }
 }
 
 .profits-tabs__btn {

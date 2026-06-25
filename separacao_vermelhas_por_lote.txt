@@ -6,7 +6,7 @@ Tamanho XGG da planilha = XG no estoque.
 
 Alba - Fedex 03
 Capacidade: 100 peças | P: 10 | M: 30 | G: 35 | GG: 20 | XG: 5
-Total do lote usado: 101 peças | P: 11 | M: 30 | G: 35 | GG: 20 | XG: 5
+Total do lote usado: 100 peças | P: 10 | M: 30 | G: 35 | GG: 20 | XG: 5
 #1152	23/05/2026	Vermelha	GG	1	Com personalização	Não	R$ 279,90	R$ 279,90
 #1153	24/05/2026	Vermelha	M	1	Com personalização	Não	R$ 279,90	R$ 279,90
 #1155	24/05/2026	Vermelha	GG	1	Com personalização	Não	R$ 279,90	R$ 279,90
@@ -40,7 +40,6 @@ Total do lote usado: 101 peças | P: 11 | M: 30 | G: 35 | GG: 20 | XG: 5
 #1198	31/05/2026	Vermelha	P	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1199	31/05/2026	Vermelha	XG	1	Com personalização	Não	R$ 279,90	R$ 279,90
 #1200	31/05/2026	Vermelha	P	1	Com personalização	Sim	R$ 279,90	R$ 260,31
-#1201	31/05/2026	Vermelha	P	1	Com personalização	Sim	R$ 279,90	R$ 260,31
 #1202	31/05/2026	Vermelha	P	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
 #1203	31/05/2026	Vermelha	P	1	Sem personalização	Sim	R$ 229,90	R$ 213,81
 #1204	31/05/2026	Vermelha	G	1	Com personalização	Sim	R$ 279,90	R$ 260,31
@@ -111,10 +110,11 @@ Total do lote usado: 101 peças | P: 11 | M: 30 | G: 35 | GG: 20 | XG: 5
 
 Fedex 04
 Capacidade: 80 peças | P: 10 | M: 20 | G: 25 | GG: 20 | XG: 5
-Total do lote usado: 77 peças | P: 9 | M: 21 | G: 22 | GG: 20 | XG: 5
+Total do lote usado: 78 peças | P: 10 | M: 21 | G: 22 | GG: 20 | XG: 5
 #1205	31/05/2026	Vermelha	P	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 #1206	31/05/2026	Vermelha	G	1	Com personalização	Sim	R$ 279,90	R$ 237,05
 #1206-2	31/05/2026	Vermelha	P	1	Com personalização	Sim	R$ 279,90	R$ 237,05
+#1201	31/05/2026	Vermelha	P	1	Com personalização	Sim	R$ 279,90	R$ 260,31
 #1213	31/05/2026	Vermelha	P	1	Com personalização	Não	R$ 279,90	R$ 279,90
 #1228	01/06/2026	Vermelha	XG	1	Com personalização	Sim	R$ 279,90	R$ 260,31
 #1229	01/06/2026	Vermelha	XG	1	Com personalização	Sim	R$ 279,90	R$ 260,31
@@ -305,7 +305,7 @@ Total faltante: 9 peças | P: 1 | M: 0 | G: 0 | GG: 0 | XG: 8
 #1502	11/06/2026	Vermelha	P	1	Sem personalização	Não	R$ 229,90	R$ 229,90
 
 SOBRA APÓS ABATER AS VENDAS
-Alba - Fedex 03: P: -1 | M: 0 | G: 0 | GG: 0 | XG: 0 | Total -1
-Fedex 04: P: 1 | M: -1 | G: 3 | GG: 0 | XG: 0 | Total 3
+Alba - Fedex 03: P: 0 | M: 0 | G: 0 | GG: 0 | XG: 0 | Total 0
+Fedex 04: P: 0 | M: -1 | G: 3 | GG: 0 | XG: 0 | Total 2
 Fedex 05: P: 0 | M: 0 | G: 19 | GG: 10 | XG: 0 | Total 29
 LZ vermelhas: P: 0 | M: 6 | G: 0 | GG: 3 | XG: 0 | Total 9

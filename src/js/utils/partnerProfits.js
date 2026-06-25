@@ -8,6 +8,7 @@ import {
   buildSaleFinancialsFromSale,
   calculateShir7ShirtShareForInvestor,
   resolveSaleUnitCost,
+  resolveInvestorCapitalUnitCost,
 } from './calculations.js';
 
 export const SHIR7_PARTNERS = [
@@ -24,6 +25,27 @@ function getInvestorRepasse(sale) {
     return stored;
   }
   return 0;
+}
+
+function splitInvestorRepasse(sale, investor, stockEntry = null) {
+  const repasse = getInvestorRepasse(sale);
+  if (!investor || repasse <= 0) {
+    return { capital: 0, profitShare: repasse, repasse };
+  }
+
+  const qty = Number(sale.quantity) || 0;
+  const capitalUnit = resolveInvestorCapitalUnitCost(sale, stockEntry);
+
+  if (investor.repasseType === 'capital_mais_lucro' || investor.repasseType === 'custo_comissao') {
+    const capital = capitalUnit * qty;
+    return {
+      capital,
+      profitShare: Math.max(0, repasse - capital),
+      repasse,
+    };
+  }
+
+  return { capital: 0, profitShare: repasse, repasse };
 }
 
 function decomposeSaleProfit(sale, settings = {}, investor = null, stockEntry = null) {
@@ -73,6 +95,8 @@ export function calculatePartnerDistribution(sales, investors = [], filters = {}
 
   let totalNetProfit = 0;
   let investorRepasseTotal = 0;
+  let investorCapitalTotal = 0;
+  let investorProfitShareTotal = 0;
   let shir7ShirtFromInvestor = 0;
   let shir7ShirtFromProprio = 0;
   let shirtNetProfitTotal = 0;
@@ -109,16 +133,25 @@ export function calculatePartnerDistribution(sales, investors = [], filters = {}
       shir7ShirtFromInvestor += split.shir7ShirtFromInvestor;
 
       const invId = sale.investorId || 'sem-investidor';
+      const repasseParts = splitInvestorRepasse(sale, investor, stockEntry);
       const prev = byInvestor.get(invId) || {
         repasse: 0,
+        capital: 0,
+        profitShare: 0,
         shir7Share: 0,
         netProfit: 0,
         shirtNetProfit: 0,
         sales: 0,
         pieces: 0,
         profitBase: 0,
+        repasseRule: investor?.repasseType || '',
+        repassePercent: investor?.repasseValue ?? null,
       };
 
+      investorCapitalTotal += repasseParts.capital;
+      investorProfitShareTotal += repasseParts.profitShare;
+      prev.capital += repasseParts.capital;
+      prev.profitShare += repasseParts.profitShare;
       prev.repasse += split.investorRepasse;
       prev.shir7Share += split.shir7ShirtFromInvestor;
       prev.netProfit += split.shirtNetProfit;
@@ -147,6 +180,8 @@ export function calculatePartnerDistribution(sales, investors = [], filters = {}
   return {
     totalNetProfit,
     investorRepasseTotal,
+    investorCapitalTotal,
+    investorProfitShareTotal,
     shir7Total,
     shir7FromProprio: shir7ShirtFromProprio,
     shir7FromInvestor: shir7ShirtFromInvestor,
@@ -155,6 +190,8 @@ export function calculatePartnerDistribution(sales, investors = [], filters = {}
     investorSalesCount,
     shirts: {
       investorRepasseTotal,
+      investorCapitalTotal,
+      investorProfitShareTotal,
       shir7FromInvestor: shir7ShirtFromInvestor,
       shir7FromProprio: shir7ShirtFromProprio,
       shir7Total: shir7ShirtTotal,
@@ -176,6 +213,8 @@ export function calculatePartnerDistribution(sales, investors = [], filters = {}
       .map(([id, stats]) => ({
         investorId: id,
         investorName: investorMap.get(id)?.name || (id === 'sem-investidor' ? 'Sem vínculo' : '—'),
+        repasseRule: stats.repasseRule || investorMap.get(id)?.repasseType || '',
+        repassePercent: stats.repassePercent ?? investorMap.get(id)?.repasseValue ?? null,
         ...stats,
       }))
       .sort((a, b) => b.repasse - a.repasse),

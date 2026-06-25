@@ -454,11 +454,27 @@ function pasteStockOptionsHtml(selectedId = '') {
   return `<option value=""${!selectedId ? ' selected' : ''}>— Escolher estoque —</option>${options.join('')}`;
 }
 
+function buildPasteAllocationOverrides(orderCount) {
+  const bulkStock = getSelectedPasteStockEntry();
+  const overrides = { ...pasteStockOverrides };
+
+  if (!bulkStock) return overrides;
+
+  for (let i = 0; i < orderCount; i += 1) {
+    if (!overrides[i]) {
+      overrides[i] = bulkStock.id;
+    }
+  }
+
+  return overrides;
+}
+
 function applyPasteStockOverrides(batch) {
+  const overrides = buildPasteAllocationOverrides(batch.orders.length);
   const orders = allocateOrdersByPriority(
     batch.orders,
     allStockEntries,
-    pasteStockOverrides
+    overrides
   );
 
   return {
@@ -535,6 +551,10 @@ function onPasteStockChange() {
   infoEl.innerHTML = `
     <strong>${origin}</strong> · Custo ${formatCurrency(unitCost)} · Mín. ${formatCurrency(stockEntry.minimumSalePrice)}
   `;
+
+  if (qs('#sales-paste-input')?.value?.trim()) {
+    previewPasteOrders();
+  }
 }
 
 function onStockEntryChange() {
@@ -588,6 +608,7 @@ function getPasteParserContext() {
     stockMatchMode: 'defer',
     coupons: globalSettings.coupons || [],
     defaultFreight: globalSettings.defaultFreight,
+    defaultPersonalizationPrice: globalSettings.defaultPersonalizationPrice,
   };
 }
 
