@@ -78,8 +78,8 @@
         </div>
 
         <nav class="sales-tabs">
-          <button type="button" class="sales-tabs__btn sales-tabs__btn--active" data-tab="quick">Saída rápida</button>
-          <button type="button" class="sales-tabs__btn" data-tab="paste">Colar pedidos</button>
+          <button type="button" class="sales-tabs__btn sales-tabs__btn--active" data-tab="paste">Colar pedidos</button>
+          <button type="button" class="sales-tabs__btn" data-tab="quick">Saída rápida</button>
           <button type="button" class="sales-tabs__btn" data-tab="history">Saídas recentes</button>
           <button type="button" class="sales-tabs__btn" data-tab="costs">Cupons &amp; Custos</button>
           <button type="button" class="sales-tabs__btn" data-tab="personalization">Custos de Personalização</button>
@@ -106,7 +106,7 @@
           </div>
         </div>
 
-        <section id="tab-quick" class="sales-tab-panel">
+        <section id="tab-quick" class="sales-tab-panel" hidden>
           <div class="card sales-form-card">
             <div class="card__header">
               <h3 class="card__title">Nova saída</h3>
@@ -165,7 +165,7 @@
           </div>
         </section>
 
-        <section id="tab-paste" class="sales-tab-panel" hidden>
+        <section id="tab-paste" class="sales-tab-panel">
           <div class="card sales-paste-card">
             <div class="card__header">
               <h3 class="card__title">Cadastro rápido por texto</h3>
