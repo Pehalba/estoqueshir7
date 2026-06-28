@@ -6,10 +6,12 @@ const DASHBOARD_PAGE = 'dashboard.html';
 const PROTECTED_PAGES = [
   'dashboard.html',
   'inventory.html',
+  'establishments.html',
   'sales.html',
   'orders.html',
   'investors.html',
   'profits.html',
+  'expenses.html',
   'reports.html',
 ];
 

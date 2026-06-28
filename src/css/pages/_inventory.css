@@ -122,6 +122,10 @@
   background-color: rgba(217, 119, 6, 0.06);
 }
 
+.table__row--sold-out {
+  background-color: rgba(var(--color-error-rgb), 0.06);
+}
+
 .inventory-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -547,7 +551,21 @@
 .sizes-editor__row {
   display: flex;
   gap: var(--space-sm);
-  align-items: center;
+  align-items: flex-start;
+}
+
+.stock-qty-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  max-width: 120px;
+}
+
+.stock-size-reserved-hint {
+  font-size: 0.65rem;
+  color: var(--color-warning, #d97706);
+  line-height: 1.2;
 }
 
 .sizes-editor__row .form-input {
@@ -555,7 +573,7 @@
 }
 
 .sizes-editor__row .form-input--qty {
-  max-width: 100px;
+  max-width: 100%;
 }
 
 .sizes-editor__total {

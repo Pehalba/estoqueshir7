@@ -57,6 +57,7 @@ let viewingStockEntryId = null;
 let editingStockEntryId = null;
 let editingStockProductId = '';
 let editingEntryQuantity = null;
+let editingSizeReservedMap = {};
 let deletingId = null;
 let deletingTarget = null;
 let openedProductFromStock = false;
@@ -86,14 +87,27 @@ function sizeSelectHtml(selected = '') {
 }
 
 function renderStockSizeRow(size = '', quantity = '') {
+  const isEdit = !!editingStockEntryId;
+  const reserved = Number(editingSizeReservedMap[size]) || 0;
+  const minQty = isEdit ? 0 : 1;
+  const hint = isEdit && reserved > 0
+    ? `<span class="stock-size-reserved-hint">mín. ${reserved} (reservado)</span>`
+    : '';
+
   const row = document.createElement('div');
   row.className = 'sizes-editor__row';
   row.innerHTML = `
     <select class="form-input form-select stock-size-field">${sizeSelectHtml(size)}</select>
-    <input class="form-input form-input--qty stock-qty-field" type="number" min="1" value="${quantity}" placeholder="Qtd">
+    <div class="stock-qty-wrap">
+      <input class="form-input form-input--qty stock-qty-field" type="number" min="${minQty}" value="${quantity}" placeholder="Qtd">
+      ${hint}
+    </div>
     <button type="button" class="btn btn--ghost btn--sm btn-remove-stock-size" title="Remover">&times;</button>
   `;
-  row.querySelector('.stock-size-field')?.addEventListener('change', updateStockSizesTotal);
+  row.querySelector('.stock-size-field')?.addEventListener('change', () => {
+    updateStockSizeRowReservedHint(row);
+    updateStockSizesTotal();
+  });
   row.querySelector('.stock-qty-field')?.addEventListener('input', updateStockSizesTotal);
   row.querySelector('.btn-remove-stock-size')?.addEventListener('click', () => {
     row.remove();
@@ -101,6 +115,28 @@ function renderStockSizeRow(size = '', quantity = '') {
     if (!stockSizesRows.children.length) addStockSizeRow();
   });
   return row;
+}
+
+function updateStockSizeRowReservedHint(row) {
+  if (!editingStockEntryId) return;
+  const size = row.querySelector('.stock-size-field')?.value || '';
+  const reserved = Number(editingSizeReservedMap[size]) || 0;
+  const wrap = row.querySelector('.stock-qty-wrap');
+  if (!wrap) return;
+  const input = wrap.querySelector('.stock-qty-field');
+  let hint = wrap.querySelector('.stock-size-reserved-hint');
+  if (reserved > 0) {
+    if (!hint) {
+      hint = document.createElement('span');
+      hint.className = 'stock-size-reserved-hint';
+      wrap.appendChild(hint);
+    }
+    hint.textContent = `mín. ${reserved} (reservado)`;
+    if (input) input.min = reserved;
+  } else if (hint) {
+    hint.remove();
+    if (input) input.min = 0;
+  }
 }
 
 function addStockSizeRow(size = '', quantity = '') {
@@ -122,7 +158,10 @@ function collectStockSizesFromRows() {
   return [...stockSizesRows.querySelectorAll('.sizes-editor__row')].map((row) => ({
     size: row.querySelector('.stock-size-field')?.value || '',
     quantity: Number(row.querySelector('.stock-qty-field')?.value) || 0,
-  })).filter((s) => s.size && s.quantity > 0);
+  })).filter((s) => {
+    if (!s.size) return false;
+    return editingStockEntryId ? s.quantity >= 0 : s.quantity > 0;
+  });
 }
 
 function updateStockSizesTotal() {
@@ -171,6 +210,7 @@ function resetStockForm() {
   editingStockEntryId = null;
   editingStockProductId = '';
   editingEntryQuantity = null;
+  editingSizeReservedMap = {};
   qs('#stock-name').value = '';
   qs('#stock-observation').value = '';
   qs('#stock-sizes-quick-input').value = '';
@@ -192,13 +232,25 @@ function setStockModalMode(mode = 'create') {
   const title = qs('.modal__title', qs('#stock-modal'));
   const submitBtn = qs('#btn-save-stock');
   const sizesEditor = qs('#stock-sizes-editor');
+  const sizesTitle = qs('#stock-sizes-title');
+  const sizesHint = qs('#stock-sizes-hint');
+  const sizesQuick = qs('#stock-sizes-quick-wrap');
   const productSelect = qs('#stock-product');
   const nameInput = qs('#stock-name');
   const isEdit = mode === 'edit';
 
   if (title) title.textContent = isEdit ? 'Editar estoque' : 'Cadastrar estoque';
   if (submitBtn) submitBtn.textContent = isEdit ? 'Salvar alterações' : 'Registrar estoque';
-  if (sizesEditor) sizesEditor.hidden = isEdit;
+  if (sizesEditor) sizesEditor.hidden = false;
+  if (sizesTitle) {
+    sizesTitle.textContent = isEdit ? 'Quantidade por tamanho' : 'Peças entrando no estoque';
+  }
+  if (sizesHint) {
+    sizesHint.textContent = isEdit
+      ? 'Ajuste a quantidade de cada tamanho. Não pode ser menor que o reservado (consignado).'
+      : 'Informe quantidade + tamanho de cada peça que está entrando.';
+  }
+  if (sizesQuick) sizesQuick.hidden = isEdit;
   if (productSelect) {
     productSelect.disabled = isEdit;
     productSelect.required = !isEdit;
@@ -236,6 +288,9 @@ async function openEditStockModal(id) {
   editingStockEntryId = id;
   editingStockProductId = entry.productId || '';
   editingEntryQuantity = Number(entry.entryQuantity) || totalQuantity(entry.sizes);
+  editingSizeReservedMap = Object.fromEntries(
+    (entry.sizes || []).map((s) => [s.size, Number(s.reserved) || 0])
+  );
   setStockModalMode('edit');
 
   qs('#stock-name').value = entry.name || entry.productName || '';
@@ -329,7 +384,7 @@ function updateStockImportCostPreview() {
 
   if (editingStockEntryId) {
     preview.textContent = pieces
-      ? `Edição usa ${pieces} peça(s) na entrada original. Mercadoria: ${formatCurrency(safeCost)}/peça. Operacional (imp.+frete): ${formatCurrency(operationalPerUnit)}/peça.`
+      ? `Entrada original: ${pieces} peça(s). Estoque atual no formulário: ${lineTotal} peça(s). Mercadoria: ${formatCurrency(safeCost)}/peça. Operacional (imp.+frete): ${formatCurrency(operationalPerUnit)}/peça.`
       : 'Informe imposto/frete para ver o custo operacional por peça.';
     return;
   }
@@ -394,6 +449,7 @@ async function handleStockSubmit(e) {
     investorId: qs('#stock-investorId')?.value || '',
     observation: observation || 'Entrada de estoque',
     pricing,
+    lines: isEdit ? lines : undefined,
   };
 
   const result = editingStockEntryId
@@ -457,10 +513,12 @@ function formatSizesBadges(sizes) {
   if (!sizes?.length) return '<span class="text-muted">—</span>';
   return `<div class="sizes-badges">${sortSizes(sizes).map((s) => {
     const avail = availableQty(s);
-    const low = avail <= lowStockThreshold;
+    const soldOut = avail <= 0;
+    const low = !soldOut && avail <= lowStockThreshold;
     const reserved = Number(s.reserved) || 0;
     const label = reserved > 0 ? `${s.size}: ${avail}/${s.quantity}` : `${s.size}: ${s.quantity}`;
-    return `<span class="badge ${low ? 'badge--warning' : 'badge--neutral'}">${label}</span>`;
+    const badgeClass = soldOut ? 'badge--error' : (low ? 'badge--warning' : 'badge--neutral');
+    return `<span class="badge ${badgeClass}">${label}</span>`;
   }).join('')}</div>`;
 }
 
@@ -626,7 +684,22 @@ function populateStockProductFilterSelects() {
 }
 
 function entryHasLowStock(entry) {
-  return (entry.sizes || []).some((s) => availableQty(s) <= lowStockThreshold);
+  return (entry.sizes || []).some((s) => {
+    const avail = availableQty(s);
+    return avail > 0 && avail <= lowStockThreshold;
+  });
+}
+
+function entryIsSoldOut(entry) {
+  const sizes = entry.sizes || [];
+  if (!sizes.length) return entry.status === 'esgotado';
+  return sizes.every((s) => availableQty(s) <= 0) || entry.status === 'esgotado';
+}
+
+function getStockRowClass(entry) {
+  if (entryIsSoldOut(entry)) return 'table__row--sold-out';
+  if (entryHasLowStock(entry)) return 'table__row--low-stock';
+  return '';
 }
 
 function getStockEntryQuantitySummary(entry) {
@@ -882,7 +955,7 @@ function renderStockEntriesTable(entries) {
   }
 
   stockEntriesTbody.innerHTML = filtered.map((e) => `
-    <tr data-id="${e.id}" class="${entryHasLowStock(e) ? 'table__row--low-stock' : ''}">
+    <tr data-id="${e.id}" class="${getStockRowClass(e)}">
       <td><strong>${e.name}</strong></td>
       <td>${e.productName || '—'}</td>
       <td>${formatSizesBadges(e.sizes)}</td>
@@ -1357,8 +1430,8 @@ function renderLowStockAlerts() {
   container.innerHTML = items.map((item) => `
     <div class="stock-alerts__item">
       <span><strong>${item.stockEntryName || item.productName}</strong> — ${item.size}: ${item.available} disp.</span>
-      <span class="badge ${item.stockOrigin === 'investidor' ? 'badge--info' : 'badge--neutral'}">
-        ${item.stockOrigin === 'investidor' ? 'Investidor' : 'Próprio'}
+      <span class="badge ${item.available <= 0 ? 'badge--error' : (item.stockOrigin === 'investidor' ? 'badge--info' : 'badge--neutral')}">
+        ${item.available <= 0 ? 'Esgotado' : (item.stockOrigin === 'investidor' ? 'Investidor' : 'Próprio')}
       </span>
     </div>
   `).join('');

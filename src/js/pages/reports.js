@@ -17,6 +17,7 @@ import {
   listExpenses,
   createExpense,
   deleteExpense,
+  EXPENSE_CATEGORIES,
 } from '../services/expenseService.js';
 import { formatCurrency } from '../utils/formatCurrency.js';
 import { qs, qsa, showToast, setLoading } from '../utils/domHelpers.js';
@@ -179,7 +180,7 @@ function renderExpenses(expenses) {
     <div class="expenses-list__item">
       <div class="expenses-list__info">
         <p class="expenses-list__desc">${exp.description}</p>
-        <p class="expenses-list__meta">${formatExpenseDate(exp)} · ${exp.category}</p>
+        <p class="expenses-list__meta">${formatExpenseDate(exp)} · ${EXPENSE_CATEGORIES[exp.category] || exp.category}</p>
       </div>
       <div class="expenses-list__actions">
         <span class="expenses-list__amount">${formatCurrency(exp.amount)}</span>

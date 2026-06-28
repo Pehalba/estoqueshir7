@@ -4,7 +4,7 @@ export function isRequired(value) {
   return String(value).trim() !== '';
 }
 
-import { diluteLotCostPerUnit, MAX_STOCK_ENTRY_PIECES } from './calculations.js';
+import { diluteLotCostPerUnit } from './calculations.js';
 
 export function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -128,9 +128,6 @@ export function validateStockEntry(data) {
   }
 
   const totalPieces = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
-  if (!isEdit && totalPieces > MAX_STOCK_ENTRY_PIECES) {
-    errors.push(`Cada lote pode ter no máximo ${MAX_STOCK_ENTRY_PIECES} peças.`);
-  }
 
   const cost = Number(data.costPrice);
   const entryPieces = data.entryQuantity != null && data.entryQuantity !== ''

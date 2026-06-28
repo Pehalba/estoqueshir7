@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Dashboard — SHIR7</title>
+  <title>Gastos SHIR7 — SHIR7</title>
   <link rel="stylesheet" href="../src/css/main.css">
 </head>
-<body data-page="dashboard">
+<body data-page="expenses">
   <div class="app-layout">
     <aside id="sidebar" class="sidebar">
       <div class="sidebar__brand">
@@ -14,7 +14,7 @@
         <span class="sidebar__brand-name">SHIR7</span>
       </div>
       <nav class="sidebar__nav">
-        <a href="dashboard.html" class="sidebar__link sidebar__link--active" data-nav="dashboard">
+        <a href="dashboard.html" class="sidebar__link" data-nav="dashboard">
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>
           Dashboard
         </a>
@@ -42,7 +42,7 @@
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
           Lucros
         </a>
-        <a href="expenses.html" class="sidebar__link" data-nav="expenses">
+        <a href="expenses.html" class="sidebar__link sidebar__link--active" data-nav="expenses">
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
           Gastos SHIR7
         </a>
@@ -61,7 +61,7 @@
           <button type="button" id="menu-btn" class="header__menu-btn" aria-label="Abrir menu">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
-          <h1 class="header__title">Dashboard</h1>
+          <h1 class="header__title">Gastos SHIR7</h1>
         </div>
         <div class="header__right">
           <div class="header__user">
@@ -73,98 +73,110 @@
 
       <main class="app-layout__content">
         <div class="page-header">
-          <h2 class="page-header__title">Visão Geral</h2>
-          <p class="page-header__subtitle">Resumo do estoque atual e vendas acumuladas de toda a operação</p>
+          <h2 class="page-header__title">Despesas da operação</h2>
+          <p class="page-header__subtitle">Registre gastos fixos e variáveis da SHIR7</p>
         </div>
 
-        <div id="dashboard-loading" class="dashboard-loading">Carregando dados...</div>
+        <div class="expenses-summary">
+          <div class="expenses-summary__card">
+            <span class="expenses-summary__label">Total filtrado</span>
+            <div class="expenses-summary__value" id="summary-total">R$ 0,00</div>
+            <p class="expenses-summary__hint" id="summary-count">0 despesa(s)</p>
+          </div>
+          <div class="expenses-summary__card">
+            <span class="expenses-summary__label">Gastos do mês atual</span>
+            <div class="expenses-summary__value" id="summary-month">R$ 0,00</div>
+          </div>
+        </div>
 
-        <div id="dashboard-content" hidden>
-          <section class="dashboard-kpis grid grid--4" id="dashboard-kpis"></section>
+        <div class="expenses-toolbar">
+          <input type="search" id="search-input" class="form-input expenses-toolbar__search" placeholder="Buscar por descrição ou observação...">
+          <select id="filter-category" class="form-input form-select expenses-toolbar__filter"></select>
+          <input type="month" id="filter-month" class="form-input expenses-toolbar__filter">
+          <button type="button" id="btn-clear-filters" class="btn btn--secondary btn--sm">Limpar filtros</button>
+          <button type="button" id="btn-new-expense" class="btn btn--primary">+ Novo gasto</button>
+        </div>
 
-          <section class="dashboard-charts grid grid--2">
-            <div class="card dashboard-chart-card">
-              <div class="card__header"><h3 class="card__title">Faturamento por mês</h3></div>
-              <div class="card__body"><canvas id="chart-revenue" class="dashboard-chart" height="220"></canvas></div>
-            </div>
-            <div class="card dashboard-chart-card">
-              <div class="card__header"><h3 class="card__title">Lucro por mês</h3></div>
-              <div class="card__body"><canvas id="chart-profit" class="dashboard-chart" height="220"></canvas></div>
-            </div>
-            <div class="card dashboard-chart-card">
-              <div class="card__header"><h3 class="card__title">Estoque: próprio vs investidor</h3></div>
-              <div class="card__body"><canvas id="chart-origin" class="dashboard-chart" height="220"></canvas></div>
-            </div>
-            <div class="card dashboard-chart-card">
-              <div class="card__header"><h3 class="card__title">Mais vendidos (peças)</h3></div>
-              <div class="card__body"><canvas id="chart-top" class="dashboard-chart" height="220"></canvas></div>
-            </div>
-          </section>
-
-          <section class="dashboard-lists grid grid--2">
-            <div class="card">
-              <div class="card__header"><h3 class="card__title">Estoque baixo</h3></div>
-              <div class="card__body dashboard-list" id="list-low-stock"></div>
-            </div>
-            <div class="card">
-              <div class="card__header"><h3 class="card__title">Mais vendidos</h3></div>
-              <div class="card__body dashboard-list" id="list-top-selling"></div>
-            </div>
-            <div class="card">
-              <div class="card__header"><h3 class="card__title">Maior lucro</h3></div>
-              <div class="card__body dashboard-list" id="list-top-profit"></div>
-            </div>
-            <div class="card">
-              <div class="card__header"><h3 class="card__title">Vendas com prejuízo</h3></div>
-              <div class="card__body dashboard-list" id="list-losses"></div>
-            </div>
-          </section>
-
-          <section class="card dashboard-ai">
-            <div class="card__header">
-              <h3 class="card__title">Assistente SHIR7</h3>
-              <p class="dashboard-ai__subtitle text-sm text-muted">Análises rápidas com base nos seus dados (sem API externa)</p>
-            </div>
-            <div class="card__body">
-              <div class="dashboard-ai__chips" id="ai-chips"></div>
-              <form id="ai-form" class="dashboard-ai__form">
-                <input class="form-input" type="text" id="ai-input" placeholder="Ex.: quais produtos estão parados?" autocomplete="off">
-                <button type="submit" class="btn btn--primary">Perguntar</button>
-              </form>
-              <div id="ai-response" class="dashboard-ai__response" hidden></div>
-            </div>
-          </section>
+        <p class="scroll-hint">Deslize a tabela para ver todas as colunas →</p>
+        <div class="table-wrapper table-wrapper--hint">
+          <table class="table" id="expenses-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Valor</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="expenses-tbody">
+              <tr><td colspan="5" class="table__empty">Carregando...</td></tr>
+            </tbody>
+          </table>
         </div>
       </main>
     </div>
   </div>
 
-  <!-- Modal valor / potencial de estoque -->
-  <div id="value-detail-modal" class="modal">
+  <div id="expense-modal" class="modal">
     <div class="modal__backdrop"></div>
     <div class="modal__dialog">
       <div class="modal__header">
-        <h3 class="modal__title" id="value-detail-title">Detalhe</h3>
-        <button type="button" class="modal__close-btn" data-modal-close aria-label="Fechar">&times;</button>
+        <h3 class="modal__title" id="expense-modal-title">Novo gasto</h3>
+        <button type="button" class="modal__close" data-modal-close aria-label="Fechar">&times;</button>
       </div>
-      <div class="modal__body" id="value-detail-body"></div>
-      <div class="modal__footer">
-        <button type="button" class="btn btn--secondary" data-modal-close>Fechar</button>
-      </div>
+      <form id="expense-form">
+        <div class="modal__body">
+          <div id="form-errors" class="form-errors"></div>
+
+          <div class="form-group">
+            <label class="form-group__label form-group__label--required" for="field-description">Descrição</label>
+            <input class="form-input" type="text" id="field-description" required placeholder="Ex.: Embalagens, anúncios, frete...">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-group__label form-group__label--required" for="field-amount">Valor (R$)</label>
+              <input class="form-input" type="number" id="field-amount" min="0.01" step="0.01" required>
+            </div>
+            <div class="form-group">
+              <label class="form-group__label" for="field-date">Data</label>
+              <input class="form-input" type="date" id="field-date">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-group__label" for="field-category">Categoria</label>
+            <select class="form-input form-select" id="field-category"></select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-group__label" for="field-notes">Observações</label>
+            <textarea class="form-input" id="field-notes" rows="2" placeholder="Opcional"></textarea>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="btn-save-expense">Salvar</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <!-- Modal detalhe estoque -->
-  <div id="stock-detail-modal" class="modal">
+  <div id="delete-expense-modal" class="modal">
     <div class="modal__backdrop"></div>
-    <div class="modal__dialog">
+    <div class="modal__dialog modal__dialog--sm">
       <div class="modal__header">
-        <h3 class="modal__title" id="stock-detail-title">Detalhe do estoque</h3>
-        <button type="button" class="modal__close-btn" data-modal-close aria-label="Fechar">&times;</button>
+        <h3 class="modal__title">Excluir gasto</h3>
+        <button type="button" class="modal__close" data-modal-close aria-label="Fechar">&times;</button>
       </div>
-      <div class="modal__body" id="stock-detail-body"></div>
+      <div class="modal__body">
+        <p>Remover <strong id="delete-expense-desc"></strong>?</p>
+        <p class="text-sm text-muted">Valor: <span id="delete-expense-amount"></span></p>
+      </div>
       <div class="modal__footer">
-        <button type="button" class="btn btn--secondary" data-modal-close>Fechar</button>
+        <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
+        <button type="button" class="btn btn--danger" id="btn-delete-expense-confirm">Excluir</button>
       </div>
     </div>
   </div>
@@ -172,6 +184,6 @@
   <div id="toast-container" class="toast-container"></div>
 
   <script type="module" src="../src/js/app.js"></script>
-  <script type="module" src="../src/js/pages/dashboard.js"></script>
+  <script type="module" src="../src/js/pages/expenses.js"></script>
 </body>
 </html>

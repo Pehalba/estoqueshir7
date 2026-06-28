@@ -10,6 +10,8 @@ export const CACHE_KEYS = {
   INVESTORS: 'investors',
   MOVEMENTS: 'stockMovements',
   PROFIT_PAYOUTS: 'profitPayouts',
+  ESTABLISHMENTS: 'establishments',
+  EXPENSES: 'expenses',
 };
 
 export function readCache(key) {

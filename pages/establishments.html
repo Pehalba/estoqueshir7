@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Investidores — SHIR7</title>
+  <title>Estabelecimentos — SHIR7</title>
   <link rel="stylesheet" href="../src/css/main.css">
 </head>
-<body data-page="investors">
+<body data-page="establishments">
   <div class="app-layout">
     <aside id="sidebar" class="sidebar">
       <div class="sidebar__brand">
@@ -22,7 +22,7 @@
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
           Estoque
         </a>
-        <a href="establishments.html" class="sidebar__link" data-nav="establishments">
+        <a href="establishments.html" class="sidebar__link sidebar__link--active" data-nav="establishments">
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
           Estabelecimentos
         </a>
@@ -34,7 +34,7 @@
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
           Pedidos
         </a>
-        <a href="investors.html" class="sidebar__link sidebar__link--active" data-nav="investors">
+        <a href="investors.html" class="sidebar__link" data-nav="investors">
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
           Investidores
         </a>
@@ -61,7 +61,7 @@
           <button type="button" id="menu-btn" class="header__menu-btn" aria-label="Abrir menu">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
-          <h1 class="header__title">Investidores</h1>
+          <h1 class="header__title">Estabelecimentos</h1>
         </div>
         <div class="header__right">
           <div class="header__user">
@@ -73,33 +73,31 @@
 
       <main class="app-layout__content">
         <div class="page-header">
-          <h2 class="page-header__title">Gestão de Investidores</h2>
-          <p class="page-header__subtitle">Cadastro, regras de repasse e painel por investidor</p>
+          <h2 class="page-header__title">Camisas em lojas físicas</h2>
+          <p class="page-header__subtitle">Consignado: peças deixadas para venda bloqueiam o estoque disponível</p>
         </div>
 
-        <div class="investors-toolbar">
-          <input type="search" id="search-input" class="form-input investors-toolbar__search" placeholder="Buscar por nome, e-mail ou telefone...">
-          <button type="button" id="btn-new-investor" class="btn btn--primary">+ Novo investidor</button>
+        <div class="establishments-toolbar">
+          <input type="search" id="search-input" class="form-input establishments-toolbar__search" placeholder="Buscar por nome, telefone ou produto...">
+          <button type="button" id="btn-new-establishment" class="btn btn--primary">+ Novo estabelecimento</button>
         </div>
 
-        <p id="investors-count" class="investors-stats">Carregando investidores...</p>
+        <p id="establishments-count" class="establishments-stats">Carregando...</p>
 
         <p class="scroll-hint">Deslize a tabela para ver todas as colunas →</p>
         <div class="table-wrapper table-wrapper--hint">
-          <table class="table" id="investors-table">
+          <table class="table" id="establishments-table">
             <thead>
               <tr>
-                <th>Nome</th>
-                <th>Contato</th>
-                <th>Regra de repasse</th>
-                <th>Produtos</th>
+                <th>Estabelecimento</th>
+                <th>Telefone</th>
                 <th>Peças</th>
-                <th>Valor investido</th>
+                <th>Detalhe (lote · tamanhos)</th>
                 <th>Ações</th>
               </tr>
             </thead>
-            <tbody id="investors-tbody">
-              <tr><td colspan="7" class="table__empty">Carregando...</td></tr>
+            <tbody id="establishments-tbody">
+              <tr><td colspan="5" class="table__empty">Carregando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -107,97 +105,99 @@
     </div>
   </div>
 
-  <!-- Modal criar/editar -->
-  <div id="investor-modal" class="modal">
+  <div id="establishment-modal" class="modal">
     <div class="modal__backdrop"></div>
-    <div class="modal__dialog">
+    <div class="modal__dialog modal__dialog--lg">
       <div class="modal__header">
-        <h3 class="modal__title" id="investor-modal-title">Novo investidor</h3>
+        <h3 class="modal__title" id="establishment-modal-title">Novo estabelecimento</h3>
         <button type="button" class="modal__close" data-modal-close aria-label="Fechar">&times;</button>
       </div>
-      <form id="investor-form">
+      <form id="establishment-form">
         <div class="modal__body">
           <div id="form-errors" class="form-errors"></div>
 
-          <div class="form-group">
-            <label class="form-group__label form-group__label--required" for="field-name">Nome</label>
-            <input class="form-input" type="text" id="field-name" name="name" required>
-          </div>
-
           <div class="form-row">
+            <div class="form-group">
+              <label class="form-group__label form-group__label--required" for="field-name">Nome do estabelecimento</label>
+              <input class="form-input" type="text" id="field-name" name="name" required placeholder="Ex.: Loja do Centro">
+            </div>
             <div class="form-group">
               <label class="form-group__label" for="field-phone">Telefone</label>
-              <input class="form-input" type="tel" id="field-phone" name="phone" placeholder="(00) 00000-0000">
-            </div>
-            <div class="form-group">
-              <label class="form-group__label" for="field-email">E-mail</label>
-              <input class="form-input" type="email" id="field-email" name="email" placeholder="opcional">
+              <input class="form-input" type="tel" id="field-phone" name="phone" placeholder="Opcional">
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-group__label form-group__label--required" for="field-repasseType">Tipo de repasse</label>
-              <select class="form-input form-select" id="field-repasseType" name="repasseType" required>
-                <option value="capital_mais_lucro" selected>Capital de volta + % do lucro líquido</option>
-                <option value="percent_lucro">Percentual sobre lucro</option>
-                <option value="percent_faturamento">Percentual sobre faturamento</option>
-                <option value="fixo_peca">Valor fixo por peça</option>
-                <option value="custo_comissao">Custo + comissão (%)</option>
-                <option value="personalizado">Regra personalizada</option>
-              </select>
-            </div>
-            <div class="form-group" id="repasse-value-group">
-              <label class="form-group__label form-group__label--required" for="field-repasseValue" id="repasse-value-label">% do lucro líquido</label>
-              <input class="form-input" type="number" id="field-repasseValue" name="repasseValue" min="0" step="0.01" value="40">
-              <p class="form-group__hint" id="repasse-value-hint"></p>
-            </div>
-          </div>
+          <p class="establishment-form-note">
+            Consignado apenas de <strong>estoque de investidor</strong>. Use <strong>+ Outro lote</strong> para deixar peças de mais de um lote na mesma loja.
+            As peças informadas são <strong>reservadas no estoque</strong> — ex.: <code>P: 2/5</code> (2 livres, 3 reservadas).
+          </p>
 
           <div class="form-group">
-            <label class="form-group__label" for="field-notes">Observações</label>
-            <textarea class="form-input" id="field-notes" name="notes" rows="3" placeholder="Regra personalizada ou anotações gerais"></textarea>
+            <div class="form-group__label-row">
+              <label class="form-group__label">Peças consignadas (investidor)</label>
+              <button type="button" class="btn btn--secondary btn--sm" id="btn-add-stock-line">+ Outro lote</button>
+            </div>
+            <div id="establishment-stock-lines" class="establishment-stock-lines"></div>
           </div>
         </div>
         <div class="modal__footer">
           <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
-          <button type="submit" class="btn btn--primary" id="btn-save-investor">Salvar</button>
+          <button type="submit" class="btn btn--primary" id="btn-establishment-save">Salvar</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal painel -->
-  <div id="view-modal" class="modal">
+  <div id="sell-establishment-modal" class="modal">
     <div class="modal__backdrop"></div>
-    <div class="modal__dialog modal__dialog--lg">
+    <div class="modal__dialog">
       <div class="modal__header">
-        <h3 class="modal__title" id="view-modal-title">Investidor</h3>
+        <h3 class="modal__title">Marcar como vendida</h3>
         <button type="button" class="modal__close" data-modal-close aria-label="Fechar">&times;</button>
       </div>
-      <div class="modal__body" id="view-modal-body"></div>
-      <div class="modal__footer">
-        <button type="button" class="btn btn--secondary" data-modal-close>Fechar</button>
-        <button type="button" class="btn btn--primary" id="btn-edit-from-view">Editar</button>
-      </div>
+      <form id="sell-establishment-form">
+        <div class="modal__body">
+          <div id="sell-form-errors" class="form-errors"></div>
+          <p class="text-sm text-muted" id="sell-establishment-label"></p>
+
+          <div class="form-group">
+            <label class="form-group__label form-group__label--required" for="field-sell-piece">Peça vendida</label>
+            <select class="form-input form-select" id="field-sell-piece" required>
+              <option value="">— Selecione —</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-group__label form-group__label--required" for="field-sell-price">Valor da venda (R$)</label>
+            <input class="form-input" type="number" id="field-sell-price" min="0.01" step="0.01" required placeholder="0,00">
+          </div>
+
+          <p class="establishment-form-note">
+            Registra a venda em <strong>Vendas/Pedidos</strong>, libera a reserva consignada e dá baixa no estoque.
+          </p>
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="btn-sell-confirm">Confirmar venda</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <!-- Modal excluir -->
-  <div id="delete-modal" class="modal">
+  <div id="delete-establishment-modal" class="modal">
     <div class="modal__backdrop"></div>
     <div class="modal__dialog modal__dialog--sm">
       <div class="modal__header">
-        <h3 class="modal__title">Excluir investidor</h3>
+        <h3 class="modal__title">Excluir estabelecimento</h3>
         <button type="button" class="modal__close" data-modal-close aria-label="Fechar">&times;</button>
       </div>
       <div class="modal__body">
-        <p>Tem certeza que deseja excluir <strong id="delete-investor-name"></strong>?</p>
-        <p class="text-sm text-muted">Só é possível excluir investidores sem produtos vinculados.</p>
+        <p>Remover <strong id="delete-establishment-name"></strong>?</p>
+        <p class="text-sm text-muted" id="delete-establishment-pieces"></p>
       </div>
       <div class="modal__footer">
         <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
-        <button type="button" class="btn btn--danger" id="btn-confirm-delete">Excluir</button>
+        <button type="button" class="btn btn--danger" id="btn-delete-establishment-confirm">Excluir</button>
       </div>
     </div>
   </div>
@@ -205,6 +205,6 @@
   <div id="toast-container" class="toast-container"></div>
 
   <script type="module" src="../src/js/app.js"></script>
-  <script type="module" src="../src/js/pages/investors.js"></script>
+  <script type="module" src="../src/js/pages/establishments.js"></script>
 </body>
 </html>

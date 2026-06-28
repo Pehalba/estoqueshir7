@@ -25,7 +25,6 @@ import {
   totalQuantity,
   importTaxPerUnit,
   diluteLotCostPerUnit,
-  MAX_STOCK_ENTRY_PIECES,
 } from '../utils/calculations.js';
 import { cachedFetch, invalidateCache, CACHE_KEYS } from '../utils/dataCache.js';
 
@@ -272,14 +271,6 @@ export async function registerStockEntry({
     return { success: false, error: 'Produto e peças são obrigatórios.' };
   }
 
-  const entryPiecesPreview = safeLines.reduce((sum, l) => sum + l.quantity, 0);
-  if (entryPiecesPreview > MAX_STOCK_ENTRY_PIECES) {
-    return {
-      success: false,
-      error: `Cada lote pode ter no máximo ${MAX_STOCK_ENTRY_PIECES} peças.`,
-    };
-  }
-
   const costPrice = Number(pricing.costPrice) || 0;
   const suggestedSalePrice = Number(pricing.suggestedSalePrice) || 0;
   const minimumSalePrice = Number(pricing.minimumSalePrice) || 0;
@@ -382,13 +373,64 @@ export async function registerStockEntry({
   }
 }
 
-/** Atualiza dados de um lote existente (preços, impostos, origem) sem alterar quantidades. */
+/** Aplica alterações de quantidade por tamanho na edição do lote. */
+async function syncStockEntrySizesFromEdit(entryId, entry, lines = [], observation = '') {
+  const lineMap = new Map();
+  for (const line of lines) {
+    const size = String(line.size || '').trim();
+    if (!size) continue;
+    if (lineMap.has(size)) {
+      return { success: false, error: `Tamanho ${size} duplicado.` };
+    }
+    lineMap.set(size, Math.max(0, Math.floor(Number(line.quantity) || 0)));
+  }
+
+  const existingBySize = new Map((entry.sizes || []).map((s) => [s.size, s]));
+  const allSizes = new Set([...existingBySize.keys(), ...lineMap.keys()]);
+
+  for (const size of allSizes) {
+    const existing = existingBySize.get(size);
+    const reserved = Number(existing?.reserved) || 0;
+    const oldQty = Number(existing?.quantity) || 0;
+    const newQty = lineMap.has(size) ? lineMap.get(size) : 0;
+
+    if (newQty < reserved) {
+      return {
+        success: false,
+        error: `${size}: quantidade não pode ser menor que o reservado (${reserved}).`,
+      };
+    }
+
+    if (newQty === oldQty) continue;
+
+    const isNewSize = !existing;
+    const movementResult = await registerMovement({
+      stockEntryId: entryId,
+      productId: entry.productId,
+      size,
+      type: isNewSize ? 'entrada' : 'ajuste',
+      quantity: isNewSize ? newQty : undefined,
+      adjustTo: isNewSize ? undefined : newQty,
+      observation: observation || 'Ajuste na edição do estoque',
+      stockEntryName: entry.name,
+    });
+
+    if (!movementResult.success) {
+      return movementResult;
+    }
+  }
+
+  return { success: true };
+}
+
+/** Atualiza dados de um lote existente (preços, impostos, origem e quantidades). */
 export async function updateStockEntryDetails(id, {
   stockEntryName,
   stockOrigin,
   investorId,
   observation,
   pricing = {},
+  lines,
 }) {
   const user = getCurrentUser();
   if (!user) {
@@ -402,11 +444,30 @@ export async function updateStockEntryDetails(id, {
     }
 
     const entry = entryResult.data;
-    const entryPieces = Number(entry.entryQuantity) || totalQuantity(entry.sizes);
+
+    if (Array.isArray(lines)) {
+      const syncResult = await syncStockEntrySizesFromEdit(
+        id,
+        entry,
+        lines,
+        observation || 'Ajuste na edição do estoque'
+      );
+      if (!syncResult.success) {
+        return syncResult;
+      }
+    }
+
+    const freshResult = await getStockEntryById(id);
+    if (!freshResult.success) {
+      return freshResult;
+    }
+
+    const freshEntry = freshResult.data;
+    const entryPieces = Number(freshEntry.entryQuantity) || totalQuantity(freshEntry.sizes);
     const costPrice = Number(pricing.costPrice);
     const baseCost = Number.isFinite(costPrice) && costPrice >= 0
       ? costPrice
-      : (Number(entry.baseCostPrice) || Number(entry.costPrice) || 0);
+      : (Number(freshEntry.baseCostPrice) || Number(freshEntry.costPrice) || 0);
     const suggestedSalePrice = Number(pricing.suggestedSalePrice);
     const minimumSalePrice = Number(pricing.minimumSalePrice);
     const importTaxes = Number(pricing.importTaxes) || 0;
@@ -417,12 +478,12 @@ export async function updateStockEntryDetails(id, {
     const origin = stockOrigin === 'investidor' ? 'investidor' : 'proprio';
 
     const result = await updateStockEntry(id, {
-      name: stockEntryName || entry.name,
-      productId: entry.productId,
-      productName: entry.productName,
+      name: stockEntryName || freshEntry.name,
+      productId: freshEntry.productId,
+      productName: freshEntry.productName,
       stockOrigin: origin,
       investorId: origin === 'investidor' ? (investorId || '') : '',
-      sizes: entry.sizes,
+      sizes: freshEntry.sizes,
       baseCostPrice: baseCost,
       costPrice: baseCost,
       importTaxes,
@@ -430,26 +491,26 @@ export async function updateStockEntryDetails(id, {
       importFreight,
       importFreightPerUnit: freightPerUnit,
       entryQuantity: entryPieces,
-      ...(entry.entrySizes?.length
-        ? { entrySizes: entry.entrySizes }
+      ...(freshEntry.entrySizes?.length
+        ? { entrySizes: freshEntry.entrySizes }
         : {}),
       importTaxesPaidAt,
       suggestedSalePrice: Number.isFinite(suggestedSalePrice)
         ? suggestedSalePrice
-        : Number(entry.suggestedSalePrice) || 0,
+        : Number(freshEntry.suggestedSalePrice) || 0,
       minimumSalePrice: Number.isFinite(minimumSalePrice)
         ? minimumSalePrice
-        : Number(entry.minimumSalePrice) || 0,
-      status: entry.status,
-      notes: observation || entry.notes || '',
-      deductionPriority: entry.deductionPriority,
+        : Number(freshEntry.minimumSalePrice) || 0,
+      status: freshEntry.status,
+      notes: observation || freshEntry.notes || '',
+      deductionPriority: freshEntry.deductionPriority,
     });
 
     if (!result.success) {
       return result;
     }
 
-    invalidateCache(CACHE_KEYS.STOCK_ENTRIES);
+    invalidateCache(CACHE_KEYS.STOCK_ENTRIES, CACHE_KEYS.MOVEMENTS);
 
     return {
       success: true,

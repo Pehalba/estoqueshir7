@@ -1,0 +1,109 @@
+/* Estabelecimentos — consignado em lojas físicas */
+
+.establishments-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.establishments-toolbar__search {
+  flex: 1;
+  min-width: 200px;
+}
+
+.establishments-stats {
+  margin-bottom: var(--space-sm);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.establishment-summary {
+  max-width: 320px;
+  line-height: 1.45;
+}
+
+.establishment-stock-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-top: var(--space-sm);
+}
+
+.establishment-stock-line {
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt, #f8f9fb);
+}
+
+.establishment-stock-line__header {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: flex-end;
+  margin-bottom: var(--space-sm);
+}
+
+.establishment-stock-line__select {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.establishment-size-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: var(--space-sm);
+}
+
+.establishment-size-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--text-sm);
+}
+
+.establishment-size-cell__label {
+  font-weight: 600;
+  text-align: center;
+}
+
+.establishment-size-cell__hint {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.establishment-size-qty {
+  text-align: center;
+  padding: 0.35rem 0.25rem;
+}
+
+.establishment-form-note {
+  margin: var(--space-md) 0 var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background: rgba(99, 102, 241, 0.08);
+  border-left: 3px solid var(--color-primary, #6366f1);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.form-group__label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.form-group__label-row .form-group__label {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .establishment-stock-line__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

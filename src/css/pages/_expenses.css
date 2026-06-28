@@ -1,0 +1,50 @@
+/* Gastos SHIR7 */
+
+.expenses-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.expenses-toolbar__search {
+  flex: 1;
+  min-width: 180px;
+}
+
+.expenses-toolbar__filter {
+  min-width: 160px;
+}
+
+.expenses-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.expenses-summary__card {
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt, #f8f9fb);
+}
+
+.expenses-summary__label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.expenses-summary__value {
+  font-size: var(--font-size-xl, 1.35rem);
+  font-weight: 700;
+}
+
+.expenses-summary__hint {
+  margin-top: var(--space-xs);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}

@@ -1,7 +1,5 @@
 import { sortSizes } from './sizes.js';
 
-export const MAX_STOCK_ENTRY_PIECES = 100;
-
 export function totalQuantity(sizes) {
   return (sizes || []).reduce((sum, s) => sum + (Number(s.quantity) || 0), 0);
 }
