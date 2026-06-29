@@ -4,13 +4,20 @@ const SIZE_ORDER = ['P', 'M', 'G', 'GG', 'XG'];
 const STORAGE_KEY = 'shir7-pers-done';
 const PRODUCT_FILTERS = [
   { id: 'all', label: 'Todos' },
-  { id: 'br-tor-vermelha', label: 'Vermelha', tone: 'vermelha' },
-  { id: 'br-home-amarela', label: 'Amarela', tone: 'amarela' },
+  { id: 'br-home-amarela', label: 'Amarela jogador', tone: 'amarela' },
+  { id: 'br-away-azul', label: 'Azul jogador', tone: 'azul' },
+  { id: 'br-tor-ii', label: 'Azul torcedor', tone: 'azul' },
+  { id: 'br-retro-2002', label: 'Retro 02', tone: 'amarela' },
+  { id: 'br-retro-98', label: 'Retro 98', tone: 'amarela' },
 ];
 
 const PRODUCT_SORT_ORDER = {
   'br-home-amarela': 0,
-  'br-tor-vermelha': 1,
+  'br-away-azul': 1,
+  'br-retro-2002': 2,
+  'br-retro-98': 3,
+  'br-tor-ii': 4,
+  'br-tor-vermelha': 5,
 };
 
 let activeProduct = 'all';
@@ -131,6 +138,7 @@ function renderCard(item) {
     <article class="pers-card${done ? ' pers-card--done' : ''}${placeholderClass}" data-id="${escapeHtml(key)}">
       <header class="pers-card__head${accentClass}">
         <span class="pers-card__order">${escapeHtml(item.orderId)}</span>
+        ${activeProduct === 'all' ? `<span class="pers-card__model">${escapeHtml(item.productLabel)}</span>` : ''}
       </header>
 
       <div class="pers-card__main">
@@ -282,17 +290,34 @@ function renderGrid() {
   if (!grid) return;
 
   const items = filterItems();
+  const emptyMessage = ALL_ITEMS.length === 0
+    ? '<p class="pers-empty">Nenhum pedido na fila. Edite <code>src/data/personalization-alba-fedex-03.js</code> para adicionar.</p>'
+    : '<p class="pers-empty">Nenhum item neste filtro.</p>';
   grid.innerHTML = items.length
     ? items.map(renderCard).join('')
-    : '<p class="pers-empty">Nenhum item neste filtro.</p>';
+    : emptyMessage;
 
   bindDoneButtons();
+}
+
+function clearDoneSet() {
+  doneSet.clear();
+  saveDoneSet();
+  renderStats();
+  renderGrid();
 }
 
 function init() {
   document.getElementById('pers-search')?.addEventListener('input', (e) => {
     searchQuery = e.target.value;
     renderGrid();
+  });
+
+  document.getElementById('pers-clear-done-btn')?.addEventListener('click', () => {
+    if (!doneSet.size) return;
+    if (window.confirm('Limpar todas as marcas de "feito" salvas neste navegador?')) {
+      clearDoneSet();
+    }
   });
 
   document.getElementById('pers-print-btn')?.addEventListener('click', () => {

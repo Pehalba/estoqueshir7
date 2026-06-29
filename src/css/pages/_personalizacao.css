@@ -202,6 +202,17 @@
   color: #1a1333;
 }
 
+#pers-product-filters .pers-pill--azul:hover {
+  border-color: #2563eb;
+  color: #1e40af;
+}
+
+#pers-product-filters .pers-pill--azul.pers-pill--active {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  border-color: #2563eb;
+  color: #fff;
+}
+
 /* —— Grid —— */
 .pers-main {
   max-width: 1200px;
@@ -254,10 +265,19 @@
 
 .pers-card__head {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
   padding: 0.55rem 0.85rem;
   background: var(--color-primary, #5e17eb);
   color: #fff;
+}
+
+.pers-card__model {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  opacity: 0.92;
+  line-height: 1.2;
 }
 
 .pers-card--done .pers-card__head {
