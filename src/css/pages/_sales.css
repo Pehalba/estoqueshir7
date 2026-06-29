@@ -67,6 +67,27 @@
   min-width: 0;
 }
 
+.sales-paste__stock-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  align-items: center;
+}
+
+.paste-stock-legend__item {
+  white-space: nowrap;
+}
+
+.paste-stock-legend__shir7 {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+#field-paste-stock option.paste-stock-opt--proprio,
+.paste-order-stock option.paste-stock-opt--proprio {
+  font-weight: 600;
+}
+
 .sales-paste-preview__groups {
   display: flex;
   flex-direction: column;

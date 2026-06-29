@@ -180,21 +180,27 @@
             </div>
             <div class="card__body">
               <p class="sales-paste__intro">
-                Cole os pedidos da planilha. A baixa segue automaticamente a ordem
-                <strong>Fedex 03 → Fedex 04 → Fedex 05 → LZ</strong> (quando um lote acaba o tamanho, usa o próximo).
-                Confira o resumo e cadastre todos.
+                Selecione o <strong>estoque em lote</strong> abaixo, cole os pedidos da planilha e confira o resumo antes de cadastrar.
+                Use <strong>Realocar Fedex 03→LZ</strong> apenas se quiser distribuir automaticamente entre lotes (em vez do estoque escolhido).
               </p>
               <div class="form-group sales-paste__bulk-stock">
-                <label class="form-group__label" for="field-paste-stock">Estoque em lote (opcional)</label>
+                <label class="form-group__label form-group__label--required" for="field-paste-stock">Estoque em lote</label>
                 <div class="sales-paste__bulk-stock-row">
-                  <select class="form-input form-select" id="field-paste-stock">
-                    <option value="">Selecione para aplicar a todos</option>
+                  <select class="form-input form-select" id="field-paste-stock" required>
+                    <option value="">Selecione o estoque (obrigatório)</option>
                   </select>
                   <button type="button" class="btn btn--secondary btn--sm" id="btn-paste-apply-stock-all">Aplicar a todos</button>
                   <button type="button" class="btn btn--ghost btn--sm" id="btn-paste-auto-match">Realocar Fedex 03→LZ</button>
                 </div>
                 <p id="paste-stock-info" class="sales-product-info"></p>
-                <p class="form-group__hint">O estoque selecionado acima vale para <strong>todos</strong> os pedidos da lista (não precisa repetir em cada linha).</p>
+                <p class="form-group__hint sales-paste__stock-legend">
+                  Lista: <span class="paste-stock-legend__item">🔴 Vermelha</span>
+                  <span class="paste-stock-legend__item">🟡 Amarela</span>
+                  <span class="paste-stock-legend__item">🔵 Azul</span>
+                  <span class="paste-stock-legend__item">⚫ Preta</span>
+                  · <span class="paste-stock-legend__shir7">🟣 SHIR7</span> = estoque próprio.
+                  O estoque selecionado vale para <strong>todos</strong> os pedidos da lista.
+                </p>
               </div>
               <div class="form-group">
                 <label class="form-group__label" for="sales-paste-input">Pedidos (um por linha)</label>

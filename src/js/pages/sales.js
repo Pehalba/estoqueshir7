@@ -26,6 +26,7 @@ import { validateQuickSale, parseSizesQuickInput } from '../utils/validators.js'
 import { parseSalesBatchText, validateOrderWithStockEntry, formatCouponUsedLabel, sanitizeCouponTextInLine } from '../utils/saleTextParser.js';
 import { applyPlatformSettingsToSales } from '../utils/analytics.js';
 import { allocateOrdersByPriority, normalizeOrderSize, collectStockAvailabilityErrors } from '../utils/stockAllocation.js';
+import { formatPasteStockOptionLabel, pasteStockOptionAttrs } from '../utils/stockEntryDisplay.js';
 import { formatCurrency, formatPercent } from '../utils/formatCurrency.js';
 import {
   qs,
@@ -433,25 +434,34 @@ function getSelectedPasteStockEntry() {
   return allStockEntries.find((e) => e.id === qs('#field-paste-stock')?.value) || null;
 }
 
+function pasteStockOptionHtml(entry, selectedId = '') {
+  const attrs = pasteStockOptionAttrs(entry);
+  const selected = entry.id === selectedId ? ' selected' : '';
+  return `<option value="${entry.id}" class="${attrs.class}" data-tone="${attrs['data-tone']}"${selected}>${formatPasteStockOptionLabel(entry)}</option>`;
+}
+
 function populatePasteStockSelect() {
   const select = qs('#field-paste-stock');
   if (!select) return;
   const current = select.value;
-  const options = getPasteStockEntries().map((e) => {
-    const statusTag = e.status === 'esgotado' ? ' · esgotado' : '';
-    return `<option value="${e.id}">${e.name} — ${e.productName}${statusTag}</option>`;
-  });
-  select.innerHTML = `<option value="">Selecione para aplicar a todos</option>${options.join('')}`;
+  const options = getPasteStockEntries().map((e) => pasteStockOptionHtml(e)).join('');
+  select.innerHTML = `<option value="">Selecione o estoque (obrigatório)</option>${options}`;
   select.value = current;
   onPasteStockChange();
 }
 
 function pasteStockOptionsHtml(selectedId = '') {
-  const options = getPasteStockEntries().map((e) => {
-    const statusTag = e.status === 'esgotado' ? ' · esgotado' : '';
-    return `<option value="${e.id}"${e.id === selectedId ? ' selected' : ''}>${e.name} — ${e.productName}${statusTag}</option>`;
-  });
-  return `<option value=""${!selectedId ? ' selected' : ''}>— Escolher estoque —</option>${options.join('')}`;
+  const options = getPasteStockEntries().map((e) => pasteStockOptionHtml(e, selectedId)).join('');
+  return `<option value=""${!selectedId ? ' selected' : ''}>— Escolher estoque —</option>${options}`;
+}
+
+function requirePasteStockSelected(showMessage = true) {
+  if (getSelectedPasteStockEntry()) return true;
+  if (showMessage) {
+    showToast('Selecione o estoque em lote antes de continuar.', 'warning');
+    qs('#field-paste-stock')?.focus();
+  }
+  return false;
 }
 
 function buildPasteAllocationOverrides(orderCount) {
@@ -725,7 +735,30 @@ function renderPastePreview(batch) {
 
 function previewPasteOrders() {
   const text = qs('#sales-paste-input')?.value || '';
-  const batch = applyPasteStockOverrides(parseSalesBatchText(text, getPasteParserContext()));
+  let batch = parseSalesBatchText(text, getPasteParserContext());
+
+  if (!text.trim()) {
+    renderPastePreview({ orders: [], valid: [], invalid: [], total: 0 });
+    return batch;
+  }
+
+  if (!requirePasteStockSelected(false)) {
+    batch = {
+      ...batch,
+      orders: batch.orders.map((order) => ({
+        ...order,
+        stockEntryId: '',
+        stockLabel: '—',
+        valid: false,
+        errors: [...(order.errors || []), 'Selecione o estoque em lote acima.'],
+      })),
+      valid: [],
+      invalid: batch.orders,
+    };
+  } else {
+    batch = applyPasteStockOverrides(batch);
+  }
+
   renderPastePreview(batch);
   return batch;
 }
@@ -895,6 +928,8 @@ async function registerParsedOrder(order) {
 }
 
 async function registerFirstPasteOrder() {
+  if (!requirePasteStockSelected()) return;
+
   const batch = previewPasteOrders();
   const order = batch.valid[0];
   if (!order) {
@@ -925,6 +960,8 @@ async function registerFirstPasteOrder() {
 }
 
 async function registerAllPasteOrders() {
+  if (!requirePasteStockSelected()) return;
+
   const initial = previewPasteOrders();
   if (!initial.valid.length) {
     showToast('Nenhum pedido válido. Ajuste o estoque de cada linha na pré-visualização.', 'warning');
@@ -1678,7 +1715,13 @@ function initEvents() {
     onPasteOrderStockChange(Number(select.dataset.orderIndex), select.value);
   });
 
-  qs('#btn-paste-preview')?.addEventListener('click', previewPasteOrders);
+  qs('#btn-paste-preview')?.addEventListener('click', () => {
+    const text = qs('#sales-paste-input')?.value?.trim();
+    if (text && !getSelectedPasteStockEntry()) {
+      showToast('Selecione o estoque em lote antes de pré-visualizar.', 'warning');
+    }
+    previewPasteOrders();
+  });
   qs('#btn-paste-apply-one')?.addEventListener('click', applyFirstPasteOrderToForm);
   qs('#btn-paste-register-one')?.addEventListener('click', registerFirstPasteOrder);
   qs('#btn-paste-register-all')?.addEventListener('click', registerAllPasteOrders);
