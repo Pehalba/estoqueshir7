@@ -355,6 +355,7 @@ export function buildSaleFinancialsFromSale(sale, settings = {}, stockEntry = nu
     defaultPersonalizationCostPerPiece: defaultPersCost,
     defaultPersonalizationPrice: defaultPersPrice,
     platformCosts: settings.platformCosts || [],
+    isSample: !!sale?.isSample,
   });
 }
 
@@ -553,13 +554,14 @@ export function calculateQuickSaleFinancials({
   defaultPersonalizationCostPerPiece = 0,
   defaultPersonalizationPrice = 50,
   platformCosts = [],
+  isSample = false,
 }) {
   const defaultPersCost = Number(defaultPersonalizationCostPerPiece) || 0;
   const defaultPersPrice = Number(defaultPersonalizationPrice) || 50;
   const safeLines = (lines || []).map((l) => ({
     quantity: Number(l.quantity) || 0,
     unitPrice: Number(l.unitPrice) || 0,
-    freight: Number(l.freight) || 0,
+    freight: isSample ? 0 : (Number(l.freight) || 0),
     ads: Number(l.ads) || 0,
     otherCosts: Number(l.otherCosts) || 0,
     isPersonalized: !!l.isPersonalized,
@@ -815,15 +817,20 @@ export function calculateTicketMedio(sales) {
 }
 
 function getSaleLinesForFinancials(sale) {
+  const isSample = !!sale?.isSample;
+
   if (sale?.lines?.length) {
-    return sale.lines.map((line) => ({ ...line }));
+    return sale.lines.map((line) => ({
+      ...line,
+      freight: isSample ? 0 : (Number(line.freight) || 0),
+    }));
   }
 
   return [{
     size: sale.size || '',
     quantity: Number(sale.quantity) || 1,
     unitPrice: Number(sale.unitPrice) || 0,
-    freight: Number(sale.freight) || 0,
+    freight: isSample ? 0 : (Number(sale.freight) || 0),
     ads: Number(sale.adsCost ?? sale.poolCost) || 0,
     otherCosts: Number(sale.fees) || 0,
     couponId: sale.couponId || '',
@@ -856,6 +863,7 @@ export function recalculateSaleWithPlatformSettings(sale, settings = {}, investo
     defaultPersonalizationCostPerPiece: defaultPersCost,
     defaultPersonalizationPrice: defaultPersPrice,
     platformCosts,
+    isSample: !!sale.isSample,
   });
 
   const platformFees = calculatePlatformFeesBreakdown(

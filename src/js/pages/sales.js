@@ -667,7 +667,7 @@ function buildLinesFromParsedOrder(order, fallbackUnitPrice = getBasePrice()) {
     couponId: coupon.couponId,
     couponName: coupon.couponName,
     couponPercent: coupon.couponPercent,
-    freight: order.freight,
+    freight: order.isSample ? 0 : (Number(order.freight) || 0),
     ads: 0,
     otherCosts: 0,
     isPersonalized: order.isPersonalized,
@@ -884,6 +884,7 @@ async function registerParsedOrder(order) {
     defaultPersonalizationCostPerPiece: globalSettings.personalizationCostPerPiece,
     defaultPersonalizationPrice: globalSettings.defaultPersonalizationPrice,
     platformCosts: getActivePlatformCosts(),
+    isSample: !!order.isSample,
   });
 
   const allowBelowMinimum = orderUsesSpreadsheetPrice(order);

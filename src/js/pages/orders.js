@@ -710,6 +710,7 @@ function updateOrderEditPreview() {
     defaultPersonalizationCostPerPiece: globalSettings.personalizationCostPerPiece,
     defaultPersonalizationPrice: globalSettings.defaultPersonalizationPrice,
     platformCosts: globalSettings.platformCosts || [],
+    isSample: !!sale.isSample,
   });
 
   const parts = [

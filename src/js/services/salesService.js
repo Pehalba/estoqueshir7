@@ -354,11 +354,12 @@ export async function createQuickSale(input) {
   }
 
   const stockEntryId = input.stockEntryId || input.productId;
+  const isSample = !!input.isSample;
   const lines = (input.lines || []).map((l) => ({
     size: l.size,
     quantity: Number(l.quantity) || 0,
     unitPrice: Number(l.unitPrice) || 0,
-    freight: Number(l.freight) || 0,
+    freight: isSample ? 0 : (Number(l.freight) || 0),
     ads: Number(l.ads) || 0,
     otherCosts: Number(l.otherCosts) || 0,
     couponId: l.couponId || '',
@@ -423,6 +424,7 @@ export async function createQuickSale(input) {
       defaultPersonalizationCostPerPiece: input.defaultPersonalizationCostPerPiece,
       defaultPersonalizationPrice: input.defaultPersonalizationPrice,
       platformCosts,
+      isSample,
     });
 
     const platformFees = calculatePlatformFeesBreakdown(platformCosts, financials.totalRevenue);
@@ -431,13 +433,13 @@ export async function createQuickSale(input) {
       input.allowBelowMinimum
       || input.skipMinimumPriceCheck
       || input.allowZeroPrice
-      || input.isSample
+      || isSample
     );
     const skipNegativeProfitCheck = !!(
       input.skipNegativeProfitCheck
       || input.allowBelowMinimum
       || input.allowZeroPrice
-      || input.isSample
+      || isSample
     );
     const validation = validateQuickSale(
       {
@@ -445,8 +447,8 @@ export async function createQuickSale(input) {
         unitCost,
         productId: stockEntryId,
         allowBelowMinimum: skipMinimumPriceCheck,
-        allowZeroPrice: !!(input.allowZeroPrice || input.isSample),
-        isSample: !!input.isSample,
+        allowZeroPrice: !!(input.allowZeroPrice || isSample),
+        isSample,
         skipNegativeProfitCheck,
       },
       {
@@ -454,7 +456,7 @@ export async function createQuickSale(input) {
         lines: linesWithStock,
         financials,
         skipMinimumPriceCheck,
-        allowZeroPrice: !!(input.allowZeroPrice || input.isSample),
+        allowZeroPrice: !!(input.allowZeroPrice || isSample),
         skipNegativeProfitCheck,
       }
     );
@@ -475,7 +477,7 @@ export async function createQuickSale(input) {
           capitalUnitCost,
           quantity: financials.totalQty,
           financials,
-          isSample: !!input.isSample,
+          isSample,
           stockEntry,
         });
       }
@@ -550,7 +552,7 @@ export async function createQuickSale(input) {
       customer: input.customer || '',
       establishmentId: input.establishmentId || '',
       establishmentName: input.establishmentName || '',
-      isSample: !!input.isSample,
+      isSample,
       stockOrigin: stockEntry.stockOrigin || 'proprio',
       investorId: stockEntry.investorId || '',
       investorPayout,
@@ -1035,6 +1037,7 @@ export async function updateSaleOrder(saleId, input = {}) {
       defaultPersonalizationCostPerPiece: defaultPersCost,
       defaultPersonalizationPrice: defaultPersPrice,
       platformCosts,
+      isSample: !!sale.isSample,
     });
 
     const validation = validateOrderEdit(lines, financials);

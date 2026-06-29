@@ -155,6 +155,10 @@ export function extractFreight(text, defaultFreight = 0) {
   return Number(match[1].replace(',', '.')) || 0;
 }
 
+function resolveOrderFreight(raw, context, isSample) {
+  return isSample ? 0 : extractFreight(raw, context.defaultFreight);
+}
+
 export function extractSizes(text) {
   const parsed = parseSizesQuickInput(text);
   if (parsed.length) return parsed;
@@ -227,6 +231,8 @@ const COMPACT_PRODUCT_HINTS = [
   'amarela',
   'vermelha',
   'azul',
+  'preta',
+  'retro',
   'feminina',
   'masculina',
   'torcedor',
@@ -288,6 +294,15 @@ export function parseCompactSaleLine(lineText, context = {}) {
   if (tokens[idx] && isCompactProductHint(tokens[idx])) {
     productName = tokens[idx];
     idx += 1;
+  } else if (
+    tokens[idx]
+    && !parseSizeOnly(tokens[idx])
+    && !COMPACT_PERS_MARKERS.test(tokens[idx])
+    && tokens[idx + 1]
+    && parseSizeOnly(tokens[idx + 1])
+  ) {
+    productName = tokens[idx];
+    idx += 1;
   }
 
   const sizeToken = tokens[idx];
@@ -334,7 +349,7 @@ export function parseCompactSaleLine(lineText, context = {}) {
       : (productName || '—'),
     coupon: { couponId: '', couponName: '', couponPercent: 0 },
     isPersonalized,
-    freight: extractFreight(raw, context.defaultFreight),
+    freight: resolveOrderFreight(raw, context, isSample),
     unitPrice: paid,
     listPrice: 0,
     discountedPrice: isSample ? 0 : paid,
@@ -402,7 +417,7 @@ function parseExtendedStructuredLine(cols, context, raw) {
   const sizes = buildSizesFromColumns(sizeText, qtyText);
   const isPersonalized = extractPersonalization(persText || raw);
   const coupon = parseCouponColumn(couponText, context.coupons || []);
-  const freight = extractFreight(raw, context.defaultFreight);
+  const freight = resolveOrderFreight(raw, context, isSample);
   const { entry: stockEntry, error: stockError } = resolveStockEntry(context, productName);
 
   const errors = [];
