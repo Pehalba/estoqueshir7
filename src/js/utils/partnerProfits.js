@@ -6,10 +6,12 @@ import {
 } from './analytics.js';
 import {
   buildSaleFinancialsFromSale,
+  calculateInvestorRepasseForSale,
   calculateShir7ShirtShareForInvestor,
   resolveSaleUnitCost,
   resolveInvestorCapitalUnitCost,
 } from './calculations.js';
+import { getSaleCampaignAdsCost } from './adCampaignUtils.js';
 
 export const SHIR7_PARTNERS = [
   { id: 'pedro', name: 'Pedro', share: 0.5 },
@@ -54,9 +56,24 @@ function decomposeSaleProfit(sale, settings = {}, investor = null, stockEntry = 
   const persProfit = pers.revenue - pers.cost;
   const financials = buildSaleFinancialsFromSale(sale, settings, stockEntry);
   const unitCost = resolveSaleUnitCost(sale, stockEntry);
-  const shirtNetProfit = Math.max(0, net - persProfit);
-  const payout = sale.stockOrigin === 'investidor' ? getInvestorRepasse(sale) : 0;
+  const campaignAds = getSaleCampaignAdsCost(sale);
+  const shirtNetProfit = Math.max(0, net - persProfit - campaignAds);
   const isInvestor = sale.stockOrigin === 'investidor';
+  const capitalUnit = resolveInvestorCapitalUnitCost(sale, stockEntry);
+  const payout = isInvestor && investor
+    ? calculateInvestorRepasseForSale(investor, {
+      unitCost,
+      capitalUnitCost: capitalUnit,
+      quantity: sale.quantity,
+      financials,
+      persProfit,
+      sale,
+      stockEntry,
+      shirtAdsCost: campaignAds,
+    })
+    : isInvestor
+      ? getInvestorRepasse(sale)
+      : 0;
 
   return {
     persRevenue: pers.revenue,
@@ -65,16 +82,19 @@ function decomposeSaleProfit(sale, settings = {}, investor = null, stockEntry = 
     persPieces: pers.pieces,
     hasPersonalization: saleHasPersonalization(sale) && (pers.pieces > 0 || pers.revenue > 0 || pers.cost > 0),
     shirtNetProfit,
+    campaignAdsCost: campaignAds,
     shirtRevenue: Math.max(0, (Number(sale.totalRevenue) || 0) - pers.revenue),
     investorRepasse: payout,
     shir7ShirtFromInvestor: isInvestor && investor
       ? calculateShir7ShirtShareForInvestor(investor, {
         unitCost,
+        capitalUnitCost: capitalUnit,
         quantity: sale.quantity,
         financials,
         persProfit,
         sale,
         stockEntry,
+        shirtAdsCost: campaignAds,
       })
       : 0,
     shir7ShirtFromProprio: !isInvestor ? shirtNetProfit : 0,
@@ -110,6 +130,7 @@ export function calculatePartnerDistribution(sales, investors = [], filters = {}
   let persProfit = 0;
   let persPieces = 0;
   let persOrderCount = 0;
+  let campaignAdsTotal = 0;
 
   for (const sale of filtered) {
     const investor = sale.investorId ? investorMap.get(sale.investorId) : null;
@@ -118,6 +139,7 @@ export function calculatePartnerDistribution(sales, investors = [], filters = {}
     totalNetProfit += Number(sale.netProfit) || 0;
     shirtNetProfitTotal += split.shirtNetProfit;
     shirtPieces += split.quantity;
+    campaignAdsTotal += split.campaignAdsCost || 0;
 
     if (split.hasPersonalization) {
       persOrderCount += 1;
@@ -200,6 +222,7 @@ export function calculatePartnerDistribution(sales, investors = [], filters = {}
       proprioSalesCount,
       proprioPieces,
       pieces: shirtPieces,
+      campaignAdsTotal,
     },
     personalization: {
       revenue: persRevenue,

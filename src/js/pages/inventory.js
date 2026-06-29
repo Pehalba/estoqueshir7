@@ -511,15 +511,36 @@ function formatPriceCell(product) {
 
 function formatSizesBadges(sizes) {
   if (!sizes?.length) return '<span class="text-muted">—</span>';
-  return `<div class="sizes-badges">${sortSizes(sizes).map((s) => {
+
+  const sorted = sortSizes(sizes);
+  const hasReserved = sorted.some((s) => (Number(s.reserved) || 0) > 0);
+
+  const availBadges = sorted.map((s) => {
     const avail = availableQty(s);
-    const soldOut = avail <= 0;
-    const low = !soldOut && avail <= lowStockThreshold;
-    const reserved = Number(s.reserved) || 0;
-    const label = reserved > 0 ? `${s.size}: ${avail}/${s.quantity}` : `${s.size}: ${s.quantity}`;
+    const qty = Number(s.quantity) || 0;
+    const displayQty = hasReserved ? avail : qty;
+    const soldOut = displayQty <= 0;
+    const low = !soldOut && displayQty <= lowStockThreshold;
     const badgeClass = soldOut ? 'badge--error' : (low ? 'badge--warning' : 'badge--neutral');
-    return `<span class="badge ${badgeClass}">${label}</span>`;
-  }).join('')}</div>`;
+    return `<span class="badge ${badgeClass}">${s.size}: ${displayQty}</span>`;
+  }).join('');
+
+  if (!hasReserved) {
+    return `<div class="sizes-badges">${availBadges}</div>`;
+  }
+
+  const establishmentBadges = sorted.map((s) => {
+    const reserved = Number(s.reserved) || 0;
+    const badgeClass = reserved > 0 ? 'badge--establishment' : 'badge--establishment-empty';
+    return `<span class="badge ${badgeClass}">${s.size}: ${reserved}</span>`;
+  }).join('');
+
+  return `
+    <div class="sizes-badges-stack">
+      <div class="sizes-badges sizes-badges--available" title="Disponível no estoque">${availBadges}</div>
+      <div class="sizes-badges sizes-badges--establishment" title="Em estabelecimentos (consignado)">${establishmentBadges}</div>
+    </div>
+  `;
 }
 
 function productThumbHtml(imageUrl, alt = '') {
@@ -707,16 +728,8 @@ function getStockEntryQuantitySummary(entry) {
 }
 
 function formatStockQuantityCell(entry) {
-  const { currentQty, entryPieces, hasRecordedEntry } = getStockEntryQuantitySummary(entry);
-
-  if (!hasRecordedEntry || entryPieces === currentQty) {
-    return `<strong>${currentQty}</strong>`;
-  }
-
-  return `
-    <strong>${currentQty}</strong>
-    <br><span class="text-sm text-muted">de ${entryPieces} na entrada</span>
-  `;
+  const { currentQty } = getStockEntryQuantitySummary(entry);
+  return `<strong>${currentQty}</strong>`;
 }
 
 function formatSizesLine(sizes) {

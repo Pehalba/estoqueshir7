@@ -251,7 +251,12 @@ export async function createSale(input) {
     let investor = null;
     let investorPayout = 0;
 
-    if (stockEntry.stockOrigin === 'investidor' && stockEntry.investorId) {
+    const isSample = !!input.isSample || (
+      Number(input.unitPrice) === 0
+      && Number(financials.itemsSubtotal ?? financials.totalRevenue) === 0
+    );
+
+    if (stockEntry.stockOrigin === 'investidor' && stockEntry.investorId && !isSample) {
       const invResult = await getInvestorById(stockEntry.investorId);
       if (invResult.success) {
         investor = invResult.data;
@@ -300,6 +305,7 @@ export async function createSale(input) {
       stockOrigin: stockEntry.stockOrigin || 'proprio',
       investorId: stockEntry.investorId || '',
       investorPayout,
+      isSample,
       grossRevenue: financials.grossRevenue,
       totalRevenue: financials.totalRevenue,
       variableCosts: financials.variableCosts,
@@ -469,6 +475,7 @@ export async function createQuickSale(input) {
           capitalUnitCost,
           quantity: financials.totalQty,
           financials,
+          isSample: !!input.isSample,
           stockEntry,
         });
       }

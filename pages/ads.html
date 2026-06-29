@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Gastos SHIR7 — SHIR7</title>
+  <title>Anúncios — SHIR7</title>
   <link rel="stylesheet" href="../src/css/main.css">
 </head>
-<body data-page="expenses">
+<body data-page="ads">
   <div class="app-layout">
     <aside id="sidebar" class="sidebar">
       <div class="sidebar__brand">
@@ -42,11 +42,11 @@
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
           Lucros
         </a>
-        <a href="ads.html" class="sidebar__link" data-nav="ads">
+        <a href="ads.html" class="sidebar__link sidebar__link--active" data-nav="ads">
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 13v-2z"/><path d="M11 13v8a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2v-8"/></svg></span>
           Anúncios
         </a>
-        <a href="expenses.html" class="sidebar__link sidebar__link--active" data-nav="expenses">
+        <a href="expenses.html" class="sidebar__link" data-nav="expenses">
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
           Gastos SHIR7
         </a>
@@ -69,7 +69,7 @@
           <button type="button" id="menu-btn" class="header__menu-btn" aria-label="Abrir menu">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
-          <h1 class="header__title">Gastos SHIR7</h1>
+          <h1 class="header__title">Anúncios</h1>
         </div>
         <div class="header__right">
           <div class="header__user">
@@ -81,44 +81,53 @@
 
       <main class="app-layout__content">
         <div class="page-header">
-          <h2 class="page-header__title">Despesas da operação</h2>
-          <p class="page-header__subtitle">Registre gastos fixos e variáveis da SHIR7</p>
+          <h2 class="page-header__title">Campanhas de anúncios</h2>
+          <p class="page-header__subtitle">Registre o gasto por venda ao fechar uma campanha — desconta do lucro da camisa antes de dividir investidor e SHIR7</p>
         </div>
 
-        <div class="expenses-summary">
-          <div class="expenses-summary__card">
-            <span class="expenses-summary__label">Total filtrado</span>
-            <div class="expenses-summary__value" id="summary-total">R$ 0,00</div>
-            <p class="expenses-summary__hint" id="summary-count">0 despesa(s)</p>
+        <p class="ads-intro">
+          Ao terminar uma campanha, informe quantas vendas ela gerou e quanto gastou <strong>por venda</strong>.
+          O sistema vincula automaticamente às <strong>últimas N vendas do estoque investidor</strong> ainda sem campanha.
+          A personalização não entra nesse desconto.
+        </p>
+
+        <div class="ads-summary">
+          <div class="ads-summary__card">
+            <span class="ads-summary__label">Total em ads (campanhas)</span>
+            <div class="ads-summary__value" id="summary-spent">R$ 0,00</div>
           </div>
-          <div class="expenses-summary__card">
-            <span class="expenses-summary__label">Gastos do mês atual</span>
-            <div class="expenses-summary__value" id="summary-month">R$ 0,00</div>
+          <div class="ads-summary__card">
+            <span class="ads-summary__label">Vendas com ads</span>
+            <div class="ads-summary__value" id="summary-sales">0</div>
+          </div>
+          <div class="ads-summary__card">
+            <span class="ads-summary__label">Vendas investidor disponíveis</span>
+            <div class="ads-summary__value" id="summary-available">0</div>
+            <p class="ads-summary__hint">Sem campanha vinculada</p>
           </div>
         </div>
 
-        <div class="expenses-toolbar">
-          <input type="search" id="search-input" class="form-input expenses-toolbar__search" placeholder="Buscar por descrição ou observação...">
-          <select id="filter-category" class="form-input form-select expenses-toolbar__filter"></select>
-          <input type="month" id="filter-month" class="form-input expenses-toolbar__filter">
-          <button type="button" id="btn-clear-filters" class="btn btn--secondary btn--sm">Limpar filtros</button>
-          <button type="button" id="btn-new-expense" class="btn btn--primary">+ Novo gasto</button>
+        <div class="influencers-toolbar">
+          <span></span>
+          <button type="button" id="btn-new-campaign" class="btn btn--primary">+ Registrar campanha</button>
         </div>
 
         <p class="scroll-hint">Deslize a tabela para ver todas as colunas →</p>
         <div class="table-wrapper table-wrapper--hint">
-          <table class="table" id="expenses-table">
+          <table class="table">
             <thead>
               <tr>
-                <th>Data</th>
-                <th>Descrição</th>
-                <th>Categoria</th>
-                <th>Valor</th>
-                <th>Ações</th>
+                <th>Campanha</th>
+                <th>Plataforma</th>
+                <th>Vendas</th>
+                <th>R$/venda</th>
+                <th>Total</th>
+                <th>Vinculadas</th>
+                <th></th>
               </tr>
             </thead>
-            <tbody id="expenses-tbody">
-              <tr><td colspan="5" class="table__empty">Carregando...</td></tr>
+            <tbody id="ads-tbody">
+              <tr><td colspan="7" class="table__empty">Carregando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -126,65 +135,78 @@
     </div>
   </div>
 
-  <div id="expense-modal" class="modal">
+  <div id="campaign-modal" class="modal">
     <div class="modal__backdrop"></div>
     <div class="modal__dialog">
       <div class="modal__header">
-        <h3 class="modal__title" id="expense-modal-title">Novo gasto</h3>
+        <h3 class="modal__title">Registrar campanha</h3>
         <button type="button" class="modal__close" data-modal-close aria-label="Fechar">&times;</button>
       </div>
-      <form id="expense-form">
+      <form id="campaign-form">
         <div class="modal__body">
           <div id="form-errors" class="form-errors"></div>
 
-          <div class="form-group">
-            <label class="form-group__label form-group__label--required" for="field-description">Descrição</label>
-            <input class="form-input" type="text" id="field-description" required placeholder="Ex.: Embalagens, anúncios, frete...">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-group__label form-group__label--required" for="campaign-name">Nome da campanha</label>
+              <input class="form-input" type="text" id="campaign-name" required placeholder="Ex.: Coleção vermelhas — junho">
+            </div>
+            <div class="form-group">
+              <label class="form-group__label" for="campaign-platform">Plataforma</label>
+              <select class="form-input form-select" id="campaign-platform">
+                <option value="Meta">Meta (Facebook/Instagram)</option>
+                <option value="Google">Google Ads</option>
+                <option value="TikTok">TikTok</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-group__label form-group__label--required" for="field-amount">Valor (R$)</label>
-              <input class="form-input" type="number" id="field-amount" min="0.01" step="0.01" required>
+              <label class="form-group__label form-group__label--required" for="campaign-sale-count">Quantidade de vendas</label>
+              <input class="form-input" type="number" id="campaign-sale-count" min="1" step="1" required placeholder="Ex.: 100">
+              <p class="form-group__hint">Últimas vendas do estoque investidor, mais recentes primeiro.</p>
             </div>
             <div class="form-group">
-              <label class="form-group__label" for="field-date">Data</label>
-              <input class="form-input" type="date" id="field-date">
+              <label class="form-group__label form-group__label--required" for="campaign-cost-per-sale">Custo por venda (R$)</label>
+              <input class="form-input" type="number" id="campaign-cost-per-sale" min="0.01" step="0.01" required placeholder="Ex.: 50">
+              <p class="form-group__hint">Gasto total ÷ vendas da campanha (ex.: R$ 5.000 ÷ 100 = R$ 50).</p>
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-group__label" for="field-category">Categoria</label>
-            <select class="form-input form-select" id="field-category"></select>
+            <label class="form-group__label" for="campaign-notes">Observação</label>
+            <textarea class="form-input" id="campaign-notes" rows="2" placeholder="Opcional"></textarea>
           </div>
 
-          <div class="form-group">
-            <label class="form-group__label" for="field-notes">Observações</label>
-            <textarea class="form-input" id="field-notes" rows="2" placeholder="Opcional"></textarea>
+          <div class="ads-preview" id="campaign-preview">
+            <p class="ads-preview--empty">Informe quantidade de vendas e custo por venda para ver a prévia.</p>
           </div>
         </div>
         <div class="modal__footer">
-          <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
-          <button type="submit" class="btn btn--primary" id="btn-save-expense">Salvar</button>
+          <button type="button" class="btn btn--ghost" data-modal-close>Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="btn-save-campaign">Salvar campanha</button>
         </div>
       </form>
     </div>
   </div>
 
-  <div id="delete-expense-modal" class="modal">
+  <div id="delete-modal" class="modal">
     <div class="modal__backdrop"></div>
-    <div class="modal__dialog modal__dialog--sm">
+    <div class="modal__dialog">
       <div class="modal__header">
-        <h3 class="modal__title">Excluir gasto</h3>
+        <h3 class="modal__title">Excluir campanha</h3>
         <button type="button" class="modal__close" data-modal-close aria-label="Fechar">&times;</button>
       </div>
       <div class="modal__body">
-        <p>Remover <strong id="delete-expense-desc"></strong>?</p>
-        <p class="text-sm text-muted">Valor: <span id="delete-expense-amount"></span></p>
+        <p>Excluir a campanha <strong id="delete-campaign-name"></strong>?</p>
+        <p class="text-sm text-muted" id="delete-campaign-detail"></p>
+        <p class="text-sm text-muted">O custo de ads será removido das vendas vinculadas. Os lucros voltam ao valor anterior.</p>
       </div>
       <div class="modal__footer">
-        <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
-        <button type="button" class="btn btn--danger" id="btn-delete-expense-confirm">Excluir</button>
+        <button type="button" class="btn btn--ghost" data-modal-close>Cancelar</button>
+        <button type="button" class="btn btn--danger" id="btn-confirm-delete">Excluir</button>
       </div>
     </div>
   </div>
@@ -192,6 +214,6 @@
   <div id="toast-container" class="toast-container"></div>
 
   <script type="module" src="../src/js/app.js"></script>
-  <script type="module" src="../src/js/pages/expenses.js"></script>
+  <script type="module" src="../src/js/pages/ads.js"></script>
 </body>
 </html>

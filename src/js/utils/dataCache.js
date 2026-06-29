@@ -12,6 +12,9 @@ export const CACHE_KEYS = {
   PROFIT_PAYOUTS: 'profitPayouts',
   ESTABLISHMENTS: 'establishments',
   EXPENSES: 'expenses',
+  INFLUENCERS: 'influencers',
+  INFLUENCER_PAYOUTS: 'influencerPayouts',
+  AD_CAMPAIGNS: 'adCampaigns',
 };
 
 export function readCache(key) {

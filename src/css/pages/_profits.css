@@ -43,6 +43,25 @@
   padding-top: var(--space-md);
 }
 
+.profits-partner-payments {
+  margin-top: var(--space-lg);
+}
+
+.profits-total-pers {
+  margin-bottom: var(--space-lg);
+}
+
+.profits-section-label {
+  margin: var(--space-lg) 0 var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.profits-partner-payments .card__subtitle {
+  margin-top: var(--space-xs);
+}
+
 .profits-partners--compact .profits-partner__breakdown {
   margin-top: var(--space-sm);
 }

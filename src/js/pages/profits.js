@@ -25,7 +25,7 @@ const TAB_PANELS = {
   'investidor-shir7': '#tab-investidor-shir7',
   proprio: '#tab-proprio',
   personalizacoes: '#tab-personalizacoes',
-  'total-shir7': '#tab-total-shir7',
+  'total-shir7': '#panel-total-shir7',
 };
 
 let allSales = [];
@@ -37,9 +37,17 @@ let currentFilters = {};
 let payoutBusy = false;
 let payoutModalContext = null;
 
-function getInvestorPayoutState(investorId, filters, dueAmount) {
-  const record = getPayoutRecord(payoutMap, 'investor', investorId, filters.dateFrom, filters.dateTo);
+function getPayoutState(type, recipientId, filters, dueAmount) {
+  const record = getPayoutRecord(payoutMap, type, recipientId, filters.dateFrom, filters.dateTo);
   return resolvePayoutStatus(record, dueAmount);
+}
+
+function getInvestorPayoutState(investorId, filters, dueAmount) {
+  return getPayoutState('investor', investorId, filters, dueAmount);
+}
+
+function getPartnerPayoutState(partnerId, filters, dueAmount) {
+  return getPayoutState('partner', partnerId, filters, dueAmount);
 }
 
 function switchTab(tab) {
@@ -53,7 +61,7 @@ function switchTab(tab) {
 }
 
 function getFilters() {
-  const period = qs('#profits-period')?.value || 'month';
+  const period = qs('#profits-period')?.value || 'all';
   if (period === 'custom') {
     return {
       dateFrom: qs('#profits-date-from')?.value || '',
@@ -203,10 +211,11 @@ function renderInvestidoresTab(data, shirts, filters) {
 }
 
 function renderInvestidorShir7Tab(data, shirts) {
-  qs('#tab-split-inv').textContent = formatCurrency(shirts.investorRepasseTotal);
-  qs('#tab-split-inv-hint').textContent = `${shirts.investorSalesCount} venda(s) do estoque investidor`;
+  qs('#tab-split-inv').textContent = formatCurrency(shirts.investorProfitShareTotal || 0);
+  qs('#tab-split-inv-hint').textContent =
+    `${shirts.investorSalesCount} venda(s) · só a parte do lucro do investidor`;
   qs('#tab-split-shir7').textContent = formatCurrency(shirts.shir7FromInvestor);
-  qs('#tab-split-shir7-hint').textContent = 'Restante do lucro em camisas fica com a SHIR7';
+  qs('#tab-split-shir7-hint').textContent = 'Parte SHIR7 no lucro das camisas do investidor';
 
   const tbody = qs('#tbody-investidor-shir7');
   if (!data.byInvestor.length) {
@@ -220,7 +229,7 @@ function renderInvestidorShir7Tab(data, shirts) {
       <td>${row.sales}</td>
       <td>${row.pieces}</td>
       <td>${formatCurrency(row.shirtNetProfit ?? row.netProfit)}</td>
-      <td>${formatCurrency(row.repasse)}</td>
+      <td>${formatCurrency(row.profitShare || 0)}</td>
       <td>${formatCurrency(row.shir7Share)}</td>
     </tr>
   `).join('');
@@ -248,22 +257,100 @@ function renderPartnersFull(containerId, data) {
       <p class="profits-partner__share">50% do total SHIR7</p>
       <p class="profits-partner__value">${formatCurrency(p.amount)}</p>
       <p class="profits-partner__breakdown">
-        SHIR7 investidor: ${formatCurrency(p.fromInvestor)}<br>
-        SHIR7 estoque: ${formatCurrency(p.fromProprio)}<br>
-        SHIR7 personalização: ${formatCurrency(p.fromPersonalization)}
+        Estoque investidor: ${formatCurrency(p.fromInvestor)}<br>
+        Estoque SHIR7: ${formatCurrency(p.fromProprio)}<br>
+        Personalização: ${formatCurrency(p.fromPersonalization)}
       </p>
     </div>
   `).join('');
 }
 
-function renderTotalShir7Tab(data, shirts, pers) {
+function renderPartnersPayoutTable(data, filters) {
+  const tbody = qs('#tbody-partners-payout');
+  if (!tbody) return;
+
+  if (!data.partners?.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="table__empty">Sem dados no período.</td></tr>';
+    return;
+  }
+
+  let paidTotal = 0;
+  let pendingTotal = 0;
+
+  tbody.innerHTML = data.partners.map((partner) => {
+    const state = getPartnerPayoutState(partner.id, filters, partner.amount);
+    paidTotal += state.paidAmount;
+    pendingTotal += state.remaining;
+
+    const statusClass = state.status === 'paid'
+      ? 'paid'
+      : state.status === 'partial'
+        ? 'partial'
+        : 'pending';
+    const rowClass = state.status === 'paid'
+      ? 'profits-row--paid'
+      : state.status === 'partial'
+        ? 'profits-row--partial'
+        : '';
+
+    return `
+    <tr class="${rowClass}">
+      <td><strong>${partner.name}</strong></td>
+      <td><strong>${formatCurrency(partner.amount)}</strong></td>
+      <td>${formatCurrency(partner.fromInvestor)}</td>
+      <td>${formatCurrency(partner.fromProprio)}</td>
+      <td>${formatCurrency(partner.fromPersonalization)}</td>
+      <td>${formatCurrency(state.paidAmount)}</td>
+      <td>${formatCurrency(state.remaining)}</td>
+      <td><span class="profits-status profits-status--${statusClass}">${payoutStatusLabel(state)}</span></td>
+      <td class="table__actions profits-row__actions">
+        ${state.remaining > 0.02 ? `
+        <button
+          type="button"
+          class="btn btn--sm btn--secondary"
+          data-payout-action="open"
+          data-payout-type="partner"
+          data-recipient-id="${partner.id}"
+          data-recipient-name="${partner.name.replace(/"/g, '&quot;')}"
+          data-amount="${partner.amount}"
+          ${payoutBusy ? 'disabled' : ''}
+        >Pagar</button>` : ''}
+        ${state.paidAmount > 0 ? `
+        <button
+          type="button"
+          class="btn btn--sm btn--ghost"
+          data-payout-action="clear"
+          data-payout-type="partner"
+          data-recipient-id="${partner.id}"
+          data-recipient-name="${partner.name.replace(/"/g, '&quot;')}"
+          ${payoutBusy ? 'disabled' : ''}
+        >Zerar</button>` : ''}
+      </td>
+    </tr>
+  `;
+  }).join('');
+
+  const statusEl = qs('#tab-partners-payment-status');
+  if (statusEl) {
+    if (data.shir7Total <= 0) {
+      statusEl.textContent = 'Sem lucro SHIR7 no período.';
+    } else if (pendingTotal <= 0.02) {
+      statusEl.textContent = `Tudo quitado (${formatCurrency(paidTotal)}).`;
+    } else {
+      statusEl.textContent =
+        `Pendente: ${formatCurrency(pendingTotal)} · Pago: ${formatCurrency(paidTotal)}`;
+    }
+  }
+}
+
+function renderTotalShir7Tab(data, shirts, pers, filters) {
   qs('#tab-total-inv-stock').textContent = formatCurrency(shirts.shir7FromInvestor);
   qs('#tab-total-inv-hint').textContent =
-    `${shirts.investorSalesCount} venda(s) do estoque investidor`;
+    `${shirts.investorSalesCount} venda(s) · lucro SHIR7 no estoque investidor`;
 
   qs('#tab-total-proprio').textContent = formatCurrency(shirts.shir7FromProprio);
   qs('#tab-total-proprio-hint').textContent =
-    `${shirts.proprioSalesCount} venda(s) do estoque próprio`;
+    `${shirts.proprioSalesCount} venda(s) · lucro SHIR7 no estoque próprio`;
 
   qs('#tab-total-pers').textContent = formatCurrency(pers.netProfit);
   qs('#tab-total-pers-hint').textContent =
@@ -272,23 +359,60 @@ function renderTotalShir7Tab(data, shirts, pers) {
       : 'Sem personalizações no período';
 
   qs('#tab-total-shir7').textContent = formatCurrency(data.shir7Total);
+  const totalHint = qs('#tab-total-shir7-hint');
+  if (totalHint) {
+    totalHint.textContent =
+      `Investidor ${formatCurrency(shirts.shir7FromInvestor)} + estoque ${formatCurrency(shirts.shir7FromProprio)} + pers. ${formatCurrency(pers.netProfit)}`;
+  }
 
   renderPartnersFull('#partners-total', data);
+  renderPartnersPayoutTable(data, filters);
+
+  renderPersonalizationDetail(pers, {
+    revenueId: '#tab-total-pers-revenue',
+    revenueHintId: '#tab-total-pers-revenue-hint',
+    profitId: '#tab-total-pers-profit',
+    profitHintId: '#tab-total-pers-profit-hint',
+    breakdownId: '#total-pers-breakdown',
+    partnersId: '#partners-total-pers',
+  });
 }
 
-function renderPersonalizacoesTab(pers) {
-  qs('#tab-pers-revenue').textContent = formatCurrency(pers.revenue);
-  qs('#tab-pers-revenue-hint').textContent =
-    `${pers.orderCount} pedido(s) · ${pers.pieces} peça(s) personalizada(s)`;
-  qs('#tab-pers-profit').textContent = formatCurrency(pers.netProfit);
-  qs('#tab-pers-profit-hint').textContent =
-    pers.cost > 0
-      ? `Custo do serviço: ${formatCurrency(pers.cost)}`
-      : 'Faturamento − custo do serviço';
+function renderPersonalizationDetail(pers, options = {}) {
+  const {
+    revenueId = '#tab-pers-revenue',
+    revenueHintId = '#tab-pers-revenue-hint',
+    profitId = '#tab-pers-profit',
+    profitHintId = '#tab-pers-profit-hint',
+    breakdownId = '#pers-breakdown',
+    partnersId = '#partners-pers',
+  } = options;
 
-  renderPartnersForShare('#partners-pers', pers.netProfit, 'personalizações');
+  const revenueEl = qs(revenueId);
+  if (revenueEl) revenueEl.textContent = formatCurrency(pers.revenue);
 
-  const breakdown = qs('#pers-breakdown');
+  const revenueHintEl = qs(revenueHintId);
+  if (revenueHintEl) {
+    revenueHintEl.textContent =
+      `${pers.orderCount} pedido(s) · ${pers.pieces} peça(s) personalizada(s)`;
+  }
+
+  const profitEl = qs(profitId);
+  if (profitEl) profitEl.textContent = formatCurrency(pers.netProfit);
+
+  const profitHintEl = qs(profitHintId);
+  if (profitHintEl) {
+    profitHintEl.textContent =
+      pers.cost > 0
+        ? `Custo do serviço: ${formatCurrency(pers.cost)}`
+        : 'Faturamento − custo do serviço';
+  }
+
+  if (partnersId) {
+    renderPartnersForShare(partnersId, pers.netProfit, 'personalizações');
+  }
+
+  const breakdown = qs(breakdownId);
   if (breakdown) {
     breakdown.innerHTML = `
       <div><dt>Faturamento total</dt><dd>${formatCurrency(pers.revenue)}</dd></div>
@@ -299,6 +423,10 @@ function renderPersonalizacoesTab(pers) {
   }
 }
 
+function renderPersonalizacoesTab(pers) {
+  renderPersonalizationDetail(pers);
+}
+
 function renderAll(data, filters) {
   const shirts = data.shirts || {};
   const pers = data.personalization || {};
@@ -307,13 +435,16 @@ function renderAll(data, filters) {
   renderInvestidorShir7Tab(data, shirts);
   renderProprioTab(shirts);
   renderPersonalizacoesTab(pers);
-  renderTotalShir7Tab(data, shirts, pers);
+  renderTotalShir7Tab(data, shirts, pers, filters);
 
   const periodLabel = filters.dateFrom && filters.dateTo
     ? `${filters.dateFrom} a ${filters.dateTo}`
     : 'todo o histórico';
+  const adsNote = (shirts.campaignAdsTotal || 0) > 0
+    ? ` · Ads (camisas): −${formatCurrency(shirts.campaignAdsTotal)}`
+    : '';
   qs('#profits-meta').textContent =
-    `${data.saleCount} venda(s) · ${periodLabel === 'todo o histórico' ? periodLabel : `período ${periodLabel}`}`;
+    `${data.saleCount} venda(s) · ${periodLabel === 'todo o histórico' ? periodLabel : `período ${periodLabel}`}${adsNote}`;
 }
 
 function refresh() {
@@ -323,13 +454,16 @@ function refresh() {
   renderAll(data, filters);
 }
 
-function openPayoutModal(investorId, investorName, dueAmount) {
-  const state = getInvestorPayoutState(investorId, currentFilters, dueAmount);
-  payoutModalContext = { investorId, investorName, dueAmount, state };
+function openPayoutModal({ type, recipientId, recipientName, dueAmount }) {
+  const state = getPayoutState(type, recipientId, currentFilters, dueAmount);
+  payoutModalContext = { type, recipientId, recipientName, dueAmount, state };
 
-  qs('#payout-modal-title').textContent = `Pagamento — ${investorName}`;
+  const label = type === 'partner' ? 'Pagamento ao sócio' : 'Pagamento';
+  qs('#payout-modal-title').textContent = `${label} — ${recipientName}`;
   qs('#payout-modal-intro').textContent =
-    'Registre quanto você pagou agora. Pode ser parcial — o restante fica pendente.';
+    type === 'partner'
+      ? 'Registre quanto já foi pago a este sócio (50% do lucro SHIR7). Pode ser parcial.'
+      : 'Registre quanto você pagou agora. Pode ser parcial — o restante fica pendente.';
   qs('#payout-due').textContent = formatCurrency(state.dueAmount);
   qs('#payout-paid').textContent = formatCurrency(state.paidAmount);
   qs('#payout-remaining').textContent = formatCurrency(state.remaining);
@@ -369,28 +503,29 @@ async function handlePayoutAction(button) {
   if (payoutBusy) return;
 
   const action = button.dataset.payoutAction;
-  const investorId = button.dataset.investorId;
-  const investorName = button.dataset.investorName;
+  const type = button.dataset.payoutType || 'investor';
+  const recipientId = button.dataset.recipientId || button.dataset.investorId;
+  const recipientName = button.dataset.recipientName || button.dataset.investorName;
   const dueAmount = Number(button.dataset.amount) || 0;
 
-  if (!investorId || !action) return;
+  if (!recipientId || !action) return;
 
   if (action === 'open') {
-    openPayoutModal(investorId, investorName, dueAmount);
+    openPayoutModal({ type, recipientId, recipientName, dueAmount });
     return;
   }
 
   if (action === 'clear') {
     const confirmed = window.confirm(
-      `Zerar todos os pagamentos registrados de ${investorName} neste período?`
+      `Zerar todos os pagamentos registrados de ${recipientName} neste período?`
     );
     if (!confirmed) return;
 
     payoutBusy = true;
     button.disabled = true;
     const result = await clearProfitPayout(
-      'investor',
-      investorId,
+      type,
+      recipientId,
       currentFilters.dateFrom || '',
       currentFilters.dateTo || ''
     );
@@ -402,7 +537,7 @@ async function handlePayoutAction(button) {
       return;
     }
 
-    showToast(`Pagamentos de ${investorName} zerados.`, 'success');
+    showToast(`Pagamentos de ${recipientName} zerados.`, 'success');
     await reloadPayoutsAndRefresh();
   }
 }
@@ -413,7 +548,7 @@ async function submitPayoutForm(event) {
 
   const amount = Number(qs('#payout-amount')?.value) || 0;
   const note = qs('#payout-note')?.value || '';
-  const { investorId, investorName, dueAmount, state } = payoutModalContext;
+  const { type, recipientId, recipientName, dueAmount, state } = payoutModalContext;
 
   if (amount <= 0) {
     showToast('Informe um valor maior que zero.', 'error');
@@ -430,9 +565,9 @@ async function submitPayoutForm(event) {
 
   const user = getCurrentUser();
   const result = await registerProfitPayment({
-    type: 'investor',
-    recipientId: investorId,
-    recipientName: investorName,
+    type,
+    recipientId,
+    recipientName,
     dateFrom: currentFilters.dateFrom || '',
     dateTo: currentFilters.dateTo || '',
     dueAmount,
@@ -453,7 +588,7 @@ async function submitPayoutForm(event) {
   payoutModalContext = null;
 
   if (result.status === 'paid') {
-    showToast(`${investorName} quitado (${formatCurrency(result.paidAmount)}).`, 'success');
+    showToast(`${recipientName} quitado (${formatCurrency(result.paidAmount)}).`, 'success');
   } else {
     showToast(
       `Pagamento de ${formatCurrency(amount)} registrado. Restante: ${formatCurrency(result.remaining)}.`,
@@ -510,6 +645,11 @@ function initEvents() {
     if (button) handlePayoutAction(button);
   });
 
+  qs('#tbody-partners-payout')?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-payout-action]');
+    if (button) handlePayoutAction(button);
+  });
+
   qs('#payout-form')?.addEventListener('submit', submitPayoutForm);
   qs('#btn-payout-fill-remaining')?.addEventListener('click', () => {
     if (!payoutModalContext) return;
@@ -525,7 +665,7 @@ function initEvents() {
 async function init() {
   initEvents();
   toggleCustomDates();
-  const defaults = getDefaultPeriodFilters('month');
+  const defaults = getDefaultPeriodFilters('all');
   qs('#profits-date-from').value = defaults.dateFrom;
   qs('#profits-date-to').value = defaults.dateTo;
   await waitForAuth();

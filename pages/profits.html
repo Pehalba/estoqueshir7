@@ -42,9 +42,17 @@
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
           Lucros
         </a>
+        <a href="ads.html" class="sidebar__link" data-nav="ads">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 13v-2z"/><path d="M11 13v8a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2v-8"/></svg></span>
+          Anúncios
+        </a>
         <a href="expenses.html" class="sidebar__link" data-nav="expenses">
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
           Gastos SHIR7
+        </a>
+        <a href="influencers.html" class="sidebar__link" data-nav="influencers">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-4l-3 7H7l-3-7H2"/></svg></span>
+          Influencers
         </a>
         <a href="reports.html" class="sidebar__link" data-nav="reports">
           <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
@@ -78,11 +86,11 @@
         </div>
 
         <nav class="profits-tabs profits-tabs--5">
-          <button type="button" class="profits-tabs__btn profits-tabs__btn--active" data-tab="investidores">Investidores</button>
+          <button type="button" class="profits-tabs__btn profits-tabs__btn--active" data-tab="total-shir7">Total SHIR7</button>
+          <button type="button" class="profits-tabs__btn" data-tab="investidores">Investidores</button>
           <button type="button" class="profits-tabs__btn" data-tab="investidor-shir7">Investidor + SHIR7</button>
           <button type="button" class="profits-tabs__btn" data-tab="proprio">SHIR7 estoque próprio</button>
           <button type="button" class="profits-tabs__btn" data-tab="personalizacoes">Personalizações</button>
-          <button type="button" class="profits-tabs__btn" data-tab="total-shir7">Total SHIR7</button>
         </nav>
 
         <div class="profits-filters">
@@ -90,7 +98,7 @@
             <label class="form-group__label" for="profits-period">Período</label>
             <select class="form-input form-select" id="profits-period">
               <option value="month">Este mês</option>
-              <option value="all">Todo o histórico</option>
+              <option value="all" selected>Todo o histórico</option>
               <option value="custom">Personalizado</option>
             </select>
           </div>
@@ -108,7 +116,7 @@
         <p id="profits-meta" class="investors-stats">Carregando vendas...</p>
 
         <!-- Aba 1: só investidores (repasse em camisas) -->
-        <section id="tab-investidores" class="profits-tab-panel">
+        <section id="tab-investidores" class="profits-tab-panel" hidden>
           <p class="profits-tab-intro">Repasse aos investidores em <strong>vendas de camisas</strong> do estoque investidor. Personalização não entra.</p>
           <div class="profits-summary grid grid--1 profits-summary--compact">
             <div class="profits-card profits-card--investor">
@@ -143,19 +151,19 @@
           </div>
         </section>
 
-        <!-- Aba 2: divisão investidor + SHIR7 no estoque investidor -->
+        <!-- Aba 2: lucro investidor + SHIR7 (sem capital devolvido) -->
         <section id="tab-investidor-shir7" class="profits-tab-panel" hidden>
-          <p class="profits-tab-intro">Divisão do lucro em <strong>camisas</strong> vendidas do estoque investidor: quanto vai para o investidor e quanto fica com a SHIR7.</p>
+          <p class="profits-tab-intro">Apenas o <strong>lucro</strong> das camisas vendidas do estoque investidor — capital devolvido ao investidor fica na aba Investidores.</p>
           <div class="profits-summary grid grid--2">
             <div class="profits-card profits-card--investor">
-              <p class="profits-card__label">Repasse investidores</p>
+              <p class="profits-card__label">Lucro investidor</p>
               <p class="profits-card__value" id="tab-split-inv">R$ 0,00</p>
-              <p class="profits-card__hint" id="tab-split-inv-hint">Parte do investidor</p>
+              <p class="profits-card__hint" id="tab-split-inv-hint">Parte do lucro (ex.: 40%)</p>
             </div>
             <div class="profits-card profits-card--shir7">
-              <p class="profits-card__label">Parte SHIR7</p>
+              <p class="profits-card__label">Lucro SHIR7</p>
               <p class="profits-card__value" id="tab-split-shir7">R$ 0,00</p>
-              <p class="profits-card__hint" id="tab-split-shir7-hint">Lucro SHIR7 nas camisas do investidor</p>
+              <p class="profits-card__hint" id="tab-split-shir7-hint">Parte SHIR7 no estoque investidor</p>
             </div>
           </div>
           <p class="scroll-hint">Deslize a tabela para ver todas as colunas →</p>
@@ -167,8 +175,8 @@
                   <th>Vendas</th>
                   <th>Peças</th>
                   <th>Lucro camisas</th>
-                  <th>Repasse investidor</th>
-                  <th>Parte SHIR7</th>
+                  <th>Lucro investidor</th>
+                  <th>Lucro SHIR7</th>
                 </tr>
               </thead>
               <tbody id="tbody-investidor-shir7">
@@ -225,39 +233,93 @@
         </section>
 
         <!-- Aba 5: resumo total SHIR7 -->
-        <section id="tab-total-shir7" class="profits-tab-panel" hidden>
-          <p class="profits-tab-intro">Resumo do que fica com a <strong>SHIR7</strong> no período. Repasse aos investidores não entra aqui.</p>
+        <section id="panel-total-shir7" class="profits-tab-panel">
+          <p class="profits-tab-intro">Lucros que ficam com a <strong>SHIR7</strong> no período (repasse de capital ao investidor não entra aqui).</p>
 
           <div class="profits-resumo grid grid--3">
             <div class="profits-card profits-card--shir7">
-              <p class="profits-card__label">SHIR7 investidor</p>
+              <p class="profits-card__label">Lucro — estoque investidor</p>
               <p class="profits-card__value" id="tab-total-inv-stock">R$ 0,00</p>
-              <p class="profits-card__hint" id="tab-total-inv-hint">Lucro em camisas do estoque investidor</p>
+              <p class="profits-card__hint" id="tab-total-inv-hint">Parte SHIR7 nas camisas do investidor</p>
             </div>
             <div class="profits-card profits-card--proprio">
-              <p class="profits-card__label">SHIR7 estoque</p>
+              <p class="profits-card__label">Lucro — estoque SHIR7</p>
               <p class="profits-card__value" id="tab-total-proprio">R$ 0,00</p>
-              <p class="profits-card__hint" id="tab-total-proprio-hint">Lucro em camisas do estoque próprio</p>
+              <p class="profits-card__hint" id="tab-total-proprio-hint">Camisas do estoque próprio</p>
             </div>
             <div class="profits-card profits-card--pers-profit">
-              <p class="profits-card__label">SHIR7 personalização</p>
+              <p class="profits-card__label">Lucro — personalização</p>
               <p class="profits-card__value" id="tab-total-pers">R$ 0,00</p>
-              <p class="profits-card__hint" id="tab-total-pers-hint">Lucro líquido do serviço</p>
+              <p class="profits-card__hint" id="tab-total-pers-hint">Serviço de personalização</p>
             </div>
           </div>
 
           <div class="profits-resumo-total profits-card profits-card--total profits-card--total-static">
-            <p class="profits-card__label">Total SHIR7</p>
+            <p class="profits-card__label">Total lucro SHIR7</p>
             <p class="profits-card__value" id="tab-total-shir7">R$ 0,00</p>
-            <p class="profits-card__hint">Investidor + estoque + personalização</p>
+            <p class="profits-card__hint" id="tab-total-shir7-hint">Investidor + estoque + personalização</p>
+          </div>
+
+          <div class="card profits-total-pers">
+            <div class="card__header">
+              <h3 class="card__title">Lucros de personalização</h3>
+              <p class="card__subtitle text-sm text-muted">100% SHIR7 — investidor não participa · entra no total acima</p>
+            </div>
+            <div class="card__body">
+              <div class="profits-summary grid grid--2">
+                <div class="profits-card profits-card--pers-revenue">
+                  <p class="profits-card__label">Faturamento</p>
+                  <p class="profits-card__value" id="tab-total-pers-revenue">R$ 0,00</p>
+                  <p class="profits-card__hint" id="tab-total-pers-revenue-hint">0 pedido(s)</p>
+                </div>
+                <div class="profits-card profits-card--pers-profit">
+                  <p class="profits-card__label">Lucro personalização</p>
+                  <p class="profits-card__value" id="tab-total-pers-profit">R$ 0,00</p>
+                  <p class="profits-card__hint" id="tab-total-pers-profit-hint">Faturamento − custo do serviço</p>
+                </div>
+              </div>
+              <dl class="profits-breakdown" id="total-pers-breakdown"></dl>
+              <p class="profits-section-label">Divisão 50% · Pedro e Eduardo</p>
+              <div class="profits-partners profits-partners--compact" id="partners-total-pers"></div>
+            </div>
           </div>
 
           <div class="profits-resumo-socios card">
             <div class="card__header">
-              <h3 class="card__title">50% Pedro · 50% Eduardo</h3>
+              <h3 class="card__title">Divisão 50% · Pedro e Eduardo</h3>
             </div>
             <div class="card__body">
               <div class="profits-partners profits-partners--compact" id="partners-total"></div>
+            </div>
+          </div>
+
+          <div class="card profits-partner-payments">
+            <div class="card__header">
+              <h3 class="card__title">Pagamentos aos sócios</h3>
+              <p class="card__subtitle text-sm text-muted">Registre o que já foi pago a Pedro e Eduardo neste período.</p>
+            </div>
+            <div class="card__body">
+              <p id="tab-partners-payment-status" class="profits-card__hint profits-card__hint--status"></p>
+              <div class="table-wrapper">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Sócio</th>
+                      <th>Lucro devido (50%)</th>
+                      <th>Investidor</th>
+                      <th>Estoque SHIR7</th>
+                      <th>Personalização</th>
+                      <th>Pago</th>
+                      <th>Restante</th>
+                      <th>Status</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-partners-payout">
+                    <tr><td colspan="9" class="table__empty">Carregando...</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </section>

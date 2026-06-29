@@ -312,10 +312,19 @@ export function calculateInvestorRepasseForSale(investor, {
   quantity,
   financials,
   persProfit,
+  isSample = false,
   sale = null,
   stockEntry = null,
+  shirtAdsCost = 0,
 }) {
-  const profitBase = resolveShirtNetProfitForRepasse(financials, persProfit);
+  if (isSample || sale?.isSample) {
+    return 0;
+  }
+
+  const profitBase = Math.max(
+    0,
+    resolveShirtNetProfitForRepasse(financials, persProfit) - (Number(shirtAdsCost) || 0)
+  );
   const revenueBase = investorRevenueExcludingPersonalization(financials);
   const capitalUnit = capitalUnitCost != null
     ? Number(capitalUnitCost)
@@ -361,8 +370,12 @@ export function calculateShir7ShirtShareForInvestor(investor, {
   persProfit,
   sale = null,
   stockEntry = null,
+  shirtAdsCost = 0,
 }) {
-  const profitBase = resolveShirtNetProfitForRepasse(financials, persProfit);
+  const profitBase = Math.max(
+    0,
+    resolveShirtNetProfitForRepasse(financials, persProfit) - (Number(shirtAdsCost) || 0)
+  );
   const qty = Number(quantity) || 0;
   const capitalUnit = capitalUnitCost != null
     ? Number(capitalUnitCost)

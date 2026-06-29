@@ -14,7 +14,7 @@ import { db } from '../config/firebase.js';
 import { getCurrentUser } from './authService.js';
 import { registerMovement } from './stockService.js';
 import { getStockEntryById } from './stockEntryService.js';
-import { createQuickSale, resolveShopOrderIdSuffix, orderIdExists } from './salesService.js';
+import { createQuickSale, resolveShopOrderIdSuffix, orderIdExists, getSaleById } from './salesService.js';
 import { getGlobalSettings } from './settingsService.js';
 import { availableQty } from '../utils/calculations.js';
 import { normalizeOrderSize } from '../utils/stockAllocation.js';
@@ -393,6 +393,54 @@ function decrementEstablishmentItem(items, stockEntryId, size) {
   return { items: next, found };
 }
 
+function incrementEstablishmentItem(items, stockEntryId, size, meta = {}) {
+  const targetId = String(stockEntryId || '').trim();
+  const targetSize = normalizeOrderSize(size);
+  if (!targetId || !targetSize) return normalizeEstablishmentItems(items);
+
+  const next = normalizeEstablishmentItems(items);
+  const itemIndex = next.findIndex((item) => item.stockEntryId === targetId);
+
+  if (itemIndex >= 0) {
+    const item = next[itemIndex];
+    const sizes = [...item.sizes];
+    const sizeIndex = sizes.findIndex((line) => line.size === targetSize);
+    if (sizeIndex >= 0) {
+      sizes[sizeIndex] = { ...sizes[sizeIndex], quantity: sizes[sizeIndex].quantity + 1 };
+    } else {
+      sizes.push({ size: targetSize, quantity: 1 });
+    }
+    next[itemIndex] = { ...item, sizes };
+    return next;
+  }
+
+  next.push({
+    stockEntryId: targetId,
+    stockEntryName: String(meta.stockEntryName || '').trim(),
+    productName: String(meta.productName || '').trim(),
+    sizes: [{ size: targetSize, quantity: 1 }],
+  });
+  return next;
+}
+
+function getSalePieceFromEstablishmentSale(sale) {
+  const lines = Array.isArray(sale.lines) ? sale.lines : [];
+  if (lines.length === 1) {
+    return {
+      stockEntryId: sale.stockEntryId,
+      size: normalizeOrderSize(lines[0].size),
+      quantity: Number(lines[0].quantity) || 1,
+    };
+  }
+
+  const size = normalizeOrderSize(String(sale.size || '').split(',')[0].trim());
+  return {
+    stockEntryId: sale.stockEntryId,
+    size,
+    quantity: Number(sale.quantity) || 1,
+  };
+}
+
 function buildEstablishmentOrderId(establishment, soldCount) {
   const base = String(establishment.id || 'loja').slice(0, 8).toUpperCase();
   return `LOJA-${base}-${soldCount + 1}`;
@@ -522,5 +570,120 @@ export async function markEstablishmentPieceSold(establishmentId, input = {}) {
       success: false,
       error: `Venda registrada (${orderId}), mas falhou ao atualizar o estabelecimento: ${error.message}`,
     };
+  }
+}
+
+/**
+ * Desfaz venda de peça consignada: cancela a venda, devolve ao estoque e reconsigna na loja.
+ */
+export async function revertEstablishmentPieceSale(establishmentId, saleId) {
+  const user = getCurrentUser();
+  if (!user) {
+    return { success: false, error: 'Usuário não autenticado.' };
+  }
+
+  const saleResult = await getSaleById(saleId);
+  if (!saleResult.success) {
+    return saleResult;
+  }
+
+  const sale = saleResult.data;
+  if (sale.status === 'cancelada') {
+    return { success: false, error: 'Esta venda já foi cancelada.' };
+  }
+  if (String(sale.establishmentId || '') !== String(establishmentId || '')) {
+    return { success: false, error: 'Esta venda não pertence a este estabelecimento.' };
+  }
+
+  const piece = getSalePieceFromEstablishmentSale(sale);
+  if (!piece.stockEntryId || !piece.size) {
+    return { success: false, error: 'Não foi possível identificar a peça desta venda.' };
+  }
+  if (piece.quantity !== 1) {
+    return { success: false, error: 'Só é possível desmarcar vendas de 1 peça por vez.' };
+  }
+
+  const existingResult = await getEstablishmentById(establishmentId);
+  if (!existingResult.success) {
+    return existingResult;
+  }
+
+  const establishment = existingResult.data;
+  const entryResult = await getStockEntryById(piece.stockEntryId);
+  if (!entryResult.success) {
+    return { success: false, error: entryResult.error || 'Estoque não encontrado.' };
+  }
+
+  const stockEntry = entryResult.data;
+  const label = establishment.name || 'Estabelecimento';
+
+  const restoreResult = await registerMovement({
+    stockEntryId: piece.stockEntryId,
+    productId: stockEntry.productId,
+    size: piece.size,
+    type: 'entrada',
+    quantity: 1,
+    observation: `Estorno venda ${sale.orderId || saleId} — estabelecimento "${label}"`,
+    stockEntryName: stockEntry.name,
+    relatedSaleId: saleId,
+  });
+
+  if (!restoreResult.success) {
+    return { success: false, error: restoreResult.error };
+  }
+
+  const reserveResult = await registerMovement({
+    stockEntryId: piece.stockEntryId,
+    productId: stockEntry.productId,
+    size: piece.size,
+    type: 'reserva',
+    quantity: 1,
+    observation: `Estorno venda ${sale.orderId || saleId} — reconsignado em "${label}"`,
+    stockEntryName: stockEntry.name,
+    relatedSaleId: saleId,
+  });
+
+  if (!reserveResult.success) {
+    return { success: false, error: reserveResult.error };
+  }
+
+  const nextItems = incrementEstablishmentItem(
+    establishment.items || [],
+    piece.stockEntryId,
+    piece.size,
+    {
+      stockEntryName: sale.stockEntryName || stockEntry.name,
+      productName: sale.productName || stockEntry.productName,
+    }
+  );
+
+  try {
+    await updateDoc(doc(db, 'sales', saleId), {
+      status: 'cancelada',
+      cancelledAt: serverTimestamp(),
+      cancelReason: `Estorno consignado — ${label}`,
+      updatedAt: serverTimestamp(),
+    });
+
+    await updateDoc(doc(db, COLLECTION, establishmentId), {
+      items: nextItems,
+      totalPieces: totalPieces(nextItems),
+      soldCount: Math.max(0, (Number(establishment.soldCount) || 0) - 1),
+      updatedAt: serverTimestamp(),
+    });
+
+    invalidateCache(
+      CACHE_KEYS.ESTABLISHMENTS,
+      CACHE_KEYS.STOCK_ENTRIES,
+      CACHE_KEYS.SALES,
+      CACHE_KEYS.MOVEMENTS
+    );
+
+    return {
+      success: true,
+      data: { saleId, establishmentId, orderId: sale.orderId || '' },
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
 }

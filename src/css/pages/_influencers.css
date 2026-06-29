@@ -1,0 +1,124 @@
+/* Influencers */
+
+.influencers-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.influencers-toolbar__search {
+  flex: 1;
+  min-width: 180px;
+}
+
+.influencers-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  align-items: flex-end;
+  margin-bottom: var(--space-lg);
+}
+
+.influencers-filters .form-group {
+  margin-bottom: 0;
+  min-width: 140px;
+}
+
+.influencers-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.influencers-summary__card {
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt, #f8f9fb);
+}
+
+.influencers-summary__label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.influencers-summary__value {
+  font-size: var(--font-size-xl, 1.35rem);
+  font-weight: 700;
+}
+
+.influencers-summary__hint {
+  margin-top: var(--space-xs);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.influencers-stats {
+  margin-bottom: var(--space-md);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.influencers-row__handle {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.influencers-row__codes {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.influencers-payout-intro {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-md);
+}
+
+.influencers-payout-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  font-size: var(--font-size-sm);
+}
+
+.influencers-payout-summary dt {
+  color: var(--color-text-muted);
+}
+
+.influencers-payout-summary dd {
+  font-weight: 700;
+  margin: 0;
+}
+
+.influencers-payout-history {
+  margin-top: var(--space-md);
+  font-size: var(--font-size-sm);
+}
+
+.influencers-payout-history ul {
+  margin: var(--space-xs) 0 0;
+  padding-left: 1.2rem;
+}
+
+.influencers-form-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-xs);
+}
+
+@media (max-width: 640px) {
+  .influencers-payout-summary {
+    grid-template-columns: 1fr;
+  }
+}

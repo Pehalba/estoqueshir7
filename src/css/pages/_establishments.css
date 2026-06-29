@@ -19,6 +19,154 @@
   font-size: var(--text-sm);
 }
 
+.table--establishments .establishment-units-cell {
+  vertical-align: top;
+  min-width: 220px;
+}
+
+.table--establishments .establishment-actions-cell {
+  vertical-align: middle;
+  width: 1%;
+  white-space: nowrap;
+}
+
+.table--establishments .establishment-actions-cell.table__actions {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.table--establishments .establishment-actions-cell .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.establishment-units {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.establishment-units__lot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.establishment-units__lot-name {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  line-height: 1.3;
+}
+
+.establishment-units__grid {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  align-items: flex-start;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+}
+
+.establishment-units__col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 0 0 2.35rem;
+  min-width: 2.35rem;
+}
+
+.establishment-units__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.establishment-unit-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 2rem;
+  padding: 0.15rem 0.2rem;
+  border: 1px solid var(--color-primary, #6366f1);
+  border-radius: var(--radius-sm);
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--color-primary, #6366f1);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1.1;
+  font-family: inherit;
+}
+
+.establishment-unit-chip:hover {
+  background: var(--color-primary, #6366f1);
+  color: #fff;
+}
+
+.establishment-unit-chip--sold {
+  border-color: var(--color-border);
+  background: var(--color-surface-alt, #f3f4f6);
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.establishment-unit-chip--sold:hover {
+  border-color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+}
+
+.establishment-unit-chip__size {
+  font-weight: 700;
+}
+
+.establishment-unit-chip__meta {
+  font-size: 0.55rem;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.establishment-units__sold {
+  margin-top: var(--space-xs);
+  padding-top: var(--space-xs);
+  border-top: 1px dashed var(--color-border);
+}
+
+.establishment-units__sold-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+}
+
+.establishment-units__sold .establishment-units__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.establishment-units__sold .establishment-unit-chip {
+  width: 2.35rem;
+  flex: 0 0 2.35rem;
+}
+
+.establishment-sell-piece {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt, #f8f9fb);
+  font-weight: 600;
+}
+
 .establishment-summary {
   max-width: 320px;
   line-height: 1.45;
@@ -99,6 +247,17 @@
 
 .form-group__label-row .form-group__label {
   margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .table--establishments .establishment-actions-cell.table__actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .table--establishments .establishment-actions-cell .btn {
+    width: auto;
+  }
 }
 
 @media (max-width: 640px) {

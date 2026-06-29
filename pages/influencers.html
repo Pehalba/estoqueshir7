@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Influencers — SHIR7</title>
+  <link rel="stylesheet" href="../src/css/main.css">
+</head>
+<body data-page="influencers">
+  <div class="app-layout">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar__brand">
+        <img class="sidebar__logo" src="../src/assets/logo-shir7.png" alt="SHIR7" width="36" height="36">
+        <span class="sidebar__brand-name">SHIR7</span>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="dashboard.html" class="sidebar__link" data-nav="dashboard">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>
+          Dashboard
+        </a>
+        <a href="inventory.html" class="sidebar__link" data-nav="inventory">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+          Estoque
+        </a>
+        <a href="establishments.html" class="sidebar__link" data-nav="establishments">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+          Estabelecimentos
+        </a>
+        <a href="sales.html" class="sidebar__link" data-nav="sales">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
+          Vendas
+        </a>
+        <a href="orders.html" class="sidebar__link" data-nav="orders">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+          Pedidos
+        </a>
+        <a href="investors.html" class="sidebar__link" data-nav="investors">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          Investidores
+        </a>
+        <a href="profits.html" class="sidebar__link" data-nav="profits">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+          Lucros
+        </a>
+        <a href="ads.html" class="sidebar__link" data-nav="ads">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 13v-2z"/><path d="M11 13v8a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2v-8"/></svg></span>
+          Anúncios
+        </a>
+        <a href="expenses.html" class="sidebar__link" data-nav="expenses">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+          Gastos SHIR7
+        </a>
+        <a href="influencers.html" class="sidebar__link sidebar__link--active" data-nav="influencers">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-4l-3 7H7l-3-7H2"/></svg></span>
+          Influencers
+        </a>
+        <a href="reports.html" class="sidebar__link" data-nav="reports">
+          <span class="sidebar__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+          Relatórios
+        </a>
+      </nav>
+    </aside>
+
+    <div id="sidebar-overlay" class="sidebar__overlay"></div>
+
+    <div class="app-layout__main">
+      <header class="header">
+        <div class="header__left">
+          <button type="button" id="menu-btn" class="header__menu-btn" aria-label="Abrir menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <h1 class="header__title">Influencers</h1>
+        </div>
+        <div class="header__right">
+          <div class="header__user">
+            <span class="header__user-email" id="user-email"></span>
+          </div>
+          <button type="button" id="logout-btn" class="btn btn--ghost btn--sm">Sair</button>
+        </div>
+      </header>
+
+      <main class="app-layout__content">
+        <div class="page-header">
+          <h2 class="page-header__title">Gestão de Influencers</h2>
+          <p class="page-header__subtitle">Comissões por cupom/código e controle do que já foi pago</p>
+        </div>
+
+        <div class="influencers-summary">
+          <div class="influencers-summary__card">
+            <span class="influencers-summary__label">Devido no período</span>
+            <div class="influencers-summary__value" id="summary-due">R$ 0,00</div>
+            <p class="influencers-summary__hint" id="influencers-period-label">—</p>
+          </div>
+          <div class="influencers-summary__card">
+            <span class="influencers-summary__label">Pago</span>
+            <div class="influencers-summary__value" id="summary-paid">R$ 0,00</div>
+          </div>
+          <div class="influencers-summary__card">
+            <span class="influencers-summary__label">Pendente</span>
+            <div class="influencers-summary__value" id="summary-pending">R$ 0,00</div>
+          </div>
+        </div>
+
+        <div class="influencers-filters card">
+          <div class="card__body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-group__label" for="influencers-period">Período</label>
+                <select class="form-input form-select" id="influencers-period">
+                  <option value="month" selected>Este mês</option>
+                  <option value="all">Todo o histórico</option>
+                  <option value="custom">Personalizado</option>
+                </select>
+              </div>
+              <div class="form-group" id="influencers-date-from-group" hidden>
+                <label class="form-group__label" for="influencers-date-from">De</label>
+                <input class="form-input" type="date" id="influencers-date-from">
+              </div>
+              <div class="form-group" id="influencers-date-to-group" hidden>
+                <label class="form-group__label" for="influencers-date-to">Até</label>
+                <input class="form-input" type="date" id="influencers-date-to">
+              </div>
+              <div class="form-group">
+                <label class="form-group__label" for="filter-active">Status</label>
+                <select class="form-input form-select" id="filter-active">
+                  <option value="active">Somente ativos</option>
+                  <option value="all">Todos</option>
+                </select>
+              </div>
+              <button type="button" id="btn-influencers-refresh" class="btn btn--secondary">Atualizar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="influencers-toolbar">
+          <input type="search" id="search-input" class="form-input influencers-toolbar__search" placeholder="Buscar por nome, @, cupom...">
+          <button type="button" id="btn-new-influencer" class="btn btn--primary">+ Novo influencer</button>
+        </div>
+
+        <p id="influencers-count" class="influencers-stats">Carregando...</p>
+
+        <p class="scroll-hint">Deslize a tabela para ver todas as colunas →</p>
+        <div class="table-wrapper table-wrapper--hint">
+          <table class="table" id="influencers-table">
+            <thead>
+              <tr>
+                <th>Influencer</th>
+                <th>Comissão</th>
+                <th>Vendas</th>
+                <th>Devido</th>
+                <th>Pago</th>
+                <th>Restante</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="influencers-tbody">
+              <tr><td colspan="8" class="table__empty">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="influencer-modal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog">
+      <div class="modal__header">
+        <h3 class="modal__title" id="influencer-modal-title">Novo influencer</h3>
+        <button type="button" class="modal__close" data-modal-close aria-label="Fechar">&times;</button>
+      </div>
+      <form id="influencer-form">
+        <div class="modal__body">
+          <div id="form-errors" class="form-errors"></div>
+
+          <div class="form-group">
+            <label class="form-group__label form-group__label--required" for="field-name">Nome</label>
+            <input class="form-input" type="text" id="field-name" required placeholder="Ex.: Maria Silva">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-group__label" for="field-instagram">Instagram</label>
+              <input class="form-input" type="text" id="field-instagram" placeholder="@usuario">
+            </div>
+            <div class="form-group">
+              <label class="form-group__label" for="field-phone">Telefone</label>
+              <input class="form-input" type="tel" id="field-phone" placeholder="Opcional">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-group__label" for="field-email">E-mail</label>
+            <input class="form-input" type="email" id="field-email" placeholder="Opcional">
+          </div>
+
+          <div class="form-group">
+            <label class="form-group__label" for="field-commissionType">Tipo de comissão</label>
+            <select class="form-input form-select" id="field-commissionType"></select>
+          </div>
+
+          <div class="form-group" id="commission-value-group">
+            <label class="form-group__label" for="field-commissionValue" id="commission-value-label">% do lucro</label>
+            <input class="form-input" type="number" id="field-commissionValue" min="0" step="0.01">
+            <p class="influencers-form-hint" id="commission-value-hint"></p>
+          </div>
+
+          <div class="form-group" id="coupon-codes-group">
+            <label class="form-group__label" for="field-couponCodes">Cupons / códigos vinculados</label>
+            <input class="form-input" type="text" id="field-couponCodes" placeholder="Ex.: MARIA10, FIXO 7%">
+            <p class="influencers-form-hint">Separe vários códigos com vírgula. Vendas com esse cupom entram no cálculo automático.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-group__label" for="field-notes">Observações</label>
+            <textarea class="form-input" id="field-notes" rows="2" placeholder="Acordo, prazo de pagamento..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-group__label">
+              <input type="checkbox" id="field-active" checked>
+              Ativo
+            </label>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="btn-save-influencer">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="payout-modal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog modal__dialog--sm">
+      <div class="modal__header">
+        <h3 class="modal__title" id="payout-modal-title">Registrar pagamento</h3>
+        <button type="button" class="modal__close" data-modal-close aria-label="Fechar">&times;</button>
+      </div>
+      <form id="payout-form">
+        <div class="modal__body">
+          <p class="influencers-payout-intro" id="payout-modal-intro"></p>
+          <dl class="influencers-payout-summary">
+            <div><dt>Devido</dt><dd id="payout-due">R$ 0,00</dd></div>
+            <div><dt>Já pago</dt><dd id="payout-paid">R$ 0,00</dd></div>
+            <div><dt>Restante</dt><dd id="payout-remaining">R$ 0,00</dd></div>
+          </dl>
+
+          <div class="form-group">
+            <label class="form-group__label form-group__label--required" for="payout-amount">Valor deste pagamento (R$)</label>
+            <input class="form-input" type="number" id="payout-amount" min="0.01" step="0.01" required>
+            <button type="button" class="btn btn--ghost btn--sm" id="btn-payout-fill-remaining">Preencher restante</button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-group__label" for="payout-note">Observação</label>
+            <input class="form-input" type="text" id="payout-note" placeholder="Pix, data, referência...">
+          </div>
+
+          <div id="payout-history" class="influencers-payout-history" hidden>
+            <strong>Pagamentos anteriores neste período</strong>
+            <ul id="payout-history-list"></ul>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="btn-payout-submit">Registrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="delete-influencer-modal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog modal__dialog--sm">
+      <div class="modal__header">
+        <h3 class="modal__title">Excluir influencer</h3>
+        <button type="button" class="modal__close" data-modal-close aria-label="Fechar">&times;</button>
+      </div>
+      <div class="modal__body">
+        <p>Remover <strong id="delete-influencer-name"></strong>?</p>
+        <p class="text-sm text-muted">Os pagamentos registrados no histórico permanecem no Firestore.</p>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
+        <button type="button" class="btn btn--danger" id="btn-delete-influencer-confirm">Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script type="module" src="../src/js/app.js"></script>
+  <script type="module" src="../src/js/pages/influencers.js"></script>
+</body>
+</html>

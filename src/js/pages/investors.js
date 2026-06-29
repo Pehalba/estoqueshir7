@@ -29,7 +29,7 @@ import {
 } from '../utils/domHelpers.js';
 
 const REPASSE_HINTS = {
-  capital_mais_lucro: 'Padrão SHIR7: capital da mercadoria (sem imposto/frete int.) + % do lucro líquido (ex.: 40). Imposto e frete reduzem o lucro, mas não voltam ao investidor. Personalização fica 100% com a loja.',
+  capital_mais_lucro: 'Padrão SHIR7: capital da mercadoria (sem imposto/frete int.) + % do lucro líquido (ex.: 40). Imposto e frete reduzem o lucro, mas não voltam ao investidor. Personalização fica 100% com a loja. Amostra (R$ 0) não devolve capital ao investidor.',
   percent_lucro: 'Ex.: 50 = investidor recebe 50% do lucro de cada venda.',
   percent_faturamento: 'Ex.: 30 = investidor recebe 30% do valor da venda.',
   fixo_peca: 'Ex.: 25 = investidor recebe R$ 25,00 por peça vendida.',

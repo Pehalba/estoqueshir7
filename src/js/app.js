@@ -11,7 +11,9 @@ const PROTECTED_PAGES = [
   'orders.html',
   'investors.html',
   'profits.html',
+  'ads.html',
   'expenses.html',
+  'influencers.html',
   'reports.html',
 ];
 

@@ -593,6 +593,47 @@
   scrollbar-width: thin;
 }
 
+.sizes-badges-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 100%;
+  --size-badge-col: 4.25rem;
+}
+
+.sizes-badges-stack .sizes-badges {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--size-badge-col);
+  gap: 0.2rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.sizes-badges-stack .sizes-badges .badge {
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+  padding-inline: 0.15rem;
+}
+
+.sizes-badges--establishment {
+  padding-top: 0.1rem;
+  border-top: 1px dashed rgba(37, 99, 235, 0.2);
+}
+
+.badge--establishment {
+  background-color: rgba(37, 99, 235, 0.14);
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.badge--establishment-empty {
+  background-color: rgba(37, 99, 235, 0.06);
+  color: rgba(37, 99, 235, 0.45);
+}
+
 .sizes-badges .badge {
   flex-shrink: 0;
   font-size: 0.65rem;

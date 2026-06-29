@@ -103,7 +103,10 @@
 
   .inventory-toolbar,
   .investors-toolbar,
-  .sales-toolbar {
+  .sales-toolbar,
+  .influencers-toolbar,
+  .establishments-toolbar,
+  .expenses-toolbar {
     flex-direction: column;
     align-items: stretch;
   }
@@ -111,7 +114,11 @@
   .inventory-toolbar__search,
   .investors-toolbar__search,
   .sales-toolbar__search,
-  .sales-toolbar__filter {
+  .sales-toolbar__filter,
+  .influencers-toolbar__search,
+  .establishments-toolbar__search,
+  .expenses-toolbar__search,
+  .expenses-toolbar__filter {
     flex: none;
     width: 100%;
     min-width: 0;
@@ -119,7 +126,20 @@
   }
 
   .inventory-toolbar > .btn,
-  .investors-toolbar > .btn {
+  .investors-toolbar > .btn,
+  .influencers-toolbar > .btn,
+  .establishments-toolbar > .btn,
+  .expenses-toolbar > .btn {
+    width: 100%;
+  }
+
+  .influencers-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .influencers-filters .form-group {
+    min-width: 0;
     width: 100%;
   }
 
