@@ -72,7 +72,7 @@ const PERS_JUN_2026_ITEMS = [
   { orderId: '#1687', size: 'P', sizeLabel: 'P (S)', name: 'Vini jr.', number: '7', productId: 'br-away-azul' },
   { orderId: '#1687-2', size: 'P', sizeLabel: 'P (S)', name: 'Neymar jr.', number: '10', productId: 'br-home-amarela' },
   // #1688
-  { orderId: '#1688', size: 'P', sizeLabel: 'P (S)', name: 'Neymar Jr', number: '10', productId: 'br-home-amarela' },
+  { orderId: '#1688', size: 'M', sizeLabel: 'M (M)', name: 'Neymar Jr', number: '10', productId: 'br-home-amarela' },
   // #1689 — 2× amarela P
   { orderId: '#1689', size: 'P', sizeLabel: 'P (S)', name: 'Neymar Jr', number: '10', productId: 'br-home-amarela' },
   { orderId: '#1689-2', size: 'P', sizeLabel: 'P (S)', name: 'Neymar Jr', number: '10', productId: 'br-home-amarela' },
@@ -80,10 +80,8 @@ const PERS_JUN_2026_ITEMS = [
   { orderId: '#1691', size: 'GG', sizeLabel: 'GG (XL)', name: 'Ronaldo', number: '9', productId: 'br-retro-2002' },
   // #1692 — torcedor II (nº inferido; confira no Yampi se diferente)
   { orderId: '#1692', size: 'P', sizeLabel: 'P (S)', name: 'Rafael', number: '10', productId: 'br-tor-ii' },
-  // #1694 — azul M (nº inferido)
-  { orderId: '#1694', size: 'M', sizeLabel: 'M (M)', name: 'VINI JR.', number: '7', productId: 'br-away-azul' },
-  // #1696 — amarela P Curitiba (nº inferido)
-  { orderId: '#1696', size: 'P', sizeLabel: 'P (S)', name: 'NEYMAR JR', number: '10', productId: 'br-home-amarela' },
+  // #1695 — azul M
+  { orderId: '#1695', size: 'M', sizeLabel: 'M (M)', name: 'VINI JR.', number: '7', productId: 'br-away-azul' },
   // #1698
   { orderId: '#1698', size: 'M', sizeLabel: 'M (M)', name: 'NEYMAR', number: '10', productId: 'br-home-amarela' },
   // #1701 — retro 2002 G (só a peça com personalização)
