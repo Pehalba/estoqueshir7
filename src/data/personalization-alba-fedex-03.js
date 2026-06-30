@@ -117,7 +117,7 @@ const PERS_JUN_2026_ITEMS = [
   // #1695 — azul M
   { orderId: '#1695', size: 'M', sizeLabel: 'M (M)', name: 'VINI JR.', number: '7', productId: 'br-away-azul' },
   // #1698
-  { orderId: '#1698', size: 'M', sizeLabel: 'M (M)', name: 'NEYMAR', number: '10', productId: 'br-home-amarela' },
+  { orderId: '#1698', size: 'M', sizeLabel: 'M (M)', name: 'Neymar Jr', number: '10', productId: 'br-home-amarela' },
   // #1701 — retro 2002 G (só a peça com personalização)
   { orderId: '#1701', size: 'G', sizeLabel: 'G (L)', name: 'RONALDINHO', number: '11', productId: 'br-retro-2002' },
   // #1706 — azul jogador P
