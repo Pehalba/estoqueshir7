@@ -27,8 +27,7 @@ function createFontGuide(slug, label, options = {}) {
     title: `Fonte — ${label}`,
     hint,
     images: [
-      { label: 'Nome — frente', src: `${FONT_IMG}/${slug}-nome.png` },
-      { label: 'Número — atrás', src: `${FONT_IMG}/${slug}-numero.png` },
+      { label: 'Alfabeto e números', src: `${FONT_IMG}/${slug}.png` },
     ],
   };
 }
@@ -40,7 +39,13 @@ export const PRODUCTS = {
     productName: 'Camisa Jogador Seleção Brasileira Amarela Copa do mundo home 2026/2027',
     imageUrl: IMG.amarela,
     accent: 'yellow',
-    fontGuide: createFontGuide('amarela-jogador', 'Amarela jogador'),
+    fontGuide: {
+      title: 'Fonte — Amarela jogador',
+      hint: 'Personalização na frente (nome) e atrás (número).',
+      images: [
+        { label: 'Alfabeto e números', src: `${FONT_IMG}/amarela-jogador.png` },
+      ],
+    },
   },
   'br-away-azul': {
     id: 'br-away-azul',
