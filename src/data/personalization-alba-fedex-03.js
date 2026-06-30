@@ -18,6 +18,21 @@ const IMG = {
   vermelha: '../src/assets/images/products/brasil-torcedor-vermelha-copa-2026.png',
 };
 
+const FONT_IMG = '../src/assets/images/personalization/fonts';
+
+/** @param {string} slug @param {string} label @param {{ hint?: string }} [options] */
+function createFontGuide(slug, label, options = {}) {
+  const hint = options.hint ?? 'Personalização na frente (nome) e atrás (número).';
+  return {
+    title: `Fonte — ${label}`,
+    hint,
+    images: [
+      { label: 'Nome — frente', src: `${FONT_IMG}/${slug}-nome.png` },
+      { label: 'Número — atrás', src: `${FONT_IMG}/${slug}-numero.png` },
+    ],
+  };
+}
+
 export const PRODUCTS = {
   'br-home-amarela': {
     id: 'br-home-amarela',
@@ -25,6 +40,7 @@ export const PRODUCTS = {
     productName: 'Camisa Jogador Seleção Brasileira Amarela Copa do mundo home 2026/2027',
     imageUrl: IMG.amarela,
     accent: 'yellow',
+    fontGuide: createFontGuide('amarela-jogador', 'Amarela jogador'),
   },
   'br-away-azul': {
     id: 'br-away-azul',
@@ -32,6 +48,7 @@ export const PRODUCTS = {
     productName: 'Camisa Jogador Seleção Brasileira Azul Copa do mundo away II 2026/2027',
     imageUrl: IMG.azulJogador,
     accent: 'blue',
+    fontGuide: createFontGuide('azul-jogador', 'Azul jogador'),
   },
   'br-retro-2002': {
     id: 'br-retro-2002',
@@ -39,6 +56,8 @@ export const PRODUCTS = {
     productName: 'Camisa Brasil retro 2002 amarela penta campeão',
     imageUrl: IMG.retro2002,
     accent: 'yellow',
+    persSides: 'frente e atrás',
+    fontGuide: createFontGuide('retro-02', 'Retro 02'),
   },
   'br-retro-98': {
     id: 'br-retro-98',
@@ -46,6 +65,8 @@ export const PRODUCTS = {
     productName: 'Camisa Brasil Retrô 98 Amarela',
     imageUrl: IMG.retro98,
     accent: 'yellow',
+    persSides: 'frente e atrás',
+    fontGuide: createFontGuide('retro-98', 'Retro 98'),
   },
   'br-tor-ii': {
     id: 'br-tor-ii',
@@ -53,6 +74,7 @@ export const PRODUCTS = {
     productName: 'Camisa Torcedor Brasil II COPA 2026 Masculina - Azul e Preta',
     imageUrl: IMG.azulTorcedor,
     accent: 'blue',
+    fontGuide: createFontGuide('azul-torcedor', 'Azul torcedor'),
   },
   'br-tor-vermelha': {
     id: 'br-tor-vermelha',
@@ -60,6 +82,7 @@ export const PRODUCTS = {
     productName: 'Camisa Torcedor Brasil - Vermelha - Copa 2026',
     imageUrl: IMG.vermelha,
     accent: 'purple',
+    fontGuide: createFontGuide('vermelha', 'Vermelha'),
   },
 };
 
@@ -114,6 +137,8 @@ export const ALL_ITEMS = QUEUES.flatMap((queue) =>
       productName: item.productName || product.productName,
       imageUrl: item.imageUrl || product.imageUrl,
       productAccent: product.accent,
+      persSides: product.persSides || '',
+      fontGuide: product.fontGuide || null,
     };
   }),
 );

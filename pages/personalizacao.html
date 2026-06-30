@@ -22,7 +22,16 @@
 
     <div class="pers-stats" id="pers-stats" aria-live="polite"></div>
 
-    <div class="pers-toolbar__controls">
+    <nav class="pers-tabs no-print" id="pers-tabs" role="tablist" aria-label="Visualização">
+      <button type="button" class="pers-tab pers-tab--active" role="tab" id="pers-tab-queue" aria-selected="true" aria-controls="pers-panel-queue" data-tab="queue">
+        Fila de produção
+      </button>
+      <button type="button" class="pers-tab" role="tab" id="pers-tab-summary" aria-selected="false" aria-controls="pers-panel-summary" data-tab="summary">
+        Tamanhos e modelos
+      </button>
+    </nav>
+
+    <div class="pers-toolbar__controls" id="pers-queue-controls">
       <label class="pers-toolbar__search">
         <span class="visually-hidden">Buscar pedido ou nome</span>
         <input type="search" id="pers-search" class="form-input" placeholder="Buscar pedido, nome ou número…" autocomplete="off">
@@ -52,8 +61,32 @@
   </header>
 
   <main class="pers-main">
-    <div class="pers-grid" id="pers-grid" aria-live="polite"></div>
+    <div class="pers-panel" id="pers-panel-queue" role="tabpanel" aria-labelledby="pers-tab-queue">
+      <div class="pers-grid" id="pers-grid" aria-live="polite"></div>
+    </div>
+    <div class="pers-panel" id="pers-panel-summary" role="tabpanel" aria-labelledby="pers-tab-summary" hidden>
+      <div id="pers-summary" aria-live="polite"></div>
+    </div>
   </main>
+
+  <div id="pers-font-modal" class="pers-font-modal" hidden aria-hidden="true">
+    <div class="pers-font-modal__backdrop" data-font-modal-close tabindex="-1" aria-hidden="true"></div>
+    <div
+      class="pers-font-modal__dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pers-font-modal-title"
+    >
+      <header class="pers-font-modal__head">
+        <div>
+          <h2 class="pers-font-modal__title" id="pers-font-modal-title">Consultar fonte</h2>
+          <p class="pers-font-modal__hint" id="pers-font-modal-hint"></p>
+        </div>
+        <button type="button" class="pers-font-modal__close no-print" data-font-modal-close aria-label="Fechar">×</button>
+      </header>
+      <div class="pers-font-modal__body" id="pers-font-modal-body"></div>
+    </div>
+  </div>
 
   <script type="module" src="../src/js/pages/personalizacao.js"></script>
 </body>
