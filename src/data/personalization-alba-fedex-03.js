@@ -39,6 +39,7 @@ export const PRODUCTS = {
     productName: 'Camisa Jogador Seleção Brasileira Amarela Copa do mundo home 2026/2027',
     imageUrl: IMG.amarela,
     accent: 'yellow',
+    kitType: 'jogador',
     fontGuide: {
       title: 'Fonte — Amarela jogador',
       hint: 'Personalização na frente (nome) e atrás (número).',
@@ -53,6 +54,7 @@ export const PRODUCTS = {
     productName: 'Camisa Jogador Seleção Brasileira Azul Copa do mundo away II 2026/2027',
     imageUrl: IMG.azulJogador,
     accent: 'blue',
+    kitType: 'jogador',
     fontGuide: createFontGuide('azul-jogador', 'Azul jogador'),
   },
   'br-retro-2002': {
@@ -61,6 +63,7 @@ export const PRODUCTS = {
     productName: 'Camisa Brasil retro 2002 amarela penta campeão',
     imageUrl: IMG.retro2002,
     accent: 'yellow',
+    kitType: 'retro',
     persSides: 'frente e atrás',
     fontGuide: createFontGuide('retro-02', 'Retro 02'),
   },
@@ -70,6 +73,7 @@ export const PRODUCTS = {
     productName: 'Camisa Brasil Retrô 98 Amarela',
     imageUrl: IMG.retro98,
     accent: 'yellow',
+    kitType: 'retro',
     persSides: 'frente e atrás',
     fontGuide: createFontGuide('retro-98', 'Retro 98'),
   },
@@ -79,14 +83,16 @@ export const PRODUCTS = {
     productName: 'Camisa Torcedor Brasil II COPA 2026 Masculina - Azul e Preta',
     imageUrl: IMG.azulTorcedor,
     accent: 'blue',
+    kitType: 'torcedor',
     fontGuide: createFontGuide('azul-torcedor', 'Azul torcedor'),
   },
   'br-tor-vermelha': {
     id: 'br-tor-vermelha',
-    label: 'Vermelha',
+    label: 'Vermelha torcedor',
     productName: 'Camisa Torcedor Brasil - Vermelha - Copa 2026',
     imageUrl: IMG.vermelha,
     accent: 'purple',
+    kitType: 'torcedor',
     fontGuide: createFontGuide('vermelha', 'Vermelha'),
   },
 };
@@ -142,6 +148,7 @@ export const ALL_ITEMS = QUEUES.flatMap((queue) =>
       productName: item.productName || product.productName,
       imageUrl: item.imageUrl || product.imageUrl,
       productAccent: product.accent,
+      kitType: product.kitType || 'jogador',
       persSides: product.persSides || '',
       fontGuide: product.fontGuide || null,
     };

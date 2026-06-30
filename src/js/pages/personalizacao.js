@@ -9,7 +9,7 @@ const PRODUCT_FILTERS = [
   { id: 'br-tor-ii', label: 'Azul torcedor', tone: 'azul' },
   { id: 'br-retro-2002', label: 'Retro 02', tone: 'amarela' },
   { id: 'br-retro-98', label: 'Retro 98', tone: 'amarela' },
-  { id: 'br-tor-vermelha', label: 'Vermelha', tone: 'vermelha' },
+  { id: 'br-tor-vermelha', label: 'Vermelha torcedor', tone: 'vermelha' },
 ];
 
 const PRODUCT_SORT_ORDER = {
@@ -113,6 +113,7 @@ function buildSummaryByProduct() {
         productId,
         label: item.productLabel,
         imageUrl: item.imageUrl,
+        kitType: item.kitType || 'jogador',
         sizes: {},
         total: 0,
         items: [],
@@ -169,7 +170,10 @@ function renderSummaryMatrix(groups, sizes) {
       .join('');
     return `
       <tr>
-        <th scope="row" class="pers-summary__model-cell">${escapeHtml(group.label)}</th>
+        <th scope="row" class="pers-summary__model-cell">
+          <span class="pers-summary__kit pers-summary__kit--${escapeHtml(group.kitType)}">${kitTypeLabel(group.kitType)}</span>
+          ${escapeHtml(group.label)}
+        </th>
         ${cells}
         <td class="pers-summary__qty pers-summary__qty--total"><strong>${group.total}</strong></td>
       </tr>
@@ -236,10 +240,11 @@ function renderSummaryDetails(groups) {
       .join('');
 
     return `
-      <article class="pers-summary-card">
+      <article class="pers-summary-card pers-summary-card--${escapeHtml(group.kitType)}">
         <header class="pers-summary-card__head">
           <img class="pers-summary-card__thumb" src="${escapeHtml(group.imageUrl)}" alt="" loading="lazy">
           <div>
+            <span class="pers-summary__kit pers-summary__kit--${escapeHtml(group.kitType)}">${kitTypeLabel(group.kitType)}</span>
             <h3 class="pers-summary-card__title">${escapeHtml(group.label)}</h3>
             <p class="pers-summary-card__meta">${group.total} peça${group.total === 1 ? '' : 's'}</p>
           </div>
@@ -341,12 +346,24 @@ function renderStats() {
   `;
 }
 
+function kitTypeLabel(kitType) {
+  if (kitType === 'torcedor') return 'TORCEDOR';
+  if (kitType === 'retro') return 'RETRO';
+  return 'JOGADOR';
+}
+
 function renderCard(item) {
   const name = displayName(item.name);
   const number = displayNumber(item.number);
   const key = itemKey(item);
   const done = isDone(item);
-  const accentClass = item.productAccent === 'yellow' ? ' pers-card__head--yellow' : '';
+  const kitType = item.kitType || 'jogador';
+  const kitClass = ` pers-card--${kitType}`;
+  const headClass = kitType === 'torcedor'
+    ? ' pers-card__head--torcedor'
+    : kitType === 'retro' || item.productAccent === 'yellow'
+      ? ' pers-card__head--yellow'
+      : '';
   const placeholderClass = item.placeholder ? ' pers-card--placeholder' : '';
   const sidesNote = item.persSides
     ? `<p class="pers-card__sides-note">Personalização na ${escapeHtml(item.persSides)}</p>`
@@ -354,12 +371,17 @@ function renderCard(item) {
   const fontBtn = item.fontGuide
     ? `<button type="button" class="pers-font-btn no-print" data-font-product="${escapeHtml(item.productId)}">Consultar fonte</button>`
     : '';
+  const showModel = activeProduct === 'all' || kitType === 'torcedor';
+  const modelClass = kitType === 'torcedor' ? ' pers-card__model--torcedor' : '';
 
   return `
-    <article class="pers-card${done ? ' pers-card--done' : ''}${placeholderClass}" data-id="${escapeHtml(key)}">
-      <header class="pers-card__head${accentClass}">
-        <span class="pers-card__order">${escapeHtml(item.orderId)}</span>
-        ${activeProduct === 'all' ? `<span class="pers-card__model">${escapeHtml(item.productLabel)}</span>` : ''}
+    <article class="pers-card${kitClass}${done ? ' pers-card--done' : ''}${placeholderClass}" data-id="${escapeHtml(key)}">
+      <header class="pers-card__head${headClass}">
+        <div class="pers-card__head-row">
+          <span class="pers-card__order">${escapeHtml(item.orderId)}</span>
+          <span class="pers-card__kit pers-card__kit--${escapeHtml(kitType)}">${kitTypeLabel(kitType)}</span>
+        </div>
+        ${showModel ? `<span class="pers-card__model${modelClass}">${escapeHtml(item.productLabel)}</span>` : ''}
       </header>
 
       <div class="pers-card__main">
