@@ -27,6 +27,11 @@ import { parseSalesBatchText, validateOrderWithStockEntry, formatCouponUsedLabel
 import { applyPlatformSettingsToSales } from '../utils/analytics.js';
 import { allocateOrdersByPriority, normalizeOrderSize, collectStockAvailabilityErrors } from '../utils/stockAllocation.js';
 import { formatPasteStockOptionLabel, pasteStockOptionAttrs } from '../utils/stockEntryDisplay.js';
+import {
+  formatMissingSizeInStockError,
+  formatStockEntrySizesHint,
+  isStockSizeErrorMessage,
+} from '../utils/stockSizeMessages.js';
 import { formatCurrency, formatPercent } from '../utils/formatCurrency.js';
 import {
   qs,
@@ -675,12 +680,46 @@ function buildLinesFromParsedOrder(order, fallbackUnitPrice = getBasePrice()) {
   }));
 }
 
+function renderPasteOrderErrors(order) {
+  if (!order.errors?.length) return '';
+
+  const items = order.errors.map((err) => {
+    const sizeClass = isStockSizeErrorMessage(err) ? ' sales-paste-preview__error-item--size' : '';
+    return `<li class="sales-paste-preview__error-item${sizeClass}">${err}</li>`;
+  }).join('');
+
+  const stockEntry = order.stockEntryId
+    ? allStockEntries.find((e) => e.id === order.stockEntryId)
+    : getSelectedPasteStockEntry();
+  const sizesHint = stockEntry && order.errors.some(isStockSizeErrorMessage)
+    ? `<p class="sales-paste-preview__sizes-hint"><strong>Tamanhos no lote "${stockEntry.name}":</strong> ${formatStockEntrySizesHint(stockEntry)}</p>`
+    : '';
+
+  return `
+    <div class="sales-paste-preview__errors">
+      <p class="sales-paste-preview__errors-title">Não cadastra até corrigir:</p>
+      <ul class="sales-paste-preview__errors-list">${items}</ul>
+      ${sizesHint}
+    </div>
+  `;
+}
+
+function getFirstPasteBatchIssue(batch) {
+  const order = batch.orders.find((o) => !o.valid);
+  if (!order?.errors?.length) return null;
+  const sizeError = order.errors.find(isStockSizeErrorMessage);
+  if (sizeError) {
+    return `#${order.orderId || '?'}: ${sizeError}`;
+  }
+  return order.errors[0];
+}
+
 function renderPastePreview(batch) {
   const el = qs('#sales-paste-preview');
   if (!el) return;
 
   if (!batch.orders.length) {
-    el.innerHTML = '<p class="text-muted">Cole os pedidos acima e clique em Pré-visualizar.</p>';
+    el.innerHTML = '<p class="text-muted">Cole os pedidos acima para ver o resumo.</p>';
     return;
   }
 
@@ -689,9 +728,7 @@ function renderPastePreview(batch) {
     const status = order.valid
       ? '<span class="badge badge--success">OK</span>'
       : `<span class="badge badge--warning">Revisar</span>`;
-    const errors = order.errors.length
-      ? `<p class="sales-paste-preview__error">${order.errors.join(' ')}</p>`
-      : '';
+    const errors = renderPasteOrderErrors(order);
 
     return `
       <div class="sales-paste-preview__item ${order.valid ? '' : 'sales-paste-preview__item--error'}">
@@ -799,31 +836,6 @@ function resetPasteStockMatching() {
   showToast('Realocado na ordem Fedex 03 → 04 → 05 → LZ.', 'success');
 }
 
-function applyFirstPasteOrderToForm() {
-  const batch = previewPasteOrders();
-  const order = batch.valid[0] || batch.orders[0];
-  if (!order) {
-    showToast('Nenhum pedido para aplicar.', 'warning');
-    return;
-  }
-  if (!order.valid) {
-    showToast(order.errors.join(' '), 'error');
-    return;
-  }
-
-  const stockEntry = allStockEntries.find((e) => e.id === order.stockEntryId);
-  if (!stockEntry) {
-    showToast('Selecione o estoque deste pedido na pré-visualização.', 'warning');
-    return;
-  }
-
-  qs('#field-product').value = stockEntry.id;
-  onStockEntryChange();
-  setSaleLines(buildLinesFromParsedOrder(order, getOrderFallbackUnitPrice(order)));
-  switchTab('quick');
-  showToast('Primeiro pedido aplicado no formulário. Revise e confirme.', 'success');
-}
-
 function orderUsesSpreadsheetPrice(order) {
   return !!order.isSample || Number(order.discountedPrice) > 0 || Number(order.unitPrice) > 0;
 }
@@ -928,44 +940,16 @@ async function registerParsedOrder(order) {
   });
 }
 
-async function registerFirstPasteOrder() {
-  if (!requirePasteStockSelected()) return;
-
-  const batch = previewPasteOrders();
-  const order = batch.valid[0];
-  if (!order) {
-    const first = batch.orders[0];
-    showToast(
-      first?.errors?.join(' ') || 'Nenhum pedido válido. Pré-visualize e confira o estoque.',
-      first ? 'error' : 'warning'
-    );
-    return;
-  }
-
-  const btn = qs('#btn-paste-register-one');
-  setLoading(btn, true);
-  const result = await registerParsedOrder(order);
-  setLoading(btn, false);
-
-  if (result.success) {
-    showToast(
-      `Pedido ${order.orderId} cadastrado · faturamento ${order.isSample ? 'amostra R$ 0,00' : formatCurrency(order.unitPrice)}`,
-      'success'
-    );
-    await loadData({ freshSales: true });
-    previewPasteOrders();
-    switchTab('history');
-  } else {
-    showToast(result.error, 'error');
-  }
-}
-
 async function registerAllPasteOrders() {
   if (!requirePasteStockSelected()) return;
 
   const initial = previewPasteOrders();
   if (!initial.valid.length) {
-    showToast('Nenhum pedido válido. Ajuste o estoque de cada linha na pré-visualização.', 'warning');
+    showToast(
+      getFirstPasteBatchIssue(initial)
+        || 'Nenhum pedido válido. Confira a pré-visualização e ajuste o estoque ou o tamanho.',
+      'warning'
+    );
     return;
   }
 
@@ -1042,45 +1026,6 @@ function renderPasteBatchFailures(failures) {
   } else {
     el.insertAdjacentHTML('afterbegin', block);
   }
-}
-
-function loadPasteTestExample() {
-  const example = '#1163\t28/05/2026\tVermelha\tGG\t1\tCom personalização\tSim (NAZARIO7)\tR$ 279,90\tR$ 260,31';
-  const input = qs('#sales-paste-input');
-  if (!input) return;
-  input.value = example;
-  switchTab('paste');
-  previewPasteOrders();
-  showToast('Exemplo #1163 carregado. Confira a pré-visualização e cadastre.', 'success');
-}
-
-function startPasteVoiceInput() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    showToast('Ditado não disponível neste navegador. Use Chrome ou Edge.', 'warning');
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-  recognition.lang = 'pt-BR';
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-
-  const textarea = qs('#sales-paste-input');
-  recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript.trim();
-    if (!textarea) return;
-    textarea.value = textarea.value
-      ? `${textarea.value.trim()}\n${transcript}`
-      : transcript;
-    previewPasteOrders();
-  };
-  recognition.onerror = () => {
-    showToast('Não foi possível captar o áudio.', 'error');
-  };
-
-  recognition.start();
-  showToast('Ouvindo… fale o pedido.', 'info');
 }
 
 function updateCostLabels() {
@@ -1716,20 +1661,11 @@ function initEvents() {
     onPasteOrderStockChange(Number(select.dataset.orderIndex), select.value);
   });
 
-  qs('#btn-paste-preview')?.addEventListener('click', () => {
-    const text = qs('#sales-paste-input')?.value?.trim();
-    if (text && !getSelectedPasteStockEntry()) {
-      showToast('Selecione o estoque em lote antes de pré-visualizar.', 'warning');
-    }
-    previewPasteOrders();
-  });
-  qs('#btn-paste-apply-one')?.addEventListener('click', applyFirstPasteOrderToForm);
-  qs('#btn-paste-register-one')?.addEventListener('click', registerFirstPasteOrder);
   qs('#btn-paste-register-all')?.addEventListener('click', registerAllPasteOrders);
-  qs('#btn-paste-load-example')?.addEventListener('click', loadPasteTestExample);
-  qs('#btn-paste-voice')?.addEventListener('click', startPasteVoiceInput);
   qs('#sales-paste-input')?.addEventListener('input', () => {
-    if (qs('#sales-paste-preview')?.dataset.live === '1') previewPasteOrders();
+    if (qs('#sales-paste-input')?.value?.trim()) {
+      previewPasteOrders();
+    }
   });
 
   qs('#costs-form')?.addEventListener('submit', handleCostsForm);

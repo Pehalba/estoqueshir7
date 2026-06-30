@@ -1,4 +1,5 @@
 import { parseSizesQuickInput } from './validators.js';
+import { formatMissingSizeInStockError } from './stockSizeMessages.js';
 
 const SIZE_TOKEN = /(\d+)\s*([PXMG]{1,2}|GG|XG)\b/gi;
 
@@ -564,7 +565,7 @@ function appendSizeErrors(stockEntry, sizes, errors) {
       (s) => normalizeOrderSizeLocal(s.size) === size
     );
     if (!sizeEntry) {
-      errors.push(`Tamanho ${sizeLine.size} não existe neste estoque.`);
+      errors.push(formatMissingSizeInStockError(stockEntry, sizeLine.size));
     }
   }
 }
@@ -611,11 +612,14 @@ export function matchStockEntry(lineText, stockEntries = []) {
 
 export function validateOrderWithStockEntry(order, stockEntry) {
   const errors = (order.errors || []).filter((e) => (
-    !/estoque/i.test(e)
-    && !/Selecione o estoque/i.test(e)
-    && !/Tamanho .+ não existe neste estoque/.test(e)
-    && !/só há \d+ disponível/.test(e)
-    && !/sem estoque disponível/.test(e)
+    !/^Selecione o estoque/i.test(e)
+    && !/^Estoque não encontrado/i.test(e)
+    && !/^Estoque selecionado não encontrado/.test(e)
+    && !/^Sem estoque disponível na ordem Fedex/.test(e)
+    && !/não existe no lote/i.test(e)
+    && !/esgotado no lote/i.test(e)
+    && !/só há \d+ disponível/i.test(e)
+    && !/sem estoque disponível em "/i.test(e)
   ));
 
   if (!stockEntry) {

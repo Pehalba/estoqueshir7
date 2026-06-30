@@ -27,7 +27,7 @@ export function formatPasteStockOptionLabel(entry) {
   const color = inferShirtColor(entry);
   const proprioMark = isProprioStockEntry(entry) ? '🟣 ' : '';
   const statusTag = entry.status === 'esgotado' ? ' · esgotado' : '';
-  return `${color.emoji} ${color.label} ${proprioMark}${entry.name} — ${entry.productName}${statusTag}`;
+  return `${color.emoji} ${proprioMark}${entry.name}${statusTag}`;
 }
 
 export function pasteStockOptionAttrs(entry) {

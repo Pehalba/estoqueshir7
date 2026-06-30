@@ -1,5 +1,10 @@
 import { availableQty } from './calculations.js';
 import { normalizeSaleText, validateOrderWithStockEntry } from './saleTextParser.js';
+import {
+  formatMissingSizeInStockError,
+  formatUnavailableSizeInStockError,
+  normalizeStockSize,
+} from './stockSizeMessages.js';
 
 const PRIORITY_RULES = [
   { test: /fedex\s*0?3|\b03\b/i, priority: 1, label: 'Fedex 03' },
@@ -9,9 +14,7 @@ const PRIORITY_RULES = [
 ];
 
 export function normalizeOrderSize(size) {
-  const value = String(size || '').trim().toUpperCase();
-  if (value === 'XGG') return 'XG';
-  return value;
+  return normalizeStockSize(size);
 }
 
 export function normalizeOrderSizes(order) {
@@ -116,18 +119,19 @@ function appendStockAvailabilityErrors(stockEntry, order, balances, errors) {
     const sizeEntry = (stockEntry.sizes || []).find(
       (s) => normalizeOrderSize(s.size) === size
     );
-    if (!sizeEntry) continue;
+    if (!sizeEntry) {
+      errors.push(formatMissingSizeInStockError(stockEntry, size));
+      continue;
+    }
 
     const available = balances
       ? getBalanceForEntry(balances, stockEntry.id, size)
       : availableQty(sizeEntry);
 
     if (available <= 0) {
-      errors.push(`${size}: sem estoque disponível em "${stockEntry.name}".`);
+      errors.push(formatUnavailableSizeInStockError(stockEntry, size, available));
     } else if (qty > available) {
-      errors.push(
-        `${size}: só há ${available} disponível(is) em "${stockEntry.name}".`
-      );
+      errors.push(formatUnavailableSizeInStockError(stockEntry, size, available));
     }
   }
 }

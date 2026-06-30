@@ -208,26 +208,8 @@
 1682 p 229
 1678 amarela p cp 300
 ext p 0"></textarea>
-                <p class="form-group__hint">
-                  <strong>Planilha (tab):</strong> Pedido · Data · Modelo · Tamanho · Qtd · Personalização · Cupom? · Valor · Valor c/ desconto<br>
-                  Ex.: <code>#1163	28/05/2026	Vermelha	GG	1	Com personalização	Sim	R$ 279,90	R$ 260,31</code><br>
-                  <strong>Formato curto:</strong> <code>1682 p 229</code> · <code>1678 amarela p cp 300</code> · <code>ext p 0</code> (amostra externa, ID automático)<br>
-                  <strong><code>0</code> = amostra</strong> (R$ 0, grátis). Ex.: <code>1682 p 0</code> ou <code>ext p 0</code>. Também aceita a palavra <code>amostra</code> no lugar do <code>0</code>.<br>
-                  Na coluna <strong>Cupom?</strong> use <strong>Sim</strong> ou <strong>Não</strong> (códigos como <code>Sim (NAZARIO7)</code> também são aceitos na colagem, mas não aparecem na prévia).
-                  A linha de cabeçalho pode ser colada — ela é ignorada.
-                  O faturamento usa sempre a coluna <strong>Valor com desconto</strong> (última coluna de valor).
-                  Se a <strong>Qtd</strong> for maior que 1, ou o mesmo pedido tiver mais de uma linha/tamanho, o sistema gera pedidos separados
-                  (ex.: <code>#1678</code> GG + <code>#1678</code> G → <code>#1678</code> e <code>#1678-2</code>; qtd 2 → <code>#1275</code> e <code>#1275-2</code>).
-                  Sempre <strong>1 pedido = 1 camisa</strong>.
-                  A baixa segue Fedex 03 → 04 → 05 → LZ conforme o estoque disponível.
-                </p>
               </div>
               <div class="sales-paste__actions">
-                <button type="button" class="btn btn--secondary btn--sm" id="btn-paste-load-example">Exemplo #1163</button>
-                <button type="button" class="btn btn--secondary btn--sm" id="btn-paste-voice" title="Ditado por voz (Chrome/Edge)">🎤 Ditado</button>
-                <button type="button" class="btn btn--secondary" id="btn-paste-preview">Pré-visualizar</button>
-                <button type="button" class="btn btn--primary" id="btn-paste-register-one">Cadastrar 1º pedido</button>
-                <button type="button" class="btn btn--ghost" id="btn-paste-apply-one">Aplicar 1º no formulário</button>
                 <button type="button" class="btn btn--primary" id="btn-paste-register-all">Cadastrar todos</button>
               </div>
               <div id="sales-paste-preview" class="sales-paste-preview"></div>
