@@ -25,6 +25,19 @@
   box-shadow: 0 4px 24px rgb(94 23 235 / 8%);
 }
 
+@media (max-width: 899px) {
+  .pers-toolbar {
+    transition: transform 0.28s ease, box-shadow 0.28s ease;
+    will-change: transform;
+  }
+
+  body.pers-toolbar-scroll-hidden .pers-toolbar {
+    transform: translateY(-100%);
+    box-shadow: none;
+    pointer-events: none;
+  }
+}
+
 .pers-toolbar__top {
   display: flex;
   align-items: center;

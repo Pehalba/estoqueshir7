@@ -627,6 +627,43 @@ function clearDoneSet() {
   renderGrid();
 }
 
+function bindMobileToolbarScroll() {
+  const mq = window.matchMedia('(max-width: 899px)');
+  let lastY = window.scrollY;
+  let ticking = false;
+
+  const update = () => {
+    if (!mq.matches) {
+      document.body.classList.remove('pers-toolbar-scroll-hidden');
+      ticking = false;
+      return;
+    }
+
+    const y = window.scrollY;
+    if (y <= 8) {
+      document.body.classList.remove('pers-toolbar-scroll-hidden');
+    } else if (y > lastY + 6 && y > 72) {
+      document.body.classList.add('pers-toolbar-scroll-hidden');
+    } else if (y < lastY - 6) {
+      document.body.classList.remove('pers-toolbar-scroll-hidden');
+    }
+
+    lastY = y;
+    ticking = false;
+  };
+
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      window.requestAnimationFrame(update);
+      ticking = true;
+    }
+  }, { passive: true });
+
+  mq.addEventListener('change', () => {
+    if (!mq.matches) document.body.classList.remove('pers-toolbar-scroll-hidden');
+  });
+}
+
 function init() {
   document.getElementById('pers-search')?.addEventListener('input', (e) => {
     searchQuery = e.target.value;
@@ -646,6 +683,7 @@ function init() {
 
   bindFontModal();
   bindTabs();
+  bindMobileToolbarScroll();
   updateSubtitle();
   renderProductFilters();
   renderStatusFilters();
