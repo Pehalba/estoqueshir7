@@ -41,20 +41,31 @@ export function formatMissingSizeInStockError(stockEntry, size) {
   const lot = stockEntry?.name || 'estoque selecionado';
   const normalized = normalizeStockSize(size) || String(size || '').trim();
   const options = formatStockEntrySizeOptions(stockEntry);
-  return `Tamanho ${normalized} não existe no lote "${lot}". Tamanhos neste lote: ${options}. Selecione outro estoque em lote ou cadastre ${normalized} em Estoque.`;
+  return `Este tamanho não tem no lote "${lot}": você pediu ${normalized}, mas aqui só há ${options}. Troque o tamanho, escolha outro lote ou cadastre ${normalized} em Estoque.`;
 }
 
-export function formatUnavailableSizeInStockError(stockEntry, size, available = 0) {
+export function formatUnavailableSizeInStockError(stockEntry, size, available = 0, requestedQty = 1) {
   const lot = stockEntry?.name || 'estoque selecionado';
   const normalized = normalizeStockSize(size) || String(size || '').trim();
   const hint = formatStockEntrySizesHint(stockEntry);
+  const qty = Number(requestedQty) || 1;
+
   if (available <= 0) {
-    return `Tamanho ${normalized} esgotado no lote "${lot}". Saldo: ${hint}. Troque o estoque ou repor peças ${normalized} em Estoque.`;
+    return `Tamanho ${normalized} acabou no lote "${lot}". Saldo neste lote: ${hint}. Troque o lote ou repor ${normalized} em Estoque.`;
   }
-  return `Tamanho ${normalized}: só há ${available} disponível(is) no lote "${lot}". Saldo: ${hint}.`;
+
+  return `Só há ${available} peça(s) ${normalized} no lote "${lot}" (pedido: ${qty}). Saldo neste lote: ${hint}.`;
 }
 
 export function isStockSizeErrorMessage(message) {
   const text = String(message || '');
-  return /não existe no lote|esgotado no lote|só há \d+ disponível/i.test(text);
+  return /não tem no lote|não existe no lote|acabou no lote|esgotado no lote|só há \d+ peça/i.test(text);
+}
+
+export function getStockSizeErrorTitle(message) {
+  const text = String(message || '');
+  if (/não tem no lote|não existe no lote/i.test(text)) return 'Este tamanho não tem neste lote';
+  if (/acabou no lote|esgotado no lote/i.test(text)) return 'Tamanho esgotado neste lote';
+  if (/só há \d+ peça/i.test(text)) return 'Quantidade maior que o saldo';
+  return 'Problema no estoque';
 }

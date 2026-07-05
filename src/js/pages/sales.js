@@ -30,6 +30,7 @@ import { formatPasteStockOptionLabel, pasteStockOptionAttrs } from '../utils/sto
 import {
   formatMissingSizeInStockError,
   formatStockEntrySizesHint,
+  getStockSizeErrorTitle,
   isStockSizeErrorMessage,
 } from '../utils/stockSizeMessages.js';
 import { formatCurrency, formatPercent } from '../utils/formatCurrency.js';
@@ -683,6 +684,11 @@ function buildLinesFromParsedOrder(order, fallbackUnitPrice = getBasePrice()) {
 function renderPasteOrderErrors(order) {
   if (!order.errors?.length) return '';
 
+  const sizeError = order.errors.find(isStockSizeErrorMessage);
+  const errorTitle = sizeError
+    ? getStockSizeErrorTitle(sizeError)
+    : 'Não cadastra até corrigir';
+
   const items = order.errors.map((err) => {
     const sizeClass = isStockSizeErrorMessage(err) ? ' sales-paste-preview__error-item--size' : '';
     return `<li class="sales-paste-preview__error-item${sizeClass}">${err}</li>`;
@@ -691,13 +697,13 @@ function renderPasteOrderErrors(order) {
   const stockEntry = order.stockEntryId
     ? allStockEntries.find((e) => e.id === order.stockEntryId)
     : getSelectedPasteStockEntry();
-  const sizesHint = stockEntry && order.errors.some(isStockSizeErrorMessage)
-    ? `<p class="sales-paste-preview__sizes-hint"><strong>Tamanhos no lote "${stockEntry.name}":</strong> ${formatStockEntrySizesHint(stockEntry)}</p>`
+  const sizesHint = stockEntry && sizeError
+    ? `<p class="sales-paste-preview__sizes-hint"><strong>O que tem no lote "${stockEntry.name}":</strong> ${formatStockEntrySizesHint(stockEntry)}</p>`
     : '';
 
   return `
     <div class="sales-paste-preview__errors">
-      <p class="sales-paste-preview__errors-title">Não cadastra até corrigir:</p>
+      <p class="sales-paste-preview__errors-title">${errorTitle}</p>
       <ul class="sales-paste-preview__errors-list">${items}</ul>
       ${sizesHint}
     </div>

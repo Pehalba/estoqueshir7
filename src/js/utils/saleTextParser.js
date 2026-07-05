@@ -616,8 +616,11 @@ export function validateOrderWithStockEntry(order, stockEntry) {
     && !/^Estoque não encontrado/i.test(e)
     && !/^Estoque selecionado não encontrado/.test(e)
     && !/^Sem estoque disponível na ordem Fedex/.test(e)
+    && !/não tem no lote/i.test(e)
     && !/não existe no lote/i.test(e)
+    && !/acabou no lote/i.test(e)
     && !/esgotado no lote/i.test(e)
+    && !/só há \d+ peça/i.test(e)
     && !/só há \d+ disponível/i.test(e)
     && !/sem estoque disponível em "/i.test(e)
   ));

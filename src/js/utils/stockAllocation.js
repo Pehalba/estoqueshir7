@@ -129,9 +129,9 @@ function appendStockAvailabilityErrors(stockEntry, order, balances, errors) {
       : availableQty(sizeEntry);
 
     if (available <= 0) {
-      errors.push(formatUnavailableSizeInStockError(stockEntry, size, available));
+      errors.push(formatUnavailableSizeInStockError(stockEntry, size, available, qty));
     } else if (qty > available) {
-      errors.push(formatUnavailableSizeInStockError(stockEntry, size, available));
+      errors.push(formatUnavailableSizeInStockError(stockEntry, size, available, qty));
     }
   }
 }
@@ -160,6 +160,7 @@ function finalizeAllocatedOrder(order, entry, balances, consume = true) {
 
   if (entry) {
     appendStockAvailabilityErrors(entry, order, balances, result.errors);
+    result.errors = [...new Set(result.errors)];
     result.allocationHint = buildAllocationHint(entry, order, balances);
     result.valid = result.errors.length === 0
       && !!order.orderId
