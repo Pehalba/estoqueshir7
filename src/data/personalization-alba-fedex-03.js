@@ -111,7 +111,7 @@ const PERS_JUL_2026_ITEMS = [
   // 🟡 Amarela jogador GG
   { orderId: '#1828', size: 'GG', sizeLabel: 'GG (XL)', name: '', number: '7', productId: 'br-home-amarela' },
   // 🟡 Retrô 2002 G — só nome na frente
-  { orderId: '#1791', size: 'G', sizeLabel: 'G (L)', name: 'Brasil', number: '', productId: 'br-retro-2002', persSides: 'frente (só nome)' },
+  { orderId: '#1791', size: 'G', sizeLabel: 'G (L)', name: 'Brasil', number: '', productId: 'br-retro-2002', persSides: '' },
   // 🔵 Azul jogador
   { orderId: '#1819', size: 'P', sizeLabel: 'P (S)', name: 'DUDA', number: '10', productId: 'br-away-azul' },
   { orderId: '#1819-2', size: 'G', sizeLabel: 'G (L)', name: 'JOSUE', number: '7', productId: 'br-away-azul' },
@@ -145,7 +145,7 @@ export const ALL_ITEMS = QUEUES.flatMap((queue) =>
       imageUrl: item.imageUrl || product.imageUrl,
       productAccent: product.accent,
       kitType: product.kitType || 'jogador',
-      persSides: item.persSides || product.persSides || '',
+      persSides: item.persSides ?? product.persSides ?? '',
       fontGuide: product.fontGuide || null,
     };
   }),
