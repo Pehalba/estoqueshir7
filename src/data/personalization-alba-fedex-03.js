@@ -97,41 +97,37 @@ export const PRODUCTS = {
   },
 };
 
-/** @typedef {{ orderId: string, size: string, sizeLabel: string, name: string, number: string, productId?: string, placeholder?: boolean }} PersItem */
+/** @typedef {{ orderId: string, size: string, sizeLabel: string, name: string, number: string, productId?: string, placeholder?: boolean, persSides?: string }} PersItem */
 
-/** Pedidos com personalização — jun/2026 (Yampi). */
+/** Pedidos com personalização — jul/2026 (Yampi). */
 /** @type {PersItem[]} */
-const PERS_JUN_2026_ITEMS = [
-  // #1687 — azul P + amarela P
-  { orderId: '#1687', size: 'P', sizeLabel: 'P (S)', name: 'Vini jr.', number: '7', productId: 'br-away-azul' },
-  { orderId: '#1687-2', size: 'P', sizeLabel: 'P (S)', name: 'Neymar jr.', number: '10', productId: 'br-home-amarela' },
-  // #1688
-  { orderId: '#1688', size: 'M', sizeLabel: 'M (M)', name: 'Neymar Jr', number: '10', productId: 'br-home-amarela' },
-  // #1689 — 2× amarela P
-  { orderId: '#1689', size: 'P', sizeLabel: 'P (S)', name: 'Neymar Jr', number: '10', productId: 'br-home-amarela' },
-  { orderId: '#1689-2', size: 'P', sizeLabel: 'P (S)', name: 'Neymar Jr', number: '10', productId: 'br-home-amarela' },
-  // #1691 — retro 2002 GG
-  { orderId: '#1691', size: 'GG', sizeLabel: 'GG (XL)', name: 'Ronaldo', number: '9', productId: 'br-retro-2002' },
-  // #1692 — torcedor II (nº inferido; confira no Yampi se diferente)
-  { orderId: '#1692', size: 'P', sizeLabel: 'P (S)', name: 'Rafael', number: '10', productId: 'br-tor-ii' },
-  // #1695 — azul M
-  { orderId: '#1695', size: 'M', sizeLabel: 'M (M)', name: 'VINI JR.', number: '7', productId: 'br-away-azul' },
-  // #1698
-  { orderId: '#1698', size: 'M', sizeLabel: 'M (M)', name: 'Neymar Jr', number: '10', productId: 'br-home-amarela' },
-  // #1701 — retro 2002 G (só a peça com personalização)
-  { orderId: '#1701', size: 'G', sizeLabel: 'G (L)', name: 'RONALDINHO', number: '11', productId: 'br-retro-2002' },
-  // #1706 — azul jogador P
-  { orderId: '#1706', size: 'P', sizeLabel: 'P (S)', name: 'Nina', number: '27', productId: 'br-away-azul' },
-  // Retro 98 — avulso (informe o # do pedido quando tiver)
-  { orderId: '#RETRO98', size: 'G', sizeLabel: 'G (L)', name: 'Ronaldo', number: '9', productId: 'br-retro-98' },
+const PERS_JUL_2026_ITEMS = [
+  // 🟡 Amarela jogador M
+  { orderId: '#1787', size: 'M', sizeLabel: 'M (M)', name: 'MAGALHÃES', number: '', productId: 'br-home-amarela' },
+  { orderId: '#1811', size: 'M', sizeLabel: 'M (M)', name: 'Pedro Martins', number: '7', productId: 'br-home-amarela' },
+  // 🟡 Amarela jogador XG
+  { orderId: '#1813', size: 'XG', sizeLabel: 'XG (2XL)', name: 'NEYMAR JR', number: '10', productId: 'br-home-amarela' },
+  { orderId: '#1815', size: 'XG', sizeLabel: 'XG (2XL)', name: 'HIGOR', number: '10', productId: 'br-home-amarela' },
+  // 🟡 Amarela jogador GG
+  { orderId: '#1828', size: 'GG', sizeLabel: 'GG (XL)', name: '', number: '7', productId: 'br-home-amarela' },
+  // 🟡 Retrô 2002 G — só nome na frente
+  { orderId: '#1791', size: 'G', sizeLabel: 'G (L)', name: 'Brasil', number: '', productId: 'br-retro-2002', persSides: 'frente (só nome)' },
+  // 🔵 Azul jogador
+  { orderId: '#1819', size: 'P', sizeLabel: 'P (S)', name: 'DUDA', number: '10', productId: 'br-away-azul' },
+  { orderId: '#1819-2', size: 'G', sizeLabel: 'G (L)', name: 'JOSUE', number: '7', productId: 'br-away-azul' },
+  { orderId: '#1828-2', size: 'GG', sizeLabel: 'GG (XL)', name: '', number: '10', productId: 'br-away-azul' },
+  // 🔵 Azul torcedor II
+  { orderId: '#1836', size: 'P', sizeLabel: 'P (S)', name: 'Rezler', number: '10', productId: 'br-tor-ii' },
+  { orderId: '#1836-2', size: 'XG', sizeLabel: 'XGG (XG)', name: 'Rezler', number: '77', productId: 'br-tor-ii' },
+  { orderId: '#1779', size: 'M', sizeLabel: 'M (M)', name: 'STALL', number: '10', productId: 'br-tor-ii' },
 ];
 
 export const QUEUES = [
   {
-    id: 'pers-jun-2026',
-    title: 'Personalização — jun/2026',
+    id: 'pers-jul-2026',
+    title: 'Personalização — jul/2026',
     productId: 'br-home-amarela',
-    items: PERS_JUN_2026_ITEMS,
+    items: PERS_JUL_2026_ITEMS,
   },
 ];
 
@@ -149,7 +145,7 @@ export const ALL_ITEMS = QUEUES.flatMap((queue) =>
       imageUrl: item.imageUrl || product.imageUrl,
       productAccent: product.accent,
       kitType: product.kitType || 'jogador',
-      persSides: product.persSides || '',
+      persSides: item.persSides || product.persSides || '',
       fontGuide: product.fontGuide || null,
     };
   }),
