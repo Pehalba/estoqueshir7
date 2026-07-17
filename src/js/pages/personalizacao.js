@@ -68,23 +68,57 @@ function displayNumber(number) {
   return trimmed || '—';
 }
 
+function parseOrderSortKey(orderId) {
+  const raw = String(orderId ?? '').replace(/^#/, '').trim();
+  const match = raw.match(/^(\d+)(?:-(\d+|[A-Za-z].*))?$/);
+  if (!match) {
+    return { n: Number.MAX_SAFE_INTEGER, suffix: raw.toLowerCase() };
+  }
+  const suffixRaw = match[2] || '';
+  const suffixNum = /^\d+$/.test(suffixRaw) ? Number(suffixRaw) : 0;
+  return {
+    n: Number(match[1]),
+    suffix: suffixRaw.toLowerCase(),
+    suffixNum,
+  };
+}
+
+/** Camisa → tamanho → habilitados antes → pedido crescente. */
 function sortItemsForDisplay(items) {
-  if (activeProduct !== 'all') return items;
   return [...items].sort((a, b) => {
-    const orderA = PRODUCT_SORT_ORDER[a.productId] ?? 99;
-    const orderB = PRODUCT_SORT_ORDER[b.productId] ?? 99;
-    return orderA - orderB;
+    const productA = PRODUCT_SORT_ORDER[a.productId] ?? 99;
+    const productB = PRODUCT_SORT_ORDER[b.productId] ?? 99;
+    if (productA !== productB) return productA - productB;
+
+    const sizeA = SIZE_ORDER.indexOf(a.size);
+    const sizeB = SIZE_ORDER.indexOf(b.size);
+    const sizeRankA = sizeA === -1 ? 99 : sizeA;
+    const sizeRankB = sizeB === -1 ? 99 : sizeB;
+    if (sizeRankA !== sizeRankB) return sizeRankA - sizeRankB;
+
+    // Desabilitados perdem prioridade e ficam depois dos habilitados.
+    const disabledA = a.disabled ? 1 : 0;
+    const disabledB = b.disabled ? 1 : 0;
+    if (disabledA !== disabledB) return disabledA - disabledB;
+
+    const orderA = parseOrderSortKey(a.orderId);
+    const orderB = parseOrderSortKey(b.orderId);
+    if (orderA.n !== orderB.n) return orderA.n - orderB.n;
+    if (orderA.suffixNum !== orderB.suffixNum) return orderA.suffixNum - orderB.suffixNum;
+    return orderA.suffix.localeCompare(orderB.suffix);
   });
 }
 
 function getVisibleItems() {
-  if (activeProduct === 'all') return sortItemsForDisplay(ALL_ITEMS);
-  return ALL_ITEMS.filter((i) => i.productId === activeProduct);
+  const items = activeProduct === 'all'
+    ? ALL_ITEMS
+    : ALL_ITEMS.filter((i) => i.productId === activeProduct);
+  return sortItemsForDisplay(items);
 }
 
 function filterItems() {
   const q = searchQuery.trim().toLowerCase();
-  return getVisibleItems().filter((item) => {
+  return sortItemsForDisplay(getVisibleItems().filter((item) => {
     const done = isDone(item);
     if (activeStatus === 'pending' && done) return false;
     if (activeStatus === 'done' && !done) return false;
@@ -96,7 +130,7 @@ function filterItems() {
       || item.number.toLowerCase().includes(q)
       || item.sizeLabel.toLowerCase().includes(q)
     );
-  });
+  }));
 }
 
 function getProductionItems() {
@@ -365,20 +399,32 @@ function renderCard(item) {
       ? ' pers-card__head--yellow'
       : '';
   const placeholderClass = item.placeholder ? ' pers-card--placeholder' : '';
+  const disabledClass = item.disabled ? ' pers-card--disabled' : '';
   const sidesNote = item.persSides
     ? `<p class="pers-card__sides-note">Personalização na ${escapeHtml(item.persSides)}</p>`
     : '';
   const fontBtn = item.fontGuide
-    ? `<button type="button" class="pers-font-btn no-print" data-font-product="${escapeHtml(item.productId)}">Consultar fonte</button>`
+    ? `<button type="button" class="pers-font-btn no-print" data-font-product="${escapeHtml(item.productId)}" ${item.disabled ? 'disabled' : ''}>Consultar fonte</button>`
     : '';
   const showModel = activeProduct === 'all' || kitType === 'torcedor';
   const modelClass = kitType === 'torcedor' ? ' pers-card__model--torcedor' : '';
+  const statusBadge = item.disabled
+    ? '<span class="pers-card__badge pers-card__badge--wait">Aguardar</span>'
+    : item.placeholder
+      ? '<span class="pers-card__badge">Aguardando pedido</span>'
+      : '';
+  const alertNote = item.alert
+    ? `<p class="pers-card__alert" role="alert">${escapeHtml(item.alert)}</p>`
+    : '';
+  const alertGif = item.alert
+    ? '<img class="pers-card__alert-gif" src="../src/assets/images/personalization/alert.gif" alt="Alerta" width="22" height="22">'
+    : '';
 
   return `
-    <article class="pers-card${kitClass}${done ? ' pers-card--done' : ''}${placeholderClass}" data-id="${escapeHtml(key)}">
+    <article class="pers-card${kitClass}${done ? ' pers-card--done' : ''}${placeholderClass}${disabledClass}${item.alert ? ' pers-card--alert' : ''}" data-id="${escapeHtml(key)}">
       <header class="pers-card__head${headClass}">
         <div class="pers-card__head-row">
-          <span class="pers-card__order">${escapeHtml(item.orderId)}</span>
+          <span class="pers-card__order">${escapeHtml(item.orderId)}${alertGif}</span>
           <span class="pers-card__kit pers-card__kit--${escapeHtml(kitType)}">${kitTypeLabel(kitType)}</span>
         </div>
         ${showModel ? `<span class="pers-card__model${modelClass}">${escapeHtml(item.productLabel)}</span>` : ''}
@@ -396,12 +442,13 @@ function renderCard(item) {
           ${fontBtn}
         </div>
         <div class="pers-card__pers">
-          ${item.placeholder ? '<span class="pers-card__badge">Aguardando pedido</span>' : ''}
+          ${statusBadge}
           ${sidesNote}
           <span class="pers-card__name">${escapeHtml(name)}</span>
           <span class="pers-card__number">${escapeHtml(number)}</span>
         </div>
       </div>
+      ${alertNote}
 
       <footer class="pers-card__foot no-print">
         <button
@@ -409,9 +456,10 @@ function renderCard(item) {
           class="pers-done-btn${done ? ' pers-done-btn--active' : ''}"
           data-toggle-done="${escapeHtml(key)}"
           aria-pressed="${done ? 'true' : 'false'}"
+          ${item.disabled ? 'disabled' : ''}
         >
           <span class="pers-done-btn__icon" aria-hidden="true"></span>
-          <span class="pers-done-btn__label">${done ? 'Feito' : 'Marcar feito'}</span>
+          <span class="pers-done-btn__label">${item.disabled ? 'Aguardar' : done ? 'Feito' : 'Marcar feito'}</span>
         </button>
       </footer>
     </article>
