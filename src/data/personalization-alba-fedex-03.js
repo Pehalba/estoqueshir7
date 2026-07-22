@@ -99,61 +99,20 @@ export const PRODUCTS = {
 
 /** @typedef {{ orderId: string, size: string, sizeLabel: string, name: string, number: string, productId?: string, placeholder?: boolean, disabled?: boolean, alert?: string, persSides?: string }} PersItem */
 
-/** Pedidos com personalização — jul/2026 (lote vermelhas + 2 amarelas). */
+/** Pedidos com personalização — jul/2026 (somente aguardar). */
 /** @type {PersItem[]} */
 const PERS_JUL_2026_ITEMS = [
-  // 🔴 Vermelha torcedor
+  // 🔴 Vermelha torcedor — aguardar
   { orderId: '#1870', size: 'GG', sizeLabel: 'GG (XL)', name: 'Luthiano R. Leite', number: '13', productId: 'br-tor-vermelha', disabled: true },
   { orderId: '#1866', size: 'XG', sizeLabel: 'XGG (XG)', name: 'Lula', number: '13', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1758', size: 'P', sizeLabel: 'P (S)', name: 'KARYNI', number: '80', productId: 'br-tor-vermelha' },
   { orderId: '#1743', size: 'GG', sizeLabel: 'GG (XL)', name: 'Rafael', number: '10', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1703', size: 'P', sizeLabel: 'P (S)', name: 'Nataly', number: '18', productId: 'br-tor-vermelha' },
   { orderId: '#1693', size: 'GG', sizeLabel: 'GG (XL)', name: 'João', number: '20', productId: 'br-tor-vermelha', disabled: true },
   { orderId: '#1686', size: 'GG', sizeLabel: 'GG (XL)', name: 'Matheus', number: '13', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1684', size: 'P', sizeLabel: 'P (S)', name: 'Ana Kappi', number: '13', productId: 'br-tor-vermelha' },
   { orderId: '#1681', size: 'GG', sizeLabel: 'GG (XL)', name: 'Caio', number: '15', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1677', size: 'M', sizeLabel: 'M (M)', name: 'Carlos Brito', number: '13', productId: 'br-tor-vermelha' },
-  { orderId: '#1669', size: 'M', sizeLabel: 'M (M)', name: 'Thiago Tiganá', number: '13', productId: 'br-tor-vermelha' },
-  { orderId: '#1668', size: 'M', sizeLabel: 'M (M)', name: 'MH', number: '7', productId: 'br-tor-vermelha' },
-  { orderId: '#1654', size: 'M', sizeLabel: 'M (M)', name: 'QUADROS', number: '9', productId: 'br-tor-vermelha' },
   { orderId: '#1650', size: 'GG', sizeLabel: 'GG (XL)', name: 'ANDRE', number: '12', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1639', size: 'M', sizeLabel: 'M (M)', name: 'Alex', number: '13', productId: 'br-tor-vermelha' },
-  { orderId: '#1637', size: 'M', sizeLabel: 'M (M)', name: 'TONY', number: '13', productId: 'br-tor-vermelha' },
-  { orderId: '#1634', size: 'P', sizeLabel: 'P (S)', name: 'Ribeiro', number: '19', productId: 'br-tor-vermelha' },
-  { orderId: '#1632', size: 'GG', sizeLabel: 'GG (XL)', name: 'Vitor', number: '13', productId: 'br-tor-vermelha', alert: 'Essa camisa é um pouco mais clara que as outras. Tem um bilhete na embalagem com o nome e o número.' },
-  { orderId: '#1631', size: 'G', sizeLabel: 'G (L)', name: 'Pedro Plotz', number: '', productId: 'br-tor-vermelha' },
   { orderId: '#1629', size: 'GG', sizeLabel: 'GG (XL)', name: 'MARTA', number: '10', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1620', size: 'G', sizeLabel: 'G (L)', name: '', number: '13', productId: 'br-tor-vermelha' },
   { orderId: '#1618', size: 'GG', sizeLabel: 'GG (XL)', name: 'COELHO', number: '21', productId: 'br-tor-vermelha', disabled: true },
   { orderId: '#1614', size: 'GG', sizeLabel: 'GG (XL)', name: 'F A R i A S', number: '13', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1612', size: 'GG', sizeLabel: 'GG (XL)', name: 'Ribas', number: '08', productId: 'br-tor-vermelha' },
-  { orderId: '#1607', size: 'GG', sizeLabel: 'GG (XL)', name: 'Beto', number: '13', productId: 'br-tor-vermelha' },
-  { orderId: '#1597', size: 'G', sizeLabel: 'G (L)', name: 'Luciano Lima', number: '18', productId: 'br-tor-vermelha' },
-  { orderId: '#1591', size: 'M', sizeLabel: 'M (M)', name: 'Vitor', number: '13', productId: 'br-tor-vermelha' },
-  { orderId: '#1579', size: 'M', sizeLabel: 'M (M)', name: '', number: '10', productId: 'br-tor-vermelha' },
-  { orderId: '#1577', size: 'GG', sizeLabel: 'GG (XL)', name: 'Castro', number: '10', productId: 'br-tor-vermelha' },
-  { orderId: '#1570', size: 'G', sizeLabel: 'G (L)', name: 'VINI JR', number: '7', productId: 'br-tor-vermelha' },
-  { orderId: '#1568', size: 'G', sizeLabel: 'G (L)', name: 'Diego', number: '24', productId: 'br-tor-vermelha' },
-  { orderId: '#1567', size: 'G', sizeLabel: 'G (L)', name: 'Flash tattoo', number: '43', productId: 'br-tor-vermelha' },
-  { orderId: '#1563', size: 'G', sizeLabel: 'G (L)', name: 'Renato', number: '13', productId: 'br-tor-vermelha' },
-  { orderId: '#1563-2', size: 'M', sizeLabel: 'M (M)', name: 'Vanderlucia', number: '13', productId: 'br-tor-vermelha' },
-  { orderId: '#1561', size: 'G', sizeLabel: 'G (L)', name: 'Melgaço', number: '13', productId: 'br-tor-vermelha' },
-  { orderId: '#1560', size: 'P', sizeLabel: 'P (S)', name: 'Nara Costa', number: '13', productId: 'br-tor-vermelha' },
-  { orderId: '#1556', size: 'G', sizeLabel: 'G (L)', name: 'Barbosa', number: '13', productId: 'br-tor-vermelha' },
-  { orderId: '#1546', size: 'XG', sizeLabel: 'XGG (XG)', name: 'NAVARRESCH', number: '55', productId: 'br-tor-vermelha' },
-  { orderId: '#1544', size: 'GG', sizeLabel: 'GG (XL)', name: 'THIAGO', number: '13', productId: 'br-tor-vermelha' },
-  { orderId: '#1540', size: 'G', sizeLabel: 'G (L)', name: 'ELENA', number: '10', productId: 'br-tor-vermelha' },
-  { orderId: '#1530', size: 'G', sizeLabel: 'G (L)', name: 'Heloysa', number: '7', productId: 'br-tor-vermelha' },
-  { orderId: '#1526', size: 'G', sizeLabel: 'G (L)', name: 'Lacerda', number: '13', productId: 'br-tor-vermelha' },
-  { orderId: '#1523', size: 'P', sizeLabel: 'P (S)', name: 'Tony', number: '86', productId: 'br-tor-vermelha' },
-  { orderId: '#1520', size: 'P', sizeLabel: 'P (S)', name: 'Rose', number: '9', productId: 'br-tor-vermelha' },
-  { orderId: '#1515', size: 'G', sizeLabel: 'G (L)', name: 'Diego Correia', number: '10', productId: 'br-tor-vermelha' },
-  { orderId: '#1510', size: 'G', sizeLabel: 'G (L)', name: 'Ederson', number: '10', productId: 'br-tor-vermelha' },
-  { orderId: '#1509-2', size: 'P', sizeLabel: 'P (S)', name: 'Anna Thaís', number: '26', productId: 'br-tor-vermelha' },
-  { orderId: '#1509', size: 'P', sizeLabel: 'P (S)', name: 'Maria Carolina', number: '13', productId: 'br-tor-vermelha' },
-  // 🟡 Amarela jogador M (sem nº de pedido informado)
-  { orderId: '#AMA-1', size: 'M', sizeLabel: 'M (M)', name: 'Domingos', number: '10', productId: 'br-home-amarela' },
-  { orderId: '#AMA-2', size: 'M', sizeLabel: 'M (M)', name: 'Domingos', number: '10', productId: 'br-home-amarela' },
 ];
 
 export const QUEUES = [
