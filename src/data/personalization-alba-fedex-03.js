@@ -99,20 +99,25 @@ export const PRODUCTS = {
 
 /** @typedef {{ orderId: string, size: string, sizeLabel: string, name: string, number: string, productId?: string, placeholder?: boolean, disabled?: boolean, alert?: string, persSides?: string }} PersItem */
 
-/** Pedidos com personalização — jul/2026 (somente aguardar). */
+/** Pedidos com personalização — lote atual (out/2026). */
 /** @type {PersItem[]} */
 const PERS_JUL_2026_ITEMS = [
-  // 🔴 Vermelha torcedor — aguardar
-  { orderId: '#1870', size: 'GG', sizeLabel: 'GG (XL)', name: 'Luthiano R. Leite', number: '13', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1866', size: 'XG', sizeLabel: 'XGG (XG)', name: 'Lula', number: '13', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1743', size: 'GG', sizeLabel: 'GG (XL)', name: 'Rafael', number: '10', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1693', size: 'GG', sizeLabel: 'GG (XL)', name: 'João', number: '20', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1686', size: 'GG', sizeLabel: 'GG (XL)', name: 'Matheus', number: '13', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1681', size: 'GG', sizeLabel: 'GG (XL)', name: 'Caio', number: '15', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1650', size: 'GG', sizeLabel: 'GG (XL)', name: 'ANDRE', number: '12', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1629', size: 'GG', sizeLabel: 'GG (XL)', name: 'MARTA', number: '10', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1618', size: 'GG', sizeLabel: 'GG (XL)', name: 'COELHO', number: '21', productId: 'br-tor-vermelha', disabled: true },
-  { orderId: '#1614', size: 'GG', sizeLabel: 'GG (XL)', name: 'F A R i A S', number: '13', productId: 'br-tor-vermelha', disabled: true },
+  // 🔴 Vermelha torcedor
+  { orderId: '#ALY', size: 'P', sizeLabel: 'P (S)', name: 'ALY', number: '13', productId: 'br-tor-vermelha' },
+  {
+    orderId: '#Aninha',
+    size: 'P',
+    sizeLabel: 'P (S)',
+    name: 'Aninha',
+    number: '3',
+    productId: 'br-tor-vermelha',
+    alert: 'Manga esquerda: Che - arte 1',
+  },
+  { orderId: '#Viktor', size: 'M', sizeLabel: 'M (M)', name: 'Viktor', number: '13', productId: 'br-tor-vermelha' },
+  { orderId: '#sem-nome', size: 'GG', sizeLabel: 'GG (XL)', name: '', number: '13', productId: 'br-tor-vermelha' },
+  // 🟡 Amarela jogador
+  { orderId: '#PauloVictor', size: 'GG', sizeLabel: 'GG (XL)', name: 'Paulo Victor', number: '22', productId: 'br-home-amarela' },
+  { orderId: '#Geovanna', size: 'P', sizeLabel: 'P (S)', name: 'Geovanna', number: '22', productId: 'br-home-amarela' },
 ];
 
 export const QUEUES = [
