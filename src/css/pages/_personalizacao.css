@@ -26,15 +26,20 @@
 }
 
 @media (max-width: 899px) {
-  .pers-toolbar {
-    transition: transform 0.28s ease, box-shadow 0.28s ease;
-    will-change: transform;
+  /* Ao rolar: compacta o sticky (sem translateY — evita buraco e toolbar gigante). */
+  body.pers-toolbar-compact .pers-toolbar__top,
+  body.pers-toolbar-compact .pers-stats {
+    display: none;
   }
 
-  body.pers-toolbar-scroll-hidden .pers-toolbar {
-    transform: translateY(-100%);
-    box-shadow: none;
-    pointer-events: none;
+  body.pers-toolbar-compact .pers-tabs {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+  }
+
+  body.pers-toolbar-compact .pers-toolbar__controls {
+    padding-top: 0.35rem;
+    padding-bottom: 0.5rem;
   }
 }
 
@@ -1081,16 +1086,19 @@
 
 @media (max-width: 639px) {
   .pers-toolbar__filters {
-    flex-direction: column;
-    gap: 0.5rem;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.65rem;
+    align-items: flex-start;
   }
 
   .pers-toolbar__divider {
-    flex: 0 0 auto;
-    width: 100%;
-    height: 1px;
-    min-height: 0;
-    margin: 0;
+    display: none;
+  }
+
+  .pers-toolbar__section {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 }
 

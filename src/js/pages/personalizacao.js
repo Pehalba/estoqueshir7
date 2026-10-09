@@ -710,20 +710,25 @@ function bindMobileToolbarScroll() {
   let lastY = window.scrollY;
   let ticking = false;
 
+  const setCompact = (compact) => {
+    document.body.classList.toggle('pers-toolbar-compact', compact);
+  };
+
   const update = () => {
     if (!mq.matches) {
-      document.body.classList.remove('pers-toolbar-scroll-hidden');
+      setCompact(false);
       ticking = false;
       return;
     }
 
     const y = window.scrollY;
-    if (y <= 8) {
-      document.body.classList.remove('pers-toolbar-scroll-hidden');
-    } else if (y > lastY + 6 && y > 72) {
-      document.body.classList.add('pers-toolbar-scroll-hidden');
-    } else if (y < lastY - 6) {
-      document.body.classList.remove('pers-toolbar-scroll-hidden');
+    if (y <= 24) {
+      setCompact(false);
+    } else if (y > lastY + 8 && y > 80) {
+      setCompact(true);
+    } else if (y < lastY - 8 && y < 120) {
+      // Só expande de novo perto do topo — evita toolbar ocupando a tela no meio da lista.
+      setCompact(false);
     }
 
     lastY = y;
@@ -738,7 +743,7 @@ function bindMobileToolbarScroll() {
   }, { passive: true });
 
   mq.addEventListener('change', () => {
-    if (!mq.matches) document.body.classList.remove('pers-toolbar-scroll-hidden');
+    if (!mq.matches) setCompact(false);
   });
 }
 
