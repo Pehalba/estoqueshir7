@@ -756,18 +756,71 @@
 }
 
 .pers-card--alert {
-  border-color: #f59e0b;
+  border-color: #ea580c;
+  box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.18);
 }
 
 .pers-card__alert {
+  display: grid;
+  gap: 0.65rem;
   margin: 0;
-  padding: 0.55rem 0.75rem;
-  border-top: 1px dashed #f59e0b;
-  background: #fffbeb;
-  color: #92400e;
-  font-size: 0.75rem;
-  font-weight: 600;
+  padding: 0.75rem 0.85rem;
+  border-top: 2px solid #ea580c;
+  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+  color: #9a3412;
   line-height: 1.35;
+}
+
+.pers-card__alert--with-image {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.pers-card__alert-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border: 2px solid #ea580c;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.pers-card__alert-label {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #c2410c;
+}
+
+.pers-card__alert-msg {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #7c2d12;
+}
+
+.pers-card__alert-image {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 2px solid #ea580c;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(124, 45, 18, 0.18);
+}
+
+@media (max-width: 480px) {
+  .pers-card__alert--with-image {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .pers-card__alert-image {
+    width: 96px;
+    height: 96px;
+  }
 }
 
 .pers-font-btn {

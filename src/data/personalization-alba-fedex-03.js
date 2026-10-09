@@ -97,7 +97,7 @@ export const PRODUCTS = {
   },
 };
 
-/** @typedef {{ orderId: string, size: string, sizeLabel: string, name: string, number: string, productId?: string, placeholder?: boolean, disabled?: boolean, alert?: string, persSides?: string }} PersItem */
+/** @typedef {{ orderId: string, size: string, sizeLabel: string, name: string, number: string, productId?: string, placeholder?: boolean, disabled?: boolean, alert?: string, alertImage?: string, persSides?: string }} PersItem */
 
 /** Pedidos com personalização — lote atual (out/2026). */
 /** @type {PersItem[]} */
@@ -112,6 +112,7 @@ const PERS_JUL_2026_ITEMS = [
     number: '3',
     productId: 'br-tor-vermelha',
     alert: 'Manga esquerda: Che - arte 1',
+    alertImage: '../src/assets/images/personalization/che-arte-1.png',
   },
   { orderId: '#Viktor', size: 'M', sizeLabel: 'M (M)', name: 'Viktor', number: '13', productId: 'br-tor-vermelha' },
   { orderId: '#sem-nome', size: 'GG', sizeLabel: 'GG (XL)', name: '', number: '13', productId: 'br-tor-vermelha' },

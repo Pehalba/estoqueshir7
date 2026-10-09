@@ -414,7 +414,15 @@ function renderCard(item) {
       ? '<span class="pers-card__badge">Aguardando pedido</span>'
       : '';
   const alertNote = item.alert
-    ? `<p class="pers-card__alert" role="alert">${escapeHtml(item.alert)}</p>`
+    ? `<aside class="pers-card__alert${item.alertImage ? ' pers-card__alert--with-image' : ''}" role="alert">
+        <div class="pers-card__alert-text">
+          <span class="pers-card__alert-label">Atenção — personalização extra</span>
+          <strong class="pers-card__alert-msg">${escapeHtml(item.alert)}</strong>
+        </div>
+        ${item.alertImage
+          ? `<img class="pers-card__alert-image" src="${escapeHtml(item.alertImage)}" alt="${escapeHtml(item.alert)}" loading="lazy">`
+          : ''}
+      </aside>`
     : '';
   const alertGif = item.alert
     ? '<img class="pers-card__alert-gif" src="../src/assets/images/personalization/alert.gif" alt="Alerta" width="22" height="22">'
