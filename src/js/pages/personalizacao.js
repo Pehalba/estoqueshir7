@@ -705,46 +705,25 @@ function clearDoneSet() {
   renderGrid();
 }
 
-function bindMobileToolbarScroll() {
-  const mq = window.matchMedia('(max-width: 899px)');
-  let lastY = window.scrollY;
-  let ticking = false;
+/** Mantém a toolbar fixa sem buraco: mede a altura e empurra o conteúdo. */
+function bindFixedToolbar() {
+  const toolbar = document.querySelector('.pers-toolbar');
+  if (!toolbar) return;
 
-  const setCompact = (compact) => {
-    document.body.classList.toggle('pers-toolbar-compact', compact);
+  const syncHeight = () => {
+    const height = Math.ceil(toolbar.getBoundingClientRect().height);
+    document.documentElement.style.setProperty('--pers-toolbar-h', `${height}px`);
   };
 
-  const update = () => {
-    if (!mq.matches) {
-      setCompact(false);
-      ticking = false;
-      return;
-    }
+  syncHeight();
+  window.addEventListener('resize', syncHeight, { passive: true });
 
-    const y = window.scrollY;
-    if (y <= 24) {
-      setCompact(false);
-    } else if (y > lastY + 8 && y > 80) {
-      setCompact(true);
-    } else if (y < lastY - 8 && y < 120) {
-      // Só expande de novo perto do topo — evita toolbar ocupando a tela no meio da lista.
-      setCompact(false);
-    }
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(syncHeight).observe(toolbar);
+  }
 
-    lastY = y;
-    ticking = false;
-  };
-
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      window.requestAnimationFrame(update);
-      ticking = true;
-    }
-  }, { passive: true });
-
-  mq.addEventListener('change', () => {
-    if (!mq.matches) setCompact(false);
-  });
+  // Recalcula após filtros/stats renderizarem.
+  requestAnimationFrame(syncHeight);
 }
 
 function init() {
@@ -766,13 +745,13 @@ function init() {
 
   bindFontModal();
   bindTabs();
-  bindMobileToolbarScroll();
   updateSubtitle();
   renderProductFilters();
   renderStatusFilters();
   renderSizeFilters();
   renderStats();
   setActiveTab('queue');
+  bindFixedToolbar();
 }
 
 init();

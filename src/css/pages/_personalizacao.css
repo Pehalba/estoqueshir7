@@ -13,34 +13,23 @@
 .pers-page {
   min-height: 100vh;
   background: var(--color-bg, #f0edf6);
+  --pers-toolbar-h: 0px;
 }
 
-/* —— Toolbar —— */
+/* —— Toolbar (fixa no topo; sem hide no scroll) —— */
 .pers-toolbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 20;
+  max-height: min(70vh, 100%);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: var(--color-surface, #fff);
   border-bottom: 1px solid var(--color-border, #e5e1ef);
   box-shadow: 0 4px 24px rgb(94 23 235 / 8%);
-}
-
-@media (max-width: 899px) {
-  /* Ao rolar: compacta o sticky (sem translateY — evita buraco e toolbar gigante). */
-  body.pers-toolbar-compact .pers-toolbar__top,
-  body.pers-toolbar-compact .pers-stats {
-    display: none;
-  }
-
-  body.pers-toolbar-compact .pers-tabs {
-    padding-top: 0.35rem;
-    padding-bottom: 0.35rem;
-  }
-
-  body.pers-toolbar-compact .pers-toolbar__controls {
-    padding-top: 0.35rem;
-    padding-bottom: 0.5rem;
-  }
 }
 
 .pers-toolbar__top {
@@ -458,6 +447,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 1.25rem;
+  padding-top: calc(var(--pers-toolbar-h) + 1.25rem);
 }
 
 .pers-empty {
@@ -1164,6 +1154,8 @@
 
   .pers-toolbar {
     position: static;
+    max-height: none;
+    overflow: visible;
     box-shadow: none;
   }
 
@@ -1174,6 +1166,7 @@
   .pers-main {
     max-width: none;
     padding: 0.5rem;
+    padding-top: 0.5rem;
   }
 
   .pers-grid {
