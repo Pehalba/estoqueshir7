@@ -1338,9 +1338,40 @@
 }
 
 @media print {
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
   .no-print,
   .pers-print-modal,
-  .pers-font-modal {
+  .pers-font-modal,
+  .pers-toolbar,
+  .pers-stats,
+  .pers-tabs,
+  .pers-font-btn,
+  .pers-card__foot,
+  .pers-card__alert-gif {
+    display: none !important;
+  }
+
+  html,
+  body.pers-page {
+    width: auto !important;
+    min-height: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .pers-main {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .pers-panel[hidden] {
     display: none !important;
   }
 
@@ -1352,124 +1383,186 @@
     display: block !important;
   }
 
-  .pers-toolbar {
-    box-shadow: none;
-  }
-
-  .pers-page {
-    background: #fff;
-  }
-
-  .pers-main {
-    max-width: none;
-    padding: 0.5rem;
-  }
-
   .pers-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.4rem;
+    display: grid !important;
+    width: 100%;
+    margin: 0;
+    gap: 4mm;
+    align-items: stretch;
   }
 
   .pers-card {
-    border: 1px solid #999;
+    display: flex !important;
+    flex-direction: column;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid #222 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
   .pers-card--done {
-    opacity: 1;
+    opacity: 1 !important;
   }
 
-  /* Só uma unidade */
+  .pers-card__head {
+    padding: 2.5mm 3mm !important;
+  }
+
+  .pers-card__order {
+    font-size: 11pt !important;
+  }
+
+  .pers-card__model {
+    font-size: 8pt !important;
+  }
+
+  .pers-card__kit {
+    font-size: 7pt !important;
+    padding: 1mm 2mm !important;
+  }
+
+  .pers-card__main {
+    display: grid !important;
+    grid-template-columns: 22mm 1fr !important;
+    gap: 0 !important;
+    min-height: 0 !important;
+    flex: 1 1 auto;
+  }
+
+  .pers-card__thumb {
+    padding: 2mm !important;
+    gap: 1.5mm !important;
+    background: #f5f5f5 !important;
+  }
+
+  .pers-card__image {
+    max-height: 18mm !important;
+    width: auto !important;
+  }
+
+  .pers-card__size {
+    padding: 1mm !important;
+    font-size: 8pt !important;
+  }
+
+  .pers-card__pers {
+    padding: 2.5mm 3mm !important;
+    gap: 1mm !important;
+  }
+
+  .pers-card__badge {
+    font-size: 6.5pt !important;
+    padding: 0.5mm 1.5mm !important;
+    margin-bottom: 0 !important;
+  }
+
+  .pers-card__name {
+    font-size: 14pt !important;
+    line-height: 1.05 !important;
+  }
+
+  .pers-card__number {
+    font-size: 22pt !important;
+    line-height: 1 !important;
+  }
+
+  .pers-card__alert {
+    gap: 2mm !important;
+    padding: 2mm 2.5mm !important;
+    border-top: 1px solid #ea580c !important;
+    background: #fff7ed !important;
+  }
+
+  .pers-card__note,
+  .pers-card__alert-text {
+    padding: 1.5mm 2mm !important;
+    border-width: 1px !important;
+  }
+
+  .pers-card__note,
+  .pers-card__alert-msg,
+  .pers-card__alert-place,
+  .pers-card__alert-label,
+  .pers-card__note-label {
+    font-size: 7.5pt !important;
+  }
+
+  .pers-card__alert-gallery {
+    gap: 1.5mm !important;
+  }
+
+  .pers-card__alert-image {
+    width: 14mm !important;
+    height: 14mm !important;
+  }
+
+  .pers-card__alert-figure figcaption {
+    font-size: 6pt !important;
+    max-width: 16mm !important;
+  }
+
+  /* —— A4: grade uniforme 2 colunas —— */
+  body.pers-print-format-a4 .pers-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 4mm !important;
+  }
+
+  body.pers-print-format-a4 .pers-card {
+    min-height: 62mm;
+  }
+
+  /* —— Térmica 80mm: 1 coluna compacta —— */
+  body.pers-print-format-thermal {
+    width: 80mm !important;
+  }
+
+  body.pers-print-format-thermal .pers-main {
+    width: 76mm !important;
+    max-width: 76mm !important;
+  }
+
+  body.pers-print-format-thermal .pers-grid {
+    grid-template-columns: 1fr !important;
+    gap: 3mm !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__main {
+    grid-template-columns: 18mm 1fr !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__name {
+    font-size: 12pt !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__number {
+    font-size: 18pt !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__alert-image {
+    width: 12mm !important;
+    height: 12mm !important;
+  }
+
+  /* —— Uma unidade —— */
   body.pers-print-scope-one .pers-card:not(.pers-card--print-target) {
     display: none !important;
   }
 
   body.pers-print-scope-one .pers-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
 
-  body.pers-print-scope-one .pers-stats,
-  body.pers-print-scope-one .pers-tabs {
-    display: none !important;
-  }
-
-  /* A4 */
-  body.pers-print-format-a4 {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  body.pers-print-format-a4 .pers-card__alert-image {
-    width: 64px;
-    height: 64px;
-  }
-
-  /* Térmica 80mm — no diálogo, escolha a impressora térmica / bobina */
-  body.pers-print-format-thermal {
-    width: 80mm;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  body.pers-print-format-thermal .pers-toolbar,
-  body.pers-print-format-thermal .pers-stats,
-  body.pers-print-format-thermal .pers-tabs {
-    display: none !important;
-  }
-
-  body.pers-print-format-thermal .pers-main {
-    padding: 0;
-    max-width: 72mm;
-    margin: 0;
-  }
-
-  body.pers-print-format-thermal .pers-grid {
-    grid-template-columns: 1fr;
-    gap: 4mm;
-  }
-
-  body.pers-print-format-thermal .pers-card {
-    border: 1px solid #000;
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  body.pers-print-format-thermal .pers-card__head {
-    padding: 0.35rem 0.45rem;
-  }
-
-  body.pers-print-format-thermal .pers-card__main {
-    grid-template-columns: 56px 1fr;
+  body.pers-print-format-a4.pers-print-scope-one .pers-card {
+    max-width: 95mm;
     min-height: 0;
-  }
-
-  body.pers-print-format-thermal .pers-card__image {
-    max-height: 48px;
-  }
-
-  body.pers-print-format-thermal .pers-card__name {
-    font-size: 1rem;
-  }
-
-  body.pers-print-format-thermal .pers-card__number {
-    font-size: 1.5rem;
-  }
-
-  body.pers-print-format-thermal .pers-card__alert {
-    padding: 0.35rem 0.45rem;
-  }
-
-  body.pers-print-format-thermal .pers-card__alert-image {
-    width: 48px;
-    height: 48px;
-  }
-
-  body.pers-print-format-thermal .pers-font-btn {
-    display: none !important;
   }
 }
 
 @page {
+  size: A4 portrait;
   margin: 8mm;
 }

@@ -848,6 +848,17 @@ function clearPrintMode() {
   document.querySelectorAll('.pers-card--print-target').forEach((el) => {
     el.classList.remove('pers-card--print-target');
   });
+  document.getElementById('pers-print-page-style')?.remove();
+}
+
+function applyPrintPageStyle(format) {
+  document.getElementById('pers-print-page-style')?.remove();
+  const style = document.createElement('style');
+  style.id = 'pers-print-page-style';
+  style.textContent = format === 'thermal'
+    ? '@page { size: 80mm auto; margin: 2mm; }'
+    : '@page { size: A4 portrait; margin: 8mm; }';
+  document.head.appendChild(style);
 }
 
 function runPrint() {
@@ -864,6 +875,7 @@ function runPrint() {
   if (activeTab !== 'queue') setActiveTab('queue');
 
   clearPrintMode();
+  applyPrintPageStyle(format);
   document.body.classList.add('pers-printing', `pers-print-format-${format}`, `pers-print-scope-${scope}`);
 
   if (scope === 'one') {
