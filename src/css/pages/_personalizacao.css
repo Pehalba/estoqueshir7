@@ -13,20 +13,11 @@
 .pers-page {
   min-height: 100vh;
   background: var(--color-bg, #f0edf6);
-  --pers-toolbar-h: 0px;
 }
 
-/* —— Toolbar (fixa no topo; sem hide no scroll) —— */
+/* —— Toolbar no topo (rola com a página e some ao descer) —— */
 .pers-toolbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 20;
-  max-height: min(70vh, 100%);
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  position: static;
   background: var(--color-surface, #fff);
   border-bottom: 1px solid var(--color-border, #e5e1ef);
   box-shadow: 0 4px 24px rgb(94 23 235 / 8%);
@@ -447,7 +438,6 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 1.25rem;
-  padding-top: calc(var(--pers-toolbar-h) + 1.25rem);
 }
 
 .pers-empty {
@@ -736,6 +726,16 @@
   color: #334155;
 }
 
+.pers-card__badge--date {
+  background: #ede9fe;
+  border-color: #c4b5fd;
+  color: #5b21b6;
+}
+
+.pers-card__pers .pers-card__badge + .pers-card__badge {
+  margin-left: 0.25rem;
+}
+
 .pers-card__sides-note {
   margin: 0 0 0.35rem;
   padding: 0.2rem 0.55rem;
@@ -767,14 +767,36 @@
 }
 
 .pers-card__alert--with-image {
-  grid-template-columns: 1fr auto;
-  align-items: center;
+  grid-template-columns: 1fr;
+  align-items: stretch;
+}
+
+.pers-card__note {
+  margin: 0;
+  padding: 0.45rem 0.65rem;
+  border: 2px solid #ca8a04;
+  border-radius: 8px;
+  background: #fefce8;
+  color: #854d0e;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.pers-card__note-label {
+  display: inline-block;
+  margin-right: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #a16207;
 }
 
 .pers-card__alert-text {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.35rem;
   min-width: 0;
   padding: 0.55rem 0.65rem;
   border: 2px solid #ea580c;
@@ -790,10 +812,56 @@
   color: #c2410c;
 }
 
+.pers-card__alert-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.pers-card__alert-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.pers-card__alert-place {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #c2410c;
+}
+
 .pers-card__alert-msg {
   font-size: 0.95rem;
   font-weight: 800;
   color: #7c2d12;
+}
+
+.pers-card__alert-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pers-card__alert-figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.pers-card__alert-figure figcaption {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #9a3412;
+  text-align: center;
+  max-width: 88px;
 }
 
 .pers-card__alert-image {
@@ -807,14 +875,9 @@
 }
 
 @media (max-width: 480px) {
-  .pers-card__alert--with-image {
-    grid-template-columns: 1fr;
-    justify-items: start;
-  }
-
   .pers-card__alert-image {
-    width: 96px;
-    height: 96px;
+    width: 88px;
+    height: 88px;
   }
 }
 
@@ -987,7 +1050,142 @@
 }
 
 .pers-card__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
   padding: 0.55rem 0.85rem 0.7rem;
+  border-top: 1px solid var(--color-border, #e5e1ef);
+  background: #faf9fc;
+}
+
+.pers-print-card-btn {
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--color-border, #d8d2e6);
+  border-radius: var(--radius-md, 10px);
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted, #6b6280);
+  cursor: pointer;
+}
+
+.pers-print-card-btn:hover {
+  border-color: var(--color-primary, #5e17eb);
+  color: var(--color-primary, #5e17eb);
+}
+
+/* —— Modal imprimir —— */
+.pers-print-modal-open {
+  overflow: hidden;
+}
+
+.pers-print-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.pers-print-modal[hidden] {
+  display: none;
+}
+
+.pers-print-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(26 19 51 / 55%);
+  backdrop-filter: blur(2px);
+}
+
+.pers-print-modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 420px);
+  background: var(--color-surface, #fff);
+  border-radius: var(--radius-lg, 14px);
+  box-shadow: 0 20px 60px rgb(26 19 51 / 25%);
+  overflow: hidden;
+}
+
+.pers-print-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem 0.75rem;
+  border-bottom: 1px solid var(--color-border, #e5e1ef);
+}
+
+.pers-print-modal__title {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.pers-print-modal__close {
+  border: 0;
+  background: transparent;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--color-text-muted, #6b6280);
+  cursor: pointer;
+}
+
+.pers-print-modal__body {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+}
+
+.pers-print-modal__fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.pers-print-modal__fieldset legend {
+  margin-bottom: 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #6b6280);
+}
+
+.pers-print-option {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--color-border, #e5e1ef);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.pers-print-option:has(input:checked) {
+  border-color: var(--color-primary, #5e17eb);
+  background: #f5f0ff;
+}
+
+.pers-print-modal__select-wrap {
+  display: block;
+}
+
+.pers-print-modal__select-wrap[hidden] {
+  display: none;
+}
+
+.pers-print-modal__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.85rem 1.1rem 1rem;
   border-top: 1px solid var(--color-border, #e5e1ef);
   background: #faf9fc;
 }
@@ -1140,7 +1338,9 @@
 }
 
 @media print {
-  .no-print {
+  .no-print,
+  .pers-print-modal,
+  .pers-font-modal {
     display: none !important;
   }
 
@@ -1153,9 +1353,6 @@
   }
 
   .pers-toolbar {
-    position: static;
-    max-height: none;
-    overflow: visible;
     box-shadow: none;
   }
 
@@ -1166,7 +1363,6 @@
   .pers-main {
     max-width: none;
     padding: 0.5rem;
-    padding-top: 0.5rem;
   }
 
   .pers-grid {
@@ -1176,9 +1372,104 @@
 
   .pers-card {
     border: 1px solid #999;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .pers-card--done {
     opacity: 1;
   }
+
+  /* Só uma unidade */
+  body.pers-print-scope-one .pers-card:not(.pers-card--print-target) {
+    display: none !important;
+  }
+
+  body.pers-print-scope-one .pers-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.pers-print-scope-one .pers-stats,
+  body.pers-print-scope-one .pers-tabs {
+    display: none !important;
+  }
+
+  /* A4 */
+  body.pers-print-format-a4 {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body.pers-print-format-a4 .pers-card__alert-image {
+    width: 64px;
+    height: 64px;
+  }
+
+  /* Térmica 80mm — no diálogo, escolha a impressora térmica / bobina */
+  body.pers-print-format-thermal {
+    width: 80mm;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body.pers-print-format-thermal .pers-toolbar,
+  body.pers-print-format-thermal .pers-stats,
+  body.pers-print-format-thermal .pers-tabs {
+    display: none !important;
+  }
+
+  body.pers-print-format-thermal .pers-main {
+    padding: 0;
+    max-width: 72mm;
+    margin: 0;
+  }
+
+  body.pers-print-format-thermal .pers-grid {
+    grid-template-columns: 1fr;
+    gap: 4mm;
+  }
+
+  body.pers-print-format-thermal .pers-card {
+    border: 1px solid #000;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  body.pers-print-format-thermal .pers-card__head {
+    padding: 0.35rem 0.45rem;
+  }
+
+  body.pers-print-format-thermal .pers-card__main {
+    grid-template-columns: 56px 1fr;
+    min-height: 0;
+  }
+
+  body.pers-print-format-thermal .pers-card__image {
+    max-height: 48px;
+  }
+
+  body.pers-print-format-thermal .pers-card__name {
+    font-size: 1rem;
+  }
+
+  body.pers-print-format-thermal .pers-card__number {
+    font-size: 1.5rem;
+  }
+
+  body.pers-print-format-thermal .pers-card__alert {
+    padding: 0.35rem 0.45rem;
+  }
+
+  body.pers-print-format-thermal .pers-card__alert-image {
+    width: 48px;
+    height: 48px;
+  }
+
+  body.pers-print-format-thermal .pers-font-btn {
+    display: none !important;
+  }
+}
+
+@page {
+  margin: 8mm;
 }

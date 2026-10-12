@@ -39,6 +39,13 @@
 
       <div class="pers-toolbar__filters">
         <div class="pers-toolbar__section">
+          <span class="pers-toolbar__section-label">Data</span>
+          <div class="pers-toolbar__group" id="pers-date-filters" role="group" aria-label="Filtrar data de cadastro"></div>
+        </div>
+
+        <div class="pers-toolbar__divider" role="separator" aria-hidden="true"></div>
+
+        <div class="pers-toolbar__section">
           <span class="pers-toolbar__section-label">Cor</span>
           <div class="pers-toolbar__group" id="pers-product-filters" role="group" aria-label="Filtrar cor"></div>
         </div>
@@ -85,6 +92,56 @@
         <button type="button" class="pers-font-modal__close no-print" data-font-modal-close aria-label="Fechar">×</button>
       </header>
       <div class="pers-font-modal__body" id="pers-font-modal-body"></div>
+    </div>
+  </div>
+
+  <div id="pers-print-modal" class="pers-print-modal no-print" hidden aria-hidden="true">
+    <div class="pers-print-modal__backdrop" data-print-modal-close tabindex="-1" aria-hidden="true"></div>
+    <div
+      class="pers-print-modal__dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pers-print-modal-title"
+    >
+      <header class="pers-print-modal__head">
+        <h2 class="pers-print-modal__title" id="pers-print-modal-title">Imprimir</h2>
+        <button type="button" class="pers-print-modal__close" data-print-modal-close aria-label="Fechar">×</button>
+      </header>
+
+      <div class="pers-print-modal__body">
+        <fieldset class="pers-print-modal__fieldset">
+          <legend>O que imprimir</legend>
+          <label class="pers-print-option">
+            <input type="radio" name="pers-print-scope" value="all" checked>
+            <span>Toda a fila (filtro atual)</span>
+          </label>
+          <label class="pers-print-option">
+            <input type="radio" name="pers-print-scope" value="one">
+            <span>Uma unidade</span>
+          </label>
+          <label class="pers-print-modal__select-wrap" id="pers-print-unit-wrap" hidden>
+            <span class="visually-hidden">Escolher unidade</span>
+            <select id="pers-print-unit" class="form-input"></select>
+          </label>
+        </fieldset>
+
+        <fieldset class="pers-print-modal__fieldset">
+          <legend>Formato</legend>
+          <label class="pers-print-option">
+            <input type="radio" name="pers-print-format" value="a4" checked>
+            <span>Folha A4</span>
+          </label>
+          <label class="pers-print-option">
+            <input type="radio" name="pers-print-format" value="thermal">
+            <span>Impressora térmica (80mm)</span>
+          </label>
+        </fieldset>
+      </div>
+
+      <footer class="pers-print-modal__foot">
+        <button type="button" class="btn btn--ghost" data-print-modal-close>Cancelar</button>
+        <button type="button" class="btn btn--primary" id="pers-print-confirm">Imprimir</button>
+      </footer>
     </div>
   </div>
 

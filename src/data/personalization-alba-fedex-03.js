@@ -97,45 +97,243 @@ export const PRODUCTS = {
   },
 };
 
-/** @typedef {{ orderId: string, size: string, sizeLabel: string, name: string, number: string, productId?: string, placeholder?: boolean, disabled?: boolean, alert?: string, alertImage?: string, persSides?: string }} PersItem */
+/**
+ * Regra do print:
+ * - "Costas: Bolsonaro 22 arte 3 — Sml" → arte = "Bolsonaro 22 arte 3", nome = "Sml"
+ * - "Nome e número — Lula 13" → nome/número = Lula / 13
+ * - "Costas: Bolsonaro 22" (sem arte / sem —) → nome/número = Bolsonaro / 22
+ *
+ * @typedef {{ place: string, label: string, image?: string }} PersExtra
+ * @typedef {{
+ *   orderId: string,
+ *   size: string,
+ *   sizeLabel: string,
+ *   name: string,
+ *   number: string,
+ *   productId?: string,
+ *   createdAt?: string,
+ *   placeholder?: boolean,
+ *   disabled?: boolean,
+ *   note?: string,
+ *   alert?: string,
+ *   alertImage?: string,
+ *   extras?: PersExtra[],
+ *   persSides?: string
+ * }} PersItem
+ */
 
-/** Pedidos com personalização — lote atual (out/2026). */
-/** @type {PersItem[]} */
-const PERS_JUL_2026_ITEMS = [
-  // 🔴 Vermelha torcedor
-  { orderId: '#ALY', size: 'P', sizeLabel: 'P (S)', name: 'ALY', number: '13', productId: 'br-tor-vermelha' },
-  {
-    orderId: '#Aninha',
-    size: 'P',
-    sizeLabel: 'P (S)',
-    name: 'Aninha',
-    number: '3',
-    productId: 'br-tor-vermelha',
-    alert: 'Manga esquerda: Che - arte 1',
-    alertImage: '../src/assets/images/personalization/che-arte-1.png',
-  },
-  { orderId: '#Viktor', size: 'M', sizeLabel: 'M (M)', name: 'Viktor', number: '13', productId: 'br-tor-vermelha' },
-  { orderId: '#sem-nome', size: 'GG', sizeLabel: 'GG (XL)', name: '', number: '13', productId: 'br-tor-vermelha' },
-  // 🟡 Amarela jogador
-  { orderId: '#PauloVictor', size: 'GG', sizeLabel: 'GG (XL)', name: 'Paulo Victor', number: '22', productId: 'br-home-amarela' },
-  { orderId: '#Geovanna', size: 'P', sizeLabel: 'P (S)', name: 'Geovanna', number: '22', productId: 'br-home-amarela' },
-];
+const ART_AMARELA = '../src/assets/images/personalization/artes/Camisa Jogador Seleção Brasileira Amarela Copa do mundo home I 2026 - 2027';
+const ART_VERMELHA = '../src/assets/images/personalization/artes/Camisa Vermelha Brasil 26-27 — Masculina e Feminina';
 
+/** @param {string} base @param {string} place @param {string} file */
+function art(base, place, file) {
+  return `${base}/${place}/${file}`;
+}
+
+/**
+ * Lotes por data de cadastro (YYYY-MM-DD).
+ * Novos prints → novo lote com a data do dia, sem misturar com os anteriores.
+ */
+/** @type {{ id: string, date: string, title: string, productId?: string, items: PersItem[] }[]} */
 export const QUEUES = [
   {
-    id: 'pers-jul-2026',
-    title: 'Personalização — jul/2026',
+    id: 'pers-2026-10-09',
+    date: '2026-10-09',
+    title: 'Personalização — 09/10/2026',
     productId: 'br-tor-vermelha',
-    items: PERS_JUL_2026_ITEMS,
+    items: [
+      // 🔴 Vermelha torcedor
+      { orderId: '#ALY', size: 'P', sizeLabel: 'P (S)', name: 'ALY', number: '13', productId: 'br-tor-vermelha' },
+      {
+        orderId: '#Aninha',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Aninha',
+        number: '3',
+        productId: 'br-tor-vermelha',
+        extras: [
+          {
+            place: 'Manga esquerda',
+            label: 'Che - arte 1',
+            image: art(ART_VERMELHA, 'Manga esquerda', 'Che - arte 1.webp'),
+          },
+        ],
+      },
+      { orderId: '#Viktor', size: 'M', sizeLabel: 'M (M)', name: 'Viktor', number: '13', productId: 'br-tor-vermelha' },
+      { orderId: '#sem-nome', size: 'GG', sizeLabel: 'GG (XL)', name: '', number: '13', productId: 'br-tor-vermelha' },
+      // 🟡 Amarela jogador
+      { orderId: '#PauloVictor', size: 'GG', sizeLabel: 'GG (XL)', name: 'Paulo Victor', number: '22', productId: 'br-home-amarela' },
+      { orderId: '#Geovanna', size: 'P', sizeLabel: 'P (S)', name: 'Geovanna', number: '22', productId: 'br-home-amarela' },
+    ],
+  },
+  {
+    id: 'pers-2026-10-11',
+    date: '2026-10-11',
+    title: 'Personalização — 11/10/2026',
+    items: [
+      // #1916 — 2× amarela · costas nome/número Bolsonaro 22
+      { orderId: '#1916', size: 'P', sizeLabel: 'P (S)', name: 'Bolsonaro', number: '22', productId: 'br-home-amarela' },
+      {
+        orderId: '#1916-2',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Bolsonaro',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+      },
+
+      // #1922 — costas arte + nome Sml
+      {
+        orderId: '#1922',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Sml',
+        number: '',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1923 — costas arte + nome ANTI PETISTA
+      {
+        orderId: '#1923',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'ANTI PETISTA',
+        number: '',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 2',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 2.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1924 — costas arte + nome Bolsonaro
+      {
+        orderId: '#1924',
+        size: 'XG',
+        sizeLabel: 'XGG (XG)',
+        name: 'Bolsonaro',
+        number: '',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1921 — vermelha · nome/número Lula 13 + manga
+      {
+        orderId: '#1921',
+        size: 'XG',
+        sizeLabel: 'XGG (XG)',
+        name: 'Lula',
+        number: '13',
+        productId: 'br-tor-vermelha',
+        extras: [
+          {
+            place: 'Manga esquerda',
+            label: 'Estrela - arte 2',
+            image: art(ART_VERMELHA, 'Manga esquerda', 'Estrela - arte 2.webp'),
+          },
+        ],
+      },
+
+      // #1915 — Retro 98 · nome/número
+      { orderId: '#1915', size: 'G', sizeLabel: 'G (L)', name: 'Ricardo', number: '22', productId: 'br-retro-98' },
+      { orderId: '#1915-2', size: 'P', sizeLabel: 'P (S)', name: 'Kethelyn', number: '22', productId: 'br-retro-98' },
+
+      // #1926 — amarela · nome/número
+      { orderId: '#1926', size: 'G', sizeLabel: 'G (L)', name: 'Rodrigo', number: '22', productId: 'br-home-amarela' },
+
+      // #1929 — amarela · nome/número + manga
+      {
+        orderId: '#1929',
+        size: 'XG',
+        sizeLabel: 'XGG (XG)',
+        name: 'Diogo',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Manga direita',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga direita', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+    ],
   },
 ];
+
+/** Formata YYYY-MM-DD → DD/MM/YYYY */
+export function formatBatchDate(isoDate) {
+  const [y, m, d] = String(isoDate || '').split('-');
+  if (!y || !m || !d) return isoDate || '';
+  return `${d}/${m}/${y}`;
+}
+
+/** Datas de cadastro disponíveis (mais recente primeiro). */
+export function listBatchDates() {
+  const dates = [...new Set(QUEUES.map((q) => q.date).filter(Boolean))];
+  return dates.sort((a, b) => b.localeCompare(a));
+}
 
 export const ALL_ITEMS = QUEUES.flatMap((queue) =>
   queue.items.map((item) => {
     const productId = item.productId || queue.productId;
     const product = PRODUCTS[productId] || PRODUCTS['br-home-amarela'];
+    const createdAt = item.createdAt || queue.date;
+    const extras = Array.isArray(item.extras) ? item.extras : [];
+    const alertFromExtras = extras
+      .map((extra) => `${extra.place}: ${extra.label}`)
+      .join(' · ');
+    const alert = item.alert || alertFromExtras || '';
+    const alertImage = item.alertImage || extras.find((extra) => extra.image)?.image || '';
     return {
       ...item,
+      createdAt,
+      extras,
+      alert,
+      alertImage,
       queueId: queue.id,
       queueTitle: queue.title,
       productId,

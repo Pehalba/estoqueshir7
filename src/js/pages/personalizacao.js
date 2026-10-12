@@ -1,7 +1,13 @@
-import { PRODUCTS, ALL_ITEMS } from '../../data/personalization-alba-fedex-03.js';
+import {
+  PRODUCTS,
+  ALL_ITEMS,
+  formatBatchDate,
+  listBatchDates,
+} from '../../data/personalization-alba-fedex-03.js';
 
 const SIZE_ORDER = ['P', 'M', 'G', 'GG', 'XG'];
 const STORAGE_KEY = 'shir7-pers-done';
+const BATCH_DATES = listBatchDates();
 const PRODUCT_FILTERS = [
   { id: 'all', label: 'Todos' },
   { id: 'br-home-amarela', label: 'Amarela jogador', tone: 'amarela' },
@@ -24,6 +30,8 @@ const PRODUCT_SORT_ORDER = {
 let activeProduct = 'all';
 let activeSize = 'all';
 let activeStatus = 'pending';
+/** Data de cadastro ativa (YYYY-MM-DD) ou 'all'. Padrão: lote mais recente. */
+let activeDate = BATCH_DATES[0] || 'all';
 let activeTab = 'queue';
 let searchQuery = '';
 let doneSet = loadDoneSet();
@@ -83,9 +91,20 @@ function parseOrderSortKey(orderId) {
   };
 }
 
-/** Camisa → tamanho → habilitados antes → pedido crescente. */
+/** Pedido mais antigo → mais novo; depois peça (-2); depois desabilitados. */
 function sortItemsForDisplay(items) {
   return [...items].sort((a, b) => {
+    const orderA = parseOrderSortKey(a.orderId);
+    const orderB = parseOrderSortKey(b.orderId);
+    if (orderA.n !== orderB.n) return orderA.n - orderB.n;
+    if (orderA.suffixNum !== orderB.suffixNum) return orderA.suffixNum - orderB.suffixNum;
+    const suffixCmp = orderA.suffix.localeCompare(orderB.suffix);
+    if (suffixCmp !== 0) return suffixCmp;
+
+    const disabledA = a.disabled ? 1 : 0;
+    const disabledB = b.disabled ? 1 : 0;
+    if (disabledA !== disabledB) return disabledA - disabledB;
+
     const productA = PRODUCT_SORT_ORDER[a.productId] ?? 99;
     const productB = PRODUCT_SORT_ORDER[b.productId] ?? 99;
     if (productA !== productB) return productA - productB;
@@ -94,25 +113,20 @@ function sortItemsForDisplay(items) {
     const sizeB = SIZE_ORDER.indexOf(b.size);
     const sizeRankA = sizeA === -1 ? 99 : sizeA;
     const sizeRankB = sizeB === -1 ? 99 : sizeB;
-    if (sizeRankA !== sizeRankB) return sizeRankA - sizeRankB;
-
-    // Desabilitados perdem prioridade e ficam depois dos habilitados.
-    const disabledA = a.disabled ? 1 : 0;
-    const disabledB = b.disabled ? 1 : 0;
-    if (disabledA !== disabledB) return disabledA - disabledB;
-
-    const orderA = parseOrderSortKey(a.orderId);
-    const orderB = parseOrderSortKey(b.orderId);
-    if (orderA.n !== orderB.n) return orderA.n - orderB.n;
-    if (orderA.suffixNum !== orderB.suffixNum) return orderA.suffixNum - orderB.suffixNum;
-    return orderA.suffix.localeCompare(orderB.suffix);
+    return sizeRankA - sizeRankB;
   });
 }
 
+function getItemsByDate() {
+  if (activeDate === 'all') return ALL_ITEMS;
+  return ALL_ITEMS.filter((item) => item.createdAt === activeDate);
+}
+
 function getVisibleItems() {
+  const byDate = getItemsByDate();
   const items = activeProduct === 'all'
-    ? ALL_ITEMS
-    : ALL_ITEMS.filter((i) => i.productId === activeProduct);
+    ? byDate
+    : byDate.filter((i) => i.productId === activeProduct);
   return sortItemsForDisplay(items);
 }
 
@@ -134,7 +148,7 @@ function filterItems() {
 }
 
 function getProductionItems() {
-  return ALL_ITEMS.filter((item) => !item.placeholder);
+  return getItemsByDate().filter((item) => !item.placeholder);
 }
 
 function buildSummaryByProduct() {
@@ -413,23 +427,50 @@ function renderCard(item) {
     : item.placeholder
       ? '<span class="pers-card__badge">Aguardando pedido</span>'
       : '';
-  const alertNote = item.alert
-    ? `<aside class="pers-card__alert${item.alertImage ? ' pers-card__alert--with-image' : ''}" role="alert">
+  const dateBadge = item.createdAt
+    ? `<span class="pers-card__badge pers-card__badge--date">${escapeHtml(formatBatchDate(item.createdAt))}</span>`
+    : '';
+  const extras = Array.isArray(item.extras) ? item.extras : [];
+  const noteText = String(item.note || item.alert || '').trim();
+  const hasExtras = extras.length > 0 || Boolean(item.alertImage);
+  const hasAlertBlock = hasExtras || Boolean(noteText);
+  const noteBlock = noteText
+    ? `<p class="pers-card__note" role="note"><span class="pers-card__note-label">Aviso</span> ${escapeHtml(noteText)}</p>`
+    : '';
+  const alertNote = hasAlertBlock
+    ? `<aside class="pers-card__alert${extras.some((e) => e.image) || item.alertImage ? ' pers-card__alert--with-image' : ''}" role="alert">
+        ${noteBlock}
+        ${hasExtras ? `
         <div class="pers-card__alert-text">
-          <span class="pers-card__alert-label">Atenção — personalização extra</span>
-          <strong class="pers-card__alert-msg">${escapeHtml(item.alert)}</strong>
+          <span class="pers-card__alert-label">Atenção — artes / extras</span>
+          ${extras.length
+            ? `<ul class="pers-card__alert-list">${extras.map((extra) => `
+                <li>
+                  <span class="pers-card__alert-place">${escapeHtml(extra.place)}</span>
+                  <strong class="pers-card__alert-msg">${escapeHtml(extra.label)}</strong>
+                </li>`).join('')}</ul>`
+            : ''}
         </div>
-        ${item.alertImage
-          ? `<img class="pers-card__alert-image" src="${escapeHtml(item.alertImage)}" alt="${escapeHtml(item.alert)}" loading="lazy">`
-          : ''}
+        <div class="pers-card__alert-gallery">
+          ${(extras.filter((e) => e.image).length
+            ? extras.filter((e) => e.image)
+            : item.alertImage
+              ? [{ place: '', label: noteText || item.alert, image: item.alertImage }]
+              : []
+          ).map((extra) => `
+            <figure class="pers-card__alert-figure">
+              <img class="pers-card__alert-image" src="${escapeHtml(extra.image)}" alt="${escapeHtml(`${extra.place} ${extra.label}`.trim())}" loading="lazy">
+              ${extra.place ? `<figcaption>${escapeHtml(extra.place)}</figcaption>` : ''}
+            </figure>`).join('')}
+        </div>` : ''}
       </aside>`
     : '';
-  const alertGif = item.alert
+  const alertGif = hasAlertBlock
     ? '<img class="pers-card__alert-gif" src="../src/assets/images/personalization/alert.gif" alt="Alerta" width="22" height="22">'
     : '';
 
   return `
-    <article class="pers-card${kitClass}${done ? ' pers-card--done' : ''}${placeholderClass}${disabledClass}${item.alert ? ' pers-card--alert' : ''}" data-id="${escapeHtml(key)}">
+    <article class="pers-card${kitClass}${done ? ' pers-card--done' : ''}${placeholderClass}${disabledClass}${hasAlertBlock ? ' pers-card--alert' : ''}" data-id="${escapeHtml(key)}">
       <header class="pers-card__head${headClass}">
         <div class="pers-card__head-row">
           <span class="pers-card__order">${escapeHtml(item.orderId)}${alertGif}</span>
@@ -450,7 +491,7 @@ function renderCard(item) {
           ${fontBtn}
         </div>
         <div class="pers-card__pers">
-          ${statusBadge}
+          ${statusBadge}${dateBadge}
           ${sidesNote}
           <span class="pers-card__name">${escapeHtml(name)}</span>
           <span class="pers-card__number">${escapeHtml(number)}</span>
@@ -469,6 +510,12 @@ function renderCard(item) {
           <span class="pers-done-btn__icon" aria-hidden="true"></span>
           <span class="pers-done-btn__label">${item.disabled ? 'Aguardar' : done ? 'Feito' : 'Marcar feito'}</span>
         </button>
+        <button
+          type="button"
+          class="pers-print-card-btn"
+          data-print-card="${escapeHtml(key)}"
+          title="Imprimir esta unidade"
+        >Imprimir</button>
       </footer>
     </article>
   `;
@@ -489,6 +536,33 @@ function renderPillGroup(containerId, buttons, activeId, dataAttr, pillClass = '
       `,
     )
     .join('');
+}
+
+function renderDateFilters() {
+  const buttons = [
+    { id: 'all', label: 'Todas' },
+    ...BATCH_DATES.map((date) => ({
+      id: date,
+      label: formatBatchDate(date),
+    })),
+  ];
+
+  renderPillGroup('pers-date-filters', buttons, activeDate, 'date');
+
+  document.getElementById('pers-date-filters')?.querySelectorAll('[data-date]').forEach((el) => {
+    el.addEventListener('click', () => {
+      activeDate = el.dataset.date || 'all';
+      activeProduct = 'all';
+      activeSize = 'all';
+      updateSubtitle();
+      renderDateFilters();
+      renderProductFilters();
+      renderSizeFilters();
+      renderStats();
+      if (activeTab === 'summary') renderSummary();
+      else renderGrid();
+    });
+  });
 }
 
 function renderProductFilters() {
@@ -560,15 +634,21 @@ function updateSubtitle() {
   const subtitle = document.getElementById('pers-lot-title');
   if (!subtitle) return;
 
+  const scope = getVisibleItems();
+  const dateHint = activeDate === 'all'
+    ? 'todas as datas'
+    : formatBatchDate(activeDate);
+
   if (activeProduct === 'all') {
-    subtitle.textContent = `${ALL_ITEMS.length} peças · todas as cores`;
+    subtitle.textContent = `${scope.length} peças · ${dateHint}`;
     return;
   }
 
   const product = PRODUCTS[activeProduct];
-  const count = ALL_ITEMS.filter((i) => i.productId === activeProduct).length;
   const sidesHint = product?.persSides ? ' · frente e atrás' : '';
-  subtitle.textContent = product ? `${product.label} · ${count} peças${sidesHint}` : '';
+  subtitle.textContent = product
+    ? `${product.label} · ${scope.length} peças · ${dateHint}${sidesHint}`
+    : '';
 }
 
 function bindDoneButtons() {
@@ -589,6 +669,12 @@ function bindDoneButtons() {
   document.querySelectorAll('[data-font-product]').forEach((btn) => {
     btn.addEventListener('click', () => {
       openFontModal(btn.dataset.fontProduct);
+    });
+  });
+
+  document.querySelectorAll('[data-print-card]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      openPrintModal({ scope: 'one', unitId: btn.dataset.printCard });
     });
   });
 }
@@ -705,25 +791,125 @@ function clearDoneSet() {
   renderGrid();
 }
 
-/** Mantém a toolbar fixa sem buraco: mede a altura e empurra o conteúdo. */
-function bindFixedToolbar() {
-  const toolbar = document.querySelector('.pers-toolbar');
-  if (!toolbar) return;
+function fillPrintUnitSelect(selectedId = '') {
+  const select = document.getElementById('pers-print-unit');
+  if (!select) return;
 
-  const syncHeight = () => {
-    const height = Math.ceil(toolbar.getBoundingClientRect().height);
-    document.documentElement.style.setProperty('--pers-toolbar-h', `${height}px`);
-  };
-
-  syncHeight();
-  window.addEventListener('resize', syncHeight, { passive: true });
-
-  if (typeof ResizeObserver !== 'undefined') {
-    new ResizeObserver(syncHeight).observe(toolbar);
+  const items = filterItems();
+  if (!items.length) {
+    select.innerHTML = '<option value="">Nenhuma unidade no filtro</option>';
+    return;
   }
 
-  // Recalcula após filtros/stats renderizarem.
-  requestAnimationFrame(syncHeight);
+  select.innerHTML = items.map((item) => {
+    const key = itemKey(item);
+    const label = `${item.orderId} · ${displayName(item.name)} ${displayNumber(item.number)} · ${item.sizeLabel} · ${item.productLabel}`;
+    return `<option value="${escapeHtml(key)}"${key === selectedId ? ' selected' : ''}>${escapeHtml(label)}</option>`;
+  }).join('');
+}
+
+function syncPrintUnitVisibility() {
+  const wrap = document.getElementById('pers-print-unit-wrap');
+  const scopeOne = document.querySelector('input[name="pers-print-scope"][value="one"]')?.checked;
+  if (wrap) wrap.hidden = !scopeOne;
+}
+
+function openPrintModal({ scope = 'all', unitId = '' } = {}) {
+  const modal = document.getElementById('pers-print-modal');
+  if (!modal) return;
+
+  fillPrintUnitSelect(unitId);
+  const scopeInput = document.querySelector(`input[name="pers-print-scope"][value="${scope}"]`);
+  if (scopeInput) scopeInput.checked = true;
+  syncPrintUnitVisibility();
+
+  modal.hidden = false;
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('pers-print-modal-open');
+  document.getElementById('pers-print-confirm')?.focus();
+}
+
+function closePrintModal() {
+  const modal = document.getElementById('pers-print-modal');
+  if (!modal) return;
+  modal.hidden = true;
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('pers-print-modal-open');
+}
+
+function clearPrintMode() {
+  document.body.classList.remove(
+    'pers-printing',
+    'pers-print-format-a4',
+    'pers-print-format-thermal',
+    'pers-print-scope-all',
+    'pers-print-scope-one',
+  );
+  document.querySelectorAll('.pers-card--print-target').forEach((el) => {
+    el.classList.remove('pers-card--print-target');
+  });
+}
+
+function runPrint() {
+  const scope = document.querySelector('input[name="pers-print-scope"]:checked')?.value || 'all';
+  const format = document.querySelector('input[name="pers-print-format"]:checked')?.value || 'a4';
+  const unitId = document.getElementById('pers-print-unit')?.value || '';
+
+  if (scope === 'one' && !unitId) {
+    window.alert('Escolha uma unidade para imprimir.');
+    return;
+  }
+
+  // Impressão sempre na fila (não no resumo de tamanhos).
+  if (activeTab !== 'queue') setActiveTab('queue');
+
+  clearPrintMode();
+  document.body.classList.add('pers-printing', `pers-print-format-${format}`, `pers-print-scope-${scope}`);
+
+  if (scope === 'one') {
+    const card = document.querySelector(`.pers-card[data-id="${CSS.escape(unitId)}"]`);
+    if (!card) {
+      clearPrintMode();
+      window.alert('Unidade não encontrada na fila atual.');
+      return;
+    }
+    card.classList.add('pers-card--print-target');
+  }
+
+  closePrintModal();
+
+  const cleanup = () => {
+    clearPrintMode();
+    window.removeEventListener('afterprint', cleanup);
+  };
+  window.addEventListener('afterprint', cleanup);
+
+  // Pequeno delay para o browser aplicar as classes de print.
+  window.setTimeout(() => {
+    window.print();
+    // Fallback se afterprint não disparar em alguns browsers.
+    window.setTimeout(cleanup, 1500);
+  }, 50);
+}
+
+function bindPrintModal() {
+  document.getElementById('pers-print-btn')?.addEventListener('click', () => {
+    openPrintModal({ scope: 'all' });
+  });
+
+  document.querySelectorAll('[data-print-modal-close]').forEach((el) => {
+    el.addEventListener('click', closePrintModal);
+  });
+
+  document.querySelectorAll('input[name="pers-print-scope"]').forEach((input) => {
+    input.addEventListener('change', syncPrintUnitVisibility);
+  });
+
+  document.getElementById('pers-print-confirm')?.addEventListener('click', runPrint);
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closePrintModal();
+  });
 }
 
 function init() {
@@ -739,19 +925,16 @@ function init() {
     }
   });
 
-  document.getElementById('pers-print-btn')?.addEventListener('click', () => {
-    window.print();
-  });
-
+  bindPrintModal();
   bindFontModal();
   bindTabs();
   updateSubtitle();
+  renderDateFilters();
   renderProductFilters();
   renderStatusFilters();
   renderSizeFilters();
   renderStats();
   setActiveTab('queue');
-  bindFixedToolbar();
 }
 
 init();
