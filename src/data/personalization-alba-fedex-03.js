@@ -302,6 +302,9 @@ export const QUEUES = [
       { orderId: '#1915', size: 'G', sizeLabel: 'G (L)', name: 'Ricardo', number: '22', productId: 'br-retro-98', persSides: '' },
       { orderId: '#1915-2', size: 'M', sizeLabel: 'M (M)', name: 'Kethelyn', number: '22', productId: 'br-retro-98', persSides: '' },
 
+      // #1933 — amarela · nome/número
+      { orderId: '#1933', size: 'M', sizeLabel: 'M (M)', name: 'Vinicius', number: '22', productId: 'br-home-amarela' },
+
       // #1926 — amarela · nome/número
       { orderId: '#1926', size: 'G', sizeLabel: 'G (L)', name: 'Rodrigo', number: '22', productId: 'br-home-amarela' },
 
