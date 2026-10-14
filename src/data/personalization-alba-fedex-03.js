@@ -171,8 +171,22 @@ export const QUEUES = [
     date: '2026-10-11',
     title: 'Personalização — 11/10/2026',
     items: [
-      // #1916 — 2× amarela · costas nome/número Bolsonaro 22
-      { orderId: '#1916', size: 'P', sizeLabel: 'P (S)', name: 'Bolsonaro', number: '22', productId: 'br-home-amarela' },
+      // #1916 — 2× amarela · costas Bolsonaro 22 arte 1
+      {
+        orderId: '#1916',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Bolsonaro',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
       {
         orderId: '#1916-2',
         size: 'M',
@@ -181,6 +195,13 @@ export const QUEUES = [
         number: '22',
         productId: 'br-home-amarela',
         note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
       },
 
       // #1922 — costas arte + nome Sml
@@ -279,7 +300,7 @@ export const QUEUES = [
 
       // #1915 — Retro 98 · nome/número
       { orderId: '#1915', size: 'G', sizeLabel: 'G (L)', name: 'Ricardo', number: '22', productId: 'br-retro-98' },
-      { orderId: '#1915-2', size: 'P', sizeLabel: 'P (S)', name: 'Kethelyn', number: '22', productId: 'br-retro-98' },
+      { orderId: '#1915-2', size: 'M', sizeLabel: 'M (M)', name: 'Kethelyn', number: '22', productId: 'br-retro-98' },
 
       // #1926 — amarela · nome/número
       { orderId: '#1926', size: 'G', sizeLabel: 'G (L)', name: 'Rodrigo', number: '22', productId: 'br-home-amarela' },
