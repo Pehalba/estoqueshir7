@@ -1515,7 +1515,7 @@
     min-height: 62mm;
   }
 
-  /* —— Térmica 80mm: 1 coluna compacta —— */
+  /* —— Térmica 80mm: etiqueta grande e legível —— */
   body.pers-print-format-thermal {
     width: 80mm !important;
   }
@@ -1527,24 +1527,92 @@
 
   body.pers-print-format-thermal .pers-grid {
     grid-template-columns: 1fr !important;
-    gap: 3mm !important;
+    gap: 4mm !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__head {
+    padding: 3.5mm 4mm !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__order {
+    font-size: 16pt !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__model {
+    font-size: 11pt !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__kit {
+    font-size: 9pt !important;
+    padding: 1.5mm 2.5mm !important;
   }
 
   body.pers-print-format-thermal .pers-card__main {
-    grid-template-columns: 18mm 1fr !important;
+    grid-template-columns: 26mm 1fr !important;
   }
 
-  body.pers-print-format-thermal .pers-card__name {
+  body.pers-print-format-thermal .pers-card__thumb {
+    padding: 3mm !important;
+    gap: 2.5mm !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__image {
+    max-height: 24mm !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__size {
+    padding: 2mm !important;
     font-size: 12pt !important;
   }
 
+  body.pers-print-format-thermal .pers-card__pers {
+    padding: 4mm !important;
+    gap: 2mm !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__badge {
+    font-size: 9pt !important;
+    padding: 1mm 2.5mm !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__name {
+    font-size: 20pt !important;
+  }
+
   body.pers-print-format-thermal .pers-card__number {
-    font-size: 18pt !important;
+    font-size: 32pt !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__alert {
+    gap: 3mm !important;
+    padding: 3mm !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__note,
+  body.pers-print-format-thermal .pers-card__alert-text {
+    padding: 2.5mm 3mm !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__note,
+  body.pers-print-format-thermal .pers-card__alert-msg,
+  body.pers-print-format-thermal .pers-card__alert-place,
+  body.pers-print-format-thermal .pers-card__alert-label,
+  body.pers-print-format-thermal .pers-card__note-label {
+    font-size: 11pt !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__alert-gallery {
+    gap: 3mm !important;
   }
 
   body.pers-print-format-thermal .pers-card__alert-image {
-    width: 12mm !important;
-    height: 12mm !important;
+    width: 22mm !important;
+    height: 22mm !important;
+  }
+
+  body.pers-print-format-thermal .pers-card__alert-figure figcaption {
+    font-size: 8pt !important;
+    max-width: 24mm !important;
   }
 
   /* —— Uma unidade —— */

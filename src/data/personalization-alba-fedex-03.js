@@ -305,6 +305,45 @@ export const QUEUES = [
       // #1933 — amarela · nome/número
       { orderId: '#1933', size: 'M', sizeLabel: 'M (M)', name: 'Vinicius', number: '22', productId: 'br-home-amarela' },
 
+      // #1935 — amarela · costas arte + nome G.MOURINHO
+      {
+        orderId: '#1935',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'G.MOURINHO',
+        number: '',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1936 — amarela · nome/número + artes
+      {
+        orderId: '#1936',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Gabriel',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
       // #1926 — amarela · nome/número
       { orderId: '#1926', size: 'G', sizeLabel: 'G (L)', name: 'Rodrigo', number: '22', productId: 'br-home-amarela' },
 
