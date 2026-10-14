@@ -300,7 +300,17 @@ export const QUEUES = [
 
       // #1915 — Retro 98 · só costas (sem aviso frente e atrás)
       { orderId: '#1915', size: 'G', sizeLabel: 'G (L)', name: 'Ricardo', number: '22', productId: 'br-retro-98', persSides: '' },
-      { orderId: '#1915-2', size: 'M', sizeLabel: 'M (M)', name: 'Kethelyn', number: '22', productId: 'br-retro-98', persSides: '' },
+      { orderId: '#1915-2', size: 'P', sizeLabel: 'P (S)', name: 'Kethelyn', number: '22', productId: 'br-home-amarela' },
+      // #1915 — mesma personalização em Amarela jogador
+      {
+        orderId: '#1915-3',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'Ricardo',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+      },
 
       // #1933 — amarela · nome/número
       { orderId: '#1933', size: 'M', sizeLabel: 'M (M)', name: 'Vinicius', number: '22', productId: 'br-home-amarela' },
