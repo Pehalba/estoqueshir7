@@ -76,6 +76,52 @@ function displayNumber(number) {
   return trimmed || '—';
 }
 
+/** Artes de número “limpo” (só o dígito, sem collage). */
+const NUMBER_FONT_ARTS = {
+  22: '../src/assets/images/personalization/numbers/22.png',
+};
+
+/**
+ * Bolsonaro 22 arte → mostra a arte no lugar do número.
+ * Número puro (ex.: 22) → mostra a fonte do número.
+ * Outros → texto.
+ */
+function resolveNumberDisplay(item) {
+  const extras = Array.isArray(item.extras) ? item.extras : [];
+  const bolsonaroArt = extras.find((extra) =>
+    /bolsonaro\s*22\s*arte/i.test(String(extra.label || '')) && extra.image,
+  );
+  if (bolsonaroArt) {
+    return {
+      type: 'art',
+      src: bolsonaroArt.image,
+      label: bolsonaroArt.label,
+      kind: 'bolsonaro',
+    };
+  }
+
+  if (item.numberArt) {
+    return {
+      type: 'art',
+      src: item.numberArt,
+      label: displayNumber(item.number),
+      kind: 'number',
+    };
+  }
+
+  const num = String(item.number ?? '').trim();
+  if (num && NUMBER_FONT_ARTS[num]) {
+    return {
+      type: 'art',
+      src: NUMBER_FONT_ARTS[num],
+      label: num,
+      kind: 'number',
+    };
+  }
+
+  return { type: 'text', value: displayNumber(item.number) };
+}
+
 function parseOrderSortKey(orderId) {
   const raw = String(orderId ?? '').replace(/^#/, '').trim();
   const match = raw.match(/^(\d+)(?:-(\d+|[A-Za-z].*))?$/);
@@ -402,7 +448,7 @@ function kitTypeLabel(kitType) {
 
 function renderCard(item) {
   const name = displayName(item.name);
-  const number = displayNumber(item.number);
+  const numberDisplay = resolveNumberDisplay(item);
   const key = itemKey(item);
   const done = isDone(item);
   const kitType = item.kitType || 'jogador';
@@ -468,6 +514,14 @@ function renderCard(item) {
   const alertGif = hasAlertBlock
     ? '<img class="pers-card__alert-gif" src="../src/assets/images/personalization/alert.gif" alt="Alerta" width="22" height="22">'
     : '';
+  const numberBlock = numberDisplay.type === 'art'
+    ? `<img
+         class="pers-card__number-art pers-card__number-art--${escapeHtml(numberDisplay.kind || 'number')}"
+         src="${escapeHtml(numberDisplay.src)}"
+         alt="${escapeHtml(numberDisplay.label || 'Número')}"
+         loading="lazy"
+       >`
+    : `<span class="pers-card__number">${escapeHtml(numberDisplay.value)}</span>`;
 
   return `
     <article class="pers-card${kitClass}${done ? ' pers-card--done' : ''}${placeholderClass}${disabledClass}${hasAlertBlock ? ' pers-card--alert' : ''}" data-id="${escapeHtml(key)}">
@@ -494,7 +548,7 @@ function renderCard(item) {
           ${statusBadge}${dateBadge}
           ${sidesNote}
           <span class="pers-card__name">${escapeHtml(name)}</span>
-          <span class="pers-card__number">${escapeHtml(number)}</span>
+          ${numberBlock}
         </div>
       </div>
       ${alertNote}
