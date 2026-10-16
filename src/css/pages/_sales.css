@@ -149,6 +149,13 @@
   color: var(--color-error);
 }
 
+.sales-paste-preview__pricing {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-sm);
+  margin: var(--space-sm) 0;
+}
+
 .sales-paste-preview__stock {
   display: flex;
   flex-direction: column;

@@ -24,7 +24,7 @@ export function parseSizesQuickInput(text) {
   if (!text?.trim()) return [];
 
   const results = [];
-  const regex = /(\d+)\s*([PXMG]{1,2}|GG|XG)/gi;
+  const regex = /(\d+)\s*([PXMG]{1,2}|GG|XG)(?![a-zA-ZÀ-ÿ])/gi;
   let match;
 
   while ((match = regex.exec(text)) !== null) {
