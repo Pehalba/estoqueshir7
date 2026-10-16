@@ -8,6 +8,9 @@ import {
   buildSaleFinancialsFromSale,
   calculateInvestorRepasseForSale,
   calculateShir7ShirtShareForInvestor,
+  isSharedPersonalizationSale,
+  sharedPersonalizationInvestorAmount,
+  investorPayoutWithSharedPersonalization,
   resolveSaleUnitCost,
   resolveInvestorCapitalUnitCost,
 } from './calculations.js';
@@ -61,24 +64,36 @@ function decomposeSaleProfit(sale, settings = {}, investor = null, stockEntry = 
   const isInvestor = sale.stockOrigin === 'investidor';
   const capitalUnit = resolveInvestorCapitalUnitCost(sale, stockEntry);
   const payout = isInvestor && investor
-    ? calculateInvestorRepasseForSale(investor, {
-      unitCost,
-      capitalUnitCost: capitalUnit,
-      quantity: sale.quantity,
-      financials,
-      persProfit,
+    ? investorPayoutWithSharedPersonalization(
+      calculateInvestorRepasseForSale(investor, {
+        unitCost,
+        capitalUnitCost: capitalUnit,
+        quantity: sale.quantity,
+        financials,
+        persProfit,
+        sale,
+        stockEntry,
+        shirtAdsCost: campaignAds,
+      }),
       sale,
-      stockEntry,
-      shirtAdsCost: campaignAds,
-    })
+      financials
+    )
     : isInvestor
       ? getInvestorRepasse(sale)
       : 0;
+  const persInvestorShare = isSharedPersonalizationSale(sale) && isInvestor
+    ? sharedPersonalizationInvestorAmount({
+      personalizationTotal: pers.revenue,
+      personalizationCostTotal: pers.cost,
+    })
+    : 0;
 
   return {
     persRevenue: pers.revenue,
     persCost: pers.cost,
     persProfit,
+    persStoreProfit: Math.max(0, persProfit - persInvestorShare),
+    persInvestorShare,
     persPieces: pers.pieces,
     hasPersonalization: saleHasPersonalization(sale) && (pers.pieces > 0 || pers.revenue > 0 || pers.cost > 0),
     shirtNetProfit,
@@ -105,7 +120,7 @@ function decomposeSaleProfit(sale, settings = {}, investor = null, stockEntry = 
 /**
  * Distribuição de lucros SHIR7:
  * - Camisas: repasse investidor, parte SHIR7 (investidor) e estoque próprio — sem personalização
- * - Personalização: faturamento e lucro 100% SHIR7 (investidor não participa)
+ * - Personalização: lucro 100% SHIR7, exceto vendas com personalizationSplit shared-30 (30% investidor, 70% SHIR7)
  */
 export function calculatePartnerDistribution(sales, investors = [], filters = {}, settings = {}, stockEntries = []) {
   const filtered = filterSalesByPeriod(sales, filters).filter(isSaleActive);
@@ -128,6 +143,7 @@ export function calculatePartnerDistribution(sales, investors = [], filters = {}
   let persRevenue = 0;
   let persCost = 0;
   let persProfit = 0;
+  let persInvestorShare = 0;
   let persPieces = 0;
   let persOrderCount = 0;
   let campaignAdsTotal = 0;
@@ -145,7 +161,8 @@ export function calculatePartnerDistribution(sales, investors = [], filters = {}
       persOrderCount += 1;
       persRevenue += split.persRevenue;
       persCost += split.persCost;
-      persProfit += split.persProfit;
+      persProfit += split.persStoreProfit;
+      persInvestorShare += split.persInvestorShare;
       persPieces += split.persPieces;
     }
 
@@ -228,6 +245,7 @@ export function calculatePartnerDistribution(sales, investors = [], filters = {}
       revenue: persRevenue,
       cost: persCost,
       netProfit: persProfit,
+      investorShare: persInvestorShare,
       orderCount: persOrderCount,
       pieces: persPieces,
     },

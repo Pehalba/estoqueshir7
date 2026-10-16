@@ -24,7 +24,13 @@ import {
 } from '../utils/analytics.js';
 import { renderBarChart, renderGroupedBarChart, renderDoughnutChart } from '../utils/chartRenderer.js';
 import { formatCurrency, formatPercent } from '../utils/formatCurrency.js';
-import { formatSaleLinesSummary, availableQty, getStockEntryUnitCost } from '../utils/calculations.js';
+import {
+  formatSaleLinesSummary,
+  availableQty,
+  getStockEntryUnitCost,
+  isSharedPersonalizationSale,
+  sharedPersonalizationInvestorAmount,
+} from '../utils/calculations.js';
 import { qs, qsa, showToast, openModal, setupModalClose } from '../utils/domHelpers.js';
 import { sortSizes } from '../utils/sizes.js';
 
@@ -440,9 +446,22 @@ function getSalePersonalizationProfit(sale) {
   return stats.revenue - stats.cost;
 }
 
+function getSaleStorePersonalizationProfit(sale) {
+  const persProfit = getSalePersonalizationProfit(sale);
+  if (sale.stockOrigin !== 'investidor' || !isSharedPersonalizationSale(sale)) {
+    return persProfit;
+  }
+  const stats = getSalePersonalizationStats(sale, getPersSettings());
+  const investorShare = sharedPersonalizationInvestorAmount({
+    personalizationTotal: stats.revenue,
+    personalizationCostTotal: stats.cost,
+  });
+  return Math.max(0, persProfit - investorShare);
+}
+
 function getSaleShir7ProfitSplit(sale) {
   const shir7Total = getSaleShir7Profit(sale);
-  const persProfit = getSalePersonalizationProfit(sale);
+  const persProfit = getSaleStorePersonalizationProfit(sale);
   return {
     shir7Total,
     shir7Pieces: Math.max(0, shir7Total - persProfit),

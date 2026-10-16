@@ -14,6 +14,8 @@ import {
   recalculateSaleWithPlatformSettings,
   buildSaleFinancialsFromSale,
   calculateShir7ShirtShareForInvestor,
+  isSharedPersonalizationSale,
+  sharedPersonalizationInvestorAmount,
   resolveSaleUnitCost,
   resolveInvestorCapitalUnitCost,
   resolveSaleLotImportCostPerUnit,
@@ -202,6 +204,14 @@ function getOrderFinancialBreakdown(sale) {
   const unitCost = resolveSaleUnitCost(recalc, stockEntry);
   const pers = getSalePersonalizationStats(recalc, globalSettings);
   const persProfit = pers.revenue - pers.cost;
+  const sharedPers = isSharedPersonalizationSale(recalc) && recalc.stockOrigin === 'investidor';
+  const persInvestorShare = sharedPers
+    ? sharedPersonalizationInvestorAmount({
+      personalizationTotal: pers.revenue,
+      personalizationCostTotal: pers.cost,
+    })
+    : 0;
+  const persStoreShare = Math.max(0, persProfit - persInvestorShare);
   const netProfit = Number(recalc.netProfit) || 0;
   const shirtNetProfit = Math.max(0, netProfit - persProfit);
   const shirtRevenue = Math.max(0, financials.totalRevenue - pers.revenue);
@@ -231,7 +241,10 @@ function getOrderFinancialBreakdown(sale) {
     shirtRevenue,
     investorPayout,
     shir7ShirtShare,
-    shir7Total: shir7ShirtShare + persProfit,
+    sharedPers,
+    persInvestorShare,
+    persStoreShare,
+    shir7Total: shir7ShirtShare + persStoreShare,
     unitCost,
     stockEntry,
   };
@@ -259,7 +272,7 @@ function renderOrderDetailSection(title, fieldsHtml, note = '') {
 function buildOrderDetailHtml(sale) {
   const orderLabel = normalizeShopOrderId(sale.orderId);
   const breakdown = getOrderFinancialBreakdown(sale);
-  const { recalc, financials, pers, persProfit, netProfit, shirtNetProfit, shirtRevenue, investorPayout, shir7ShirtShare, shir7Total, unitCost, stockEntry } = breakdown;
+  const { recalc, financials, pers, persProfit, netProfit, shirtNetProfit, shirtRevenue, investorPayout, shir7ShirtShare, shir7Total, unitCost, stockEntry, sharedPers, persInvestorShare, persStoreShare } = breakdown;
   const investor = recalc.investorId
     ? allInvestors.find((i) => i.id === recalc.investorId)
     : null;
@@ -367,6 +380,7 @@ function buildOrderDetailHtml(sale) {
               <dd>${formatCurrency(capitalTotal)}</dd>
               <dt>Repasse neste pedido</dt>
               <dd>${formatCurrency(investorPayout)}</dd>
+              ${sharedPers && hasPers ? `<dt>Personalização (30%)</dt><dd>${formatCurrency(persInvestorShare)}</dd>` : ''}
               <dt>Regra</dt>
               <dd>${escapeHtml(investor ? formatRepasseRule(investor) : 'Capital + % do lucro (sem personalização)')}</dd>
             </dl>
@@ -376,13 +390,15 @@ function buildOrderDetailHtml(sale) {
             <dl>
               <dt>Parte camisa (60% do lucro líquido)</dt>
               <dd>${formatCurrency(shir7ShirtShare)}</dd>
-              ${hasPers ? `<dt>Personalização (100%)</dt><dd>${formatCurrency(persProfit)}</dd>` : ''}
+              ${hasPers ? `<dt>Personalização (${sharedPers ? '70%' : '100%'})</dt><dd>${formatCurrency(sharedPers ? persStoreShare : persProfit)}</dd>` : ''}
               <dt>Total SHIR7 neste pedido</dt>
               <dd>${formatCurrency(shir7Total)}</dd>
             </dl>
           </div>
         </div>
-        <p class="order-detail-note">Imposto e frete internacional são custos operacionais (como Yampi/Appmax): abatem o lucro, mas não entram no custo do produto nem no capital do investidor. Personalização não entra no repasse — fica 100% com a SHIR7.</p>
+        <p class="order-detail-note">${sharedPers
+          ? 'Imposto e frete internacional continuam como custos operacionais e não entram no capital do investidor. Nesta venda, o lucro da personalização foi dividido: 30% para o investidor e 70% para a SHIR7. O repasse da camisa segue a regra já cadastrada.'
+          : 'Imposto e frete internacional são custos operacionais (como Yampi/Appmax): abatem o lucro, mas não entram no custo do produto nem no capital do investidor. Personalização não entra no repasse — fica 100% com a SHIR7.'}</p>
       </section>
     `;
   } else {

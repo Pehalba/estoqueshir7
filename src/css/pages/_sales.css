@@ -34,6 +34,29 @@
   animation: fadeIn 0.2s ease;
 }
 
+.sales-paste__shared {
+  margin: var(--space-md) 0;
+  padding: var(--space-md);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.sales-paste__shared-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sales-paste__shared-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
 .sales-paste__intro {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);

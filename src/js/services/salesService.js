@@ -28,6 +28,8 @@ import {
   calculatePlatformFeesBreakdown,
   calculateInvestorRepasse,
   calculateInvestorRepasseForSale,
+  investorPayoutWithSharedPersonalization,
+  SHARED_PERSONALIZATION_SPLIT,
   resolveInvestorCapitalUnitCost,
   resolveSaleLotImportCostPerUnit,
   resolveSaleLotFreightCostPerUnit,
@@ -472,14 +474,18 @@ export async function createQuickSale(input) {
       const invResult = await getInvestorById(stockEntry.investorId);
       if (invResult.success) {
         investor = invResult.data;
-        investorPayout = calculateInvestorRepasseForSale(investor, {
-          unitCost,
-          capitalUnitCost,
-          quantity: financials.totalQty,
-          financials,
-          isSample,
-          stockEntry,
-        });
+        investorPayout = investorPayoutWithSharedPersonalization(
+          calculateInvestorRepasseForSale(investor, {
+            unitCost,
+            capitalUnitCost,
+            quantity: financials.totalQty,
+            financials,
+            isSample,
+            stockEntry,
+          }),
+          { personalizationSplit: input.personalizationSplit },
+          financials
+        );
       }
     }
 
@@ -556,6 +562,9 @@ export async function createQuickSale(input) {
       stockOrigin: stockEntry.stockOrigin || 'proprio',
       investorId: stockEntry.investorId || '',
       investorPayout,
+      ...(input.personalizationSplit === SHARED_PERSONALIZATION_SPLIT
+        ? { personalizationSplit: SHARED_PERSONALIZATION_SPLIT }
+        : {}),
       itemsSubtotal: financials.itemsSubtotal,
       grossRevenue: financials.grossRevenue,
       totalRevenue: financials.totalRevenue,
@@ -1051,13 +1060,17 @@ export async function updateSaleOrder(saleId, input = {}) {
     if (sale.stockOrigin === 'investidor' && sale.investorId) {
       const invResult = await getInvestorById(sale.investorId);
       if (invResult.success) {
-        investorPayout = calculateInvestorRepasseForSale(invResult.data, {
-          unitCost,
-          capitalUnitCost: resolveInvestorCapitalUnitCost(sale),
-          quantity: financials.totalQty,
-          financials,
+        investorPayout = investorPayoutWithSharedPersonalization(
+          calculateInvestorRepasseForSale(invResult.data, {
+            unitCost,
+            capitalUnitCost: resolveInvestorCapitalUnitCost(sale),
+            quantity: financials.totalQty,
+            financials,
+            sale,
+          }),
           sale,
-        });
+          financials
+        );
       }
     }
 

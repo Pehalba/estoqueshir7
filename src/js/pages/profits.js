@@ -418,6 +418,7 @@ function renderPersonalizationDetail(pers, options = {}) {
       <div><dt>Faturamento total</dt><dd>${formatCurrency(pers.revenue)}</dd></div>
       <div><dt>Custo do serviço</dt><dd>${formatCurrency(pers.cost)}</dd></div>
       <div><dt>Lucro líquido</dt><dd>${formatCurrency(pers.netProfit)}</dd></div>
+      ${Number(pers.investorShare) > 0 ? `<div><dt>Repasse ao investidor (30%)</dt><dd>${formatCurrency(pers.investorShare)}</dd></div>` : ''}
       <div><dt>Pedidos com personalização</dt><dd>${pers.orderCount}</dd></div>
     `;
   }

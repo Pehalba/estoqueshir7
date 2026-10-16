@@ -21,6 +21,11 @@ import {
   formatSaleLinesSummary,
   totalSaleLinesQuantity,
   DEFAULT_SALE_PRICE,
+  SHARED_PERSONALIZATION_TABLE,
+  SHARED_PERSONALIZATION_SPLIT,
+  SHARED_PERSONALIZATION_SHIRT_PRICE,
+  resolveSharedPersonalization,
+  sharedPersonalizationInvestorAmount,
 } from '../utils/calculations.js';
 import { validateQuickSale, parseSizesQuickInput } from '../utils/validators.js';
 import { parseSalesBatchText, validateOrderWithStockEntry, formatCouponUsedLabel, sanitizeCouponTextInLine } from '../utils/saleTextParser.js';
@@ -634,7 +639,62 @@ function getOrderFallbackUnitPrice(order) {
   return entry?.suggestedSalePrice || DEFAULT_SALE_PRICE;
 }
 
-function buildLinesFromParsedOrder(order, fallbackUnitPrice = getBasePrice()) {
+function fillSharedPersonalizationOptions() {
+  const select = qs('#paste-pers-price');
+  if (!select || select.dataset.ready === '1') return;
+  const options = SHARED_PERSONALIZATION_TABLE.map((row) => {
+    const rule = resolveSharedPersonalization(row.price);
+    return `<option value="${row.price}">${row.count} — ${formatCurrency(row.price)} · custo ${formatCurrency(row.cost)} · lucro ${formatCurrency(rule.profit)}</option>`;
+  }).join('');
+  select.insertAdjacentHTML('beforeend', options);
+  select.dataset.ready = '1';
+}
+
+function readPasteSharedConfig() {
+  const enabled = !!qs('#paste-shared-toggle')?.checked;
+  if (!enabled) return { enabled: false, valid: true, rule: null, shirtPrice: 0 };
+
+  const shirtPrice = Number(qs('#paste-shirt-price')?.value);
+  const persPrice = Number(qs('#paste-pers-price')?.value);
+  const rule = resolveSharedPersonalization(persPrice);
+
+  if (!(shirtPrice > 0)) {
+    return { enabled: true, valid: false, error: 'Informe o valor da camisa.', shirtPrice, rule };
+  }
+  if (!rule) {
+    return {
+      enabled: true,
+      valid: false,
+      error: 'Escolha um valor de personalização da tabela (R$ 40, 50, 60, 70 ou 80).',
+      shirtPrice,
+      rule: null,
+    };
+  }
+
+  return { enabled: true, valid: true, shirtPrice, rule };
+}
+
+function buildLinesFromParsedOrder(order, fallbackUnitPrice = getBasePrice(), shared = readPasteSharedConfig()) {
+  if (shared.enabled && shared.valid && !order.isSample) {
+    const personalized = shared.rule.count > 0;
+    return order.sizes.map((sizeLine) => ({
+      size: sizeLine.size,
+      quantity: sizeLine.quantity,
+      unitPrice: shared.shirtPrice,
+      couponId: '',
+      couponName: '',
+      couponPercent: 0,
+      freight: Number(order.freight) || 0,
+      ads: 0,
+      otherCosts: 0,
+      isPersonalized: personalized,
+      personalizationTypeId: '',
+      personalizationTypeName: personalized ? `Compartilhada (${shared.rule.count})` : '',
+      personalizationPerPiece: personalized ? shared.rule.price : 0,
+      personalizationCostPerPiece: personalized ? shared.rule.cost : 0,
+    }));
+  }
+
   const linePrice = order.isSample
     ? 0
     : (order.unitPrice > 0 ? order.unitPrice : fallbackUnitPrice);
@@ -720,9 +780,42 @@ function getFirstPasteBatchIssue(batch) {
   return order.errors[0];
 }
 
+function renderSharedPasteNote(order, shared) {
+  if (!shared.enabled) return '';
+  if (order.isSample) {
+    return '<p><strong>Amostra:</strong> continua em R$ 0,00.</p>';
+  }
+  if (!shared.valid) {
+    return `<p class="sales-paste-preview__error">${shared.error}</p>`;
+  }
+
+  const qty = (order.sizes || []).reduce((sum, sizeLine) => sum + (Number(sizeLine.quantity) || 0), 0) || 1;
+  const rule = shared.rule;
+  const shirtTotal = shared.shirtPrice * qty;
+  if (!rule.count) {
+    return `<p><strong>Cadastro:</strong> camisa ${formatCurrency(shirtTotal)} · sem personalização</p>`;
+  }
+
+  const persTotal = rule.price * qty;
+  const costTotal = rule.cost * qty;
+  const profitTotal = rule.profit * qty;
+  const investorShare = sharedPersonalizationInvestorAmount({
+    personalizationTotal: persTotal,
+    personalizationCostTotal: costTotal,
+  });
+  const storeShare = Math.max(0, Math.round((profitTotal - investorShare) * 100) / 100);
+  const stock = allStockEntries.find((entry) => entry.id === order.stockEntryId) || getSelectedPasteStockEntry();
+  const splitText = stock?.stockOrigin === 'investidor'
+    ? ` · investidor ${formatCurrency(investorShare)} · você ${formatCurrency(storeShare)}`
+    : ' · estoque próprio, a personalização fica com a SHIR7';
+
+  return `<p><strong>Cadastro:</strong> camisa ${formatCurrency(shirtTotal)} · personalização ${formatCurrency(persTotal)} (${rule.count} por peça) · custo ${formatCurrency(costTotal)} · lucro ${formatCurrency(profitTotal)}${splitText}</p>`;
+}
+
 function renderPastePreview(batch) {
   const el = qs('#sales-paste-preview');
   if (!el) return;
+  const shared = readPasteSharedConfig();
 
   if (!batch.orders.length) {
     el.innerHTML = '<p class="text-muted">Cole os pedidos acima para ver o resumo.</p>';
@@ -758,13 +851,21 @@ function renderPastePreview(batch) {
         <p><strong>Pers.:</strong> ${order.isPersonalized ? 'Sim' : 'Não'}
           · <strong>Cupom:</strong> ${formatCouponUsedLabel(order.coupon)}
           · <strong>Frete:</strong> ${formatCurrency(order.freight)}</p>
+        ${renderSharedPasteNote(order, shared)}
         <p class="text-sm text-muted">${sanitizeCouponTextInLine(order.raw)}</p>
         ${errors}
       </div>
     `;
   }).join('');
 
+  const sharedBanner = shared.enabled
+    ? `<p class="sales-paste-preview__summary">${shared.valid
+      ? 'Divisão ligada: o preço colado na linha não entra no cadastro. Vale o valor da camisa e o da personalização preenchidos acima.'
+      : shared.error}</p>`
+    : '';
+
   el.innerHTML = `
+    ${sharedBanner}
     <p class="sales-paste-preview__summary">
       <strong>${batch.valid.length}</strong> pronto(s) ·
       <strong>${batch.invalid.length}</strong> com aviso ·
@@ -871,7 +972,13 @@ async function registerParsedOrder(order) {
     return { success: false, error: stockErrors.join(' ') };
   }
 
-  const lines = buildLinesFromParsedOrder(order, getOrderFallbackUnitPrice(order));
+  const shared = readPasteSharedConfig();
+  if (shared.enabled && !shared.valid) {
+    return { success: false, error: shared.error };
+  }
+
+  const lines = buildLinesFromParsedOrder(order, getOrderFallbackUnitPrice(order), shared);
+  const useSharedPrice = shared.enabled && shared.valid && !order.isSample;
   const unitCost = getStockEntryUnitCost(stockEntry);
   const costBreakdown = getStockEntryCostBreakdown(stockEntry);
   const stockLikeProduct = {
@@ -905,7 +1012,7 @@ async function registerParsedOrder(order) {
     isSample: !!order.isSample,
   });
 
-  const allowBelowMinimum = orderUsesSpreadsheetPrice(order);
+  const allowBelowMinimum = orderUsesSpreadsheetPrice(order) || useSharedPrice;
   const validation = validateQuickSale(
     {
       stockEntryId: order.stockEntryId,
@@ -943,11 +1050,20 @@ async function registerParsedOrder(order) {
     platformCosts: getActivePlatformCosts(),
     defaultPersonalizationCostPerPiece: globalSettings.personalizationCostPerPiece,
     defaultPersonalizationPrice: globalSettings.defaultPersonalizationPrice,
+    ...(useSharedPrice && shared.rule.count > 0
+      ? { personalizationSplit: SHARED_PERSONALIZATION_SPLIT }
+      : {}),
   });
 }
 
 async function registerAllPasteOrders() {
   if (!requirePasteStockSelected()) return;
+
+  const shared = readPasteSharedConfig();
+  if (shared.enabled && !shared.valid) {
+    showToast(shared.error, 'warning');
+    return;
+  }
 
   const initial = previewPasteOrders();
   if (!initial.valid.length) {
@@ -1665,6 +1781,20 @@ function initEvents() {
     const select = event.target.closest('.paste-order-stock');
     if (!select) return;
     onPasteOrderStockChange(Number(select.dataset.orderIndex), select.value);
+  });
+
+  fillSharedPersonalizationOptions();
+  if (!qs('#paste-shirt-price')?.value) {
+    qs('#paste-shirt-price').value = SHARED_PERSONALIZATION_SHIRT_PRICE;
+  }
+  qs('#paste-shared-toggle')?.addEventListener('change', () => {
+    const fields = qs('#paste-shared-fields');
+    if (fields) fields.hidden = !qs('#paste-shared-toggle').checked;
+    previewPasteOrders();
+  });
+  ['#paste-shirt-price', '#paste-pers-price'].forEach((sel) => {
+    qs(sel)?.addEventListener('input', () => previewPasteOrders());
+    qs(sel)?.addEventListener('change', () => previewPasteOrders());
   });
 
   qs('#btn-paste-register-all')?.addEventListener('click', registerAllPasteOrders);

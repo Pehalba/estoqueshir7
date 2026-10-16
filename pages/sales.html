@@ -202,6 +202,25 @@
                   O estoque selecionado vale para <strong>todos</strong> os pedidos da lista.
                 </p>
               </div>
+              <div class="sales-paste__shared">
+                <label class="sales-paste__shared-toggle" for="paste-shared-toggle">
+                  <input type="checkbox" id="paste-shared-toggle">
+                  Dividir personalização com o investidor
+                </label>
+                <p class="form-group__hint">Desligada, a personalização continua 100% com a SHIR7. Ligada, vale só para esta leva: a camisa usa o valor abaixo e o lucro da personalização fica 30% investidor e 70% SHIR7.</p>
+                <div id="paste-shared-fields" class="sales-paste__shared-fields" hidden>
+                  <div class="form-group">
+                    <label class="form-group__label" for="paste-shirt-price">Valor da camisa (R$)</label>
+                    <input class="form-input" id="paste-shirt-price" type="number" min="0.01" step="0.01" value="139.90">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-group__label" for="paste-pers-price">Valor da personalização</label>
+                    <select class="form-input form-select" id="paste-pers-price">
+                      <option value="0">Sem personalização</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
               <div class="form-group">
                 <label class="form-group__label" for="sales-paste-input">Pedidos (um por linha)</label>
                 <textarea class="form-input sales-paste__textarea" id="sales-paste-input" rows="8" placeholder="#1163	28/05/2026	Vermelha	GG	1	Com personalização	Sim	R$ 279,90	R$ 260,31

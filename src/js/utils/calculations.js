@@ -198,6 +198,63 @@ export const DEFAULT_REPASSE_VALUE = 40;
 export const DEFAULT_SALE_PRICE = 229.9;
 
 /**
+ * Personalização compartilhada com o investidor (só pedidos colados com a opção ligada).
+ * Preço ao cliente: 40 + 10 por personalização extra, até 5.
+ * Custo: 20 + 6 por personalização extra.
+ * Lucro: 30% investidor, 70% loja. Vendas sem esta marca continuam com 100% para a loja.
+ */
+export const SHARED_PERSONALIZATION_SPLIT = 'shared-30';
+export const SHARED_PERSONALIZATION_INVESTOR_RATE = 0.3;
+export const SHARED_PERSONALIZATION_SHIRT_PRICE = 139.9;
+export const SHARED_PERSONALIZATION_TABLE = [
+  { count: 1, price: 40, cost: 20 },
+  { count: 2, price: 50, cost: 26 },
+  { count: 3, price: 60, cost: 32 },
+  { count: 4, price: 70, cost: 38 },
+  { count: 5, price: 80, cost: 44 },
+];
+
+function roundMoney(value) {
+  return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+}
+
+export function isSharedPersonalizationSale(sale) {
+  return sale?.personalizationSplit === SHARED_PERSONALIZATION_SPLIT;
+}
+
+/** null quando o valor não está na tabela. R$ 0 = sem personalização. */
+export function resolveSharedPersonalization(price) {
+  const value = roundMoney(price);
+  if (!Number.isFinite(value) || value < 0) return null;
+  if (value === 0) {
+    return { count: 0, price: 0, cost: 0, profit: 0, investorShare: 0, storeShare: 0 };
+  }
+
+  const row = SHARED_PERSONALIZATION_TABLE.find((item) => item.price === value);
+  if (!row) return null;
+
+  const profit = roundMoney(row.price - row.cost);
+  const investorShare = roundMoney(profit * SHARED_PERSONALIZATION_INVESTOR_RATE);
+  const storeShare = roundMoney(profit - investorShare);
+  return { ...row, profit, investorShare, storeShare };
+}
+
+/** 30% do lucro da personalização já totalizado na venda. */
+export function sharedPersonalizationInvestorAmount(financials) {
+  const profit = Math.max(
+    0,
+    (Number(financials?.personalizationTotal) || 0) - (Number(financials?.personalizationCostTotal) || 0)
+  );
+  return roundMoney(profit * SHARED_PERSONALIZATION_INVESTOR_RATE);
+}
+
+export function investorPayoutWithSharedPersonalization(payout, sale, financials) {
+  const base = Number(payout) || 0;
+  if (!isSharedPersonalizationSale(sale)) return base;
+  return roundMoney(base + sharedPersonalizationInvestorAmount(financials));
+}
+
+/**
  * Separa receita de camisa e personalização por linha.
  * Cupom/desconto incide só na camisa; personalização mantém valor cheio.
  * Preço embutido (pers. R$ 0 na linha): unitPrice = total pago; pers. = defaultPersonalizationPrice.
@@ -873,14 +930,18 @@ export function recalculateSaleWithPlatformSettings(sale, settings = {}, investo
 
   let investorPayout = Number(sale.investorPayout) || 0;
   if (sale.stockOrigin === 'investidor' && investor) {
-    investorPayout = calculateInvestorRepasseForSale(investor, {
-      unitCost,
-      capitalUnitCost,
-      quantity: financials.totalQty,
-      financials,
+    investorPayout = investorPayoutWithSharedPersonalization(
+      calculateInvestorRepasseForSale(investor, {
+        unitCost,
+        capitalUnitCost,
+        quantity: financials.totalQty,
+        financials,
+        sale,
+        stockEntry,
+      }),
       sale,
-      stockEntry,
-    });
+      financials
+    );
   }
 
   return {
