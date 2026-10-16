@@ -16,6 +16,7 @@ const PRODUCT_FILTERS = [
   { id: 'br-retro-2002', label: 'Retro 02', tone: 'amarela' },
   { id: 'br-retro-98', label: 'Retro 98', tone: 'amarela' },
   { id: 'br-tor-vermelha', label: 'Vermelha torcedor', tone: 'vermelha' },
+  { id: 'br-jordan-preta', label: 'Jordan preta', tone: 'preta' },
 ];
 
 const PRODUCT_SORT_ORDER = {
@@ -25,6 +26,7 @@ const PRODUCT_SORT_ORDER = {
   'br-retro-98': 3,
   'br-tor-ii': 4,
   'br-tor-vermelha': 5,
+  'br-jordan-preta': 6,
 };
 
 let activeProduct = 'all';
@@ -477,7 +479,8 @@ function renderCard(item) {
     ? `<span class="pers-card__badge pers-card__badge--date">${escapeHtml(formatBatchDate(item.createdAt))}</span>`
     : '';
   const extras = Array.isArray(item.extras) ? item.extras : [];
-  const noteText = String(item.note || item.alert || '').trim();
+  // "Aviso" só para notas manuais (ex.: gola). Artes ficam na seção de extras.
+  const noteText = String(item.note || '').trim();
   const hasExtras = extras.length > 0 || Boolean(item.alertImage);
   const hasAlertBlock = hasExtras || Boolean(noteText);
   const noteBlock = noteText
@@ -501,7 +504,7 @@ function renderCard(item) {
           ${(extras.filter((e) => e.image).length
             ? extras.filter((e) => e.image)
             : item.alertImage
-              ? [{ place: '', label: noteText || item.alert, image: item.alertImage }]
+              ? [{ place: '', label: item.alert || 'Arte', image: item.alertImage }]
               : []
           ).map((extra) => `
             <figure class="pers-card__alert-figure">

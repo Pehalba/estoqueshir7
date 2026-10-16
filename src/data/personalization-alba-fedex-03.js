@@ -13,6 +13,7 @@ const IMG = {
   amarela: '../src/assets/images/products/brasil-home-amarela-jogador-2026.png',
   azulJogador: '../src/assets/images/products/brasil-away-azul-jogador-ii-2026.png',
   azulTorcedor: '../src/assets/images/products/brasil-torcedor-ii-azul-preta-2026.png',
+  jordan: '../src/assets/images/products/brasil-jordan-treino-26-27.png',
   retro2002: '../src/assets/images/products/brasil-retro-2002-penta.png',
   retro98: '../src/assets/images/products/brasil-retro-98-amarela.png',
   vermelha: '../src/assets/images/products/brasil-torcedor-vermelha-copa-2026.png',
@@ -95,6 +96,15 @@ export const PRODUCTS = {
     kitType: 'torcedor',
     fontGuide: createFontGuide('vermelha', 'Vermelha'),
   },
+  'br-jordan-preta': {
+    id: 'br-jordan-preta',
+    label: 'Jordan preta',
+    productName: 'Camisa Torcedor Seleção Brasileira Jordan Copa do mundo treino 26/27 - Preta',
+    imageUrl: IMG.jordan,
+    accent: 'black',
+    kitType: 'torcedor',
+    fontGuide: createFontGuide('jordan-preta', 'Jordan preta'),
+  },
 };
 
 /**
@@ -124,6 +134,7 @@ export const PRODUCTS = {
 
 const ART_AMARELA = '../src/assets/images/personalization/artes/Camisa Jogador Seleção Brasileira Amarela Copa do mundo home I 2026 - 2027';
 const ART_VERMELHA = '../src/assets/images/personalization/artes/Camisa Vermelha Brasil 26-27 — Masculina e Feminina';
+const ART_PRETA = '../src/assets/images/personalization/artes/Camisa Preta Jordan — Seleção Brasileira';
 
 /** @param {string} base @param {string} place @param {string} file */
 function art(base, place, file) {
@@ -370,6 +381,408 @@ export const QUEUES = [
             place: 'Manga direita',
             label: 'God Loves Brazil',
             image: art(ART_AMARELA, 'Manga direita', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'pers-2026-10-15',
+    date: '2026-10-15',
+    title: 'Personalização — 15/10/2026',
+    items: [
+      // #1938 — vermelha · nome/número
+      { orderId: '#1938', size: 'M', sizeLabel: 'M (M)', name: 'CARLOS', number: '13', productId: 'br-tor-vermelha' },
+
+      // #1940 — amarela · nome/número
+      { orderId: '#1940', size: 'M', sizeLabel: 'M (M)', name: 'Batata', number: '10', productId: 'br-home-amarela' },
+
+      // #1941 — amarela · nome/número
+      { orderId: '#1941', size: 'XG', sizeLabel: 'XGG (XG)', name: 'Franzen L.', number: '22', productId: 'br-home-amarela' },
+
+      // #1943 — 3 peças amarela (linha com qtd 2 + linha com qtd 1)
+      { orderId: '#1943', size: 'G', sizeLabel: 'G (L)', name: 'Jeferson C. Jesus', number: '22', productId: 'br-home-amarela' },
+      { orderId: '#1943-2', size: 'G', sizeLabel: 'G (L)', name: 'Luan', number: '22', productId: 'br-home-amarela' },
+      { orderId: '#1943-3', size: 'GG', sizeLabel: 'GG (XL)', name: 'Beatriz S.N.', number: '22', productId: 'br-home-amarela' },
+
+      // #1945 — amarela · Bolsonaro 22 arte 1 + extras
+      {
+        orderId: '#1945',
+        size: '3XL',
+        sizeLabel: '3XL',
+        name: 'BRASIL',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #1946 — amarela · LULA LADRÃO + artes
+      {
+        orderId: '#1946',
+        size: '3XL',
+        sizeLabel: '3XL',
+        name: 'LULA LADRÃO',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1947 — amarela · Eduardo 22 + peito
+      {
+        orderId: '#1947',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Eduardo',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1948 — amarela · Victor + artes
+      {
+        orderId: '#1948',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Victor',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga direita', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #1949 — amarela · Thaynná + artes
+      {
+        orderId: '#1949',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Thaynná',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1950 — amarela · Quimelli
+      {
+        orderId: '#1950',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'Quimelli',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1951 — 3 peças amarela (Antunes)
+      {
+        orderId: '#1951',
+        size: 'XG',
+        sizeLabel: 'XGG (XG)',
+        name: 'Antunes',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+        ],
+      },
+      {
+        orderId: '#1951-2',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Antunes',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 2',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 2.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+      {
+        orderId: '#1951-3',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'Antunes',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 2',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 2.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1952 — amarela · 5 personalizações
+      {
+        orderId: '#1952',
+        size: '3XL',
+        sizeLabel: '3XL',
+        name: 'BOLSONARO',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: '2222',
+            image: art(ART_AMARELA, 'Frente — peito', '2222.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga esquerda', 'Nikolas.webp'),
+          },
+        ],
+      },
+
+      // #1953 — amarela · Bolsonaro 22 arte 3
+      {
+        orderId: '#1953',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'LIMA',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+        ],
+      },
+
+      // #1954 — Jordan preta · Bolsonaro 22 arte 3
+      {
+        orderId: '#1954',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Lima',
+        number: '22',
+        productId: 'br-jordan-preta',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_PRETA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+        ],
+      },
+
+      // #1956 — amarela · nome/número
+      { orderId: '#1956', size: 'P', sizeLabel: 'P (S)', name: 'João Leonardo', number: '31', productId: 'br-home-amarela' },
+
+      // #1959 — amarela · Bolsonaro 22 arte 1 + cintura + peito
+      {
+        orderId: '#1959',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Duda',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1960 — amarela · Bolsonaro 22 arte 2 + peito
+      {
+        orderId: '#1960',
+        size: 'XG',
+        sizeLabel: 'XGG (XG)',
+        name: 'BOLSONARO',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 2',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 2.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1962 — amarela · só artes (sem nome/número)
+      {
+        orderId: '#1962',
+        size: '3XL',
+        sizeLabel: '3XL',
+        name: '',
+        number: '',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Acorda Brasil',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Acorda Brasil.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #1963 — amarela · nome/número
+      { orderId: '#1963', size: 'XG', sizeLabel: 'XGG (XG)', name: 'Rafael blau', number: '10', productId: 'br-home-amarela' },
+
+      // #1957 — amarela · nome/número
+      { orderId: '#1957', size: 'G', sizeLabel: 'G (L)', name: 'Kaká', number: '22', productId: 'br-home-amarela' },
+
+      // #1964 — amarela · Bolsonaro 22 arte 1
+      {
+        orderId: '#1964',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Carlos',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
           },
         ],
       },
