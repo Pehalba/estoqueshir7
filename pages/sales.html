@@ -202,29 +202,11 @@
                   O estoque selecionado vale para <strong>todos</strong> os pedidos da lista.
                 </p>
               </div>
-              <div class="sales-paste__shared">
-                <label class="sales-paste__shared-toggle" for="paste-shared-toggle">
-                  <input type="checkbox" id="paste-shared-toggle" checked>
-                  Dividir personalização com o investidor
-                </label>
-                <p class="form-group__hint">Escreva na linha a personalização e o preço da camisa. O padrão abaixo só entra na linha que não trouxer esses valores.</p>
-                <div id="paste-shared-fields" class="sales-paste__shared-fields">
-                  <div class="form-group">
-                    <label class="form-group__label" for="paste-shirt-price">Valor padrão da camisa (R$)</label>
-                    <input class="form-input" id="paste-shirt-price" type="number" min="0.01" step="0.01" value="139.90">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-group__label" for="paste-pers-price">Personalização padrão</label>
-                    <select class="form-input form-select" id="paste-pers-price">
-                      <option value="0">Sem personalização</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
               <div class="form-group">
                 <label class="form-group__label" for="sales-paste-input">Pedidos (um por linha)</label>
-                <textarea class="form-input sales-paste__textarea" id="sales-paste-input" rows="8" placeholder="#1957 Amarela 1 G 1 personalização camisa 139,90 frete 0
-#1958 Amarela 1 G 3 personalizações camisa 100 frete 0"></textarea>
+                <textarea class="form-input sales-paste__textarea" id="sales-paste-input" rows="8" placeholder="#1957 Amarela 1 G 1 personalização camisa 139,90 frete 0 dividir
+#1958 Amarela 1 G 3 personalizações camisa 100 frete 0 dividir"></textarea>
+                <p class="form-group__hint">A palavra <strong>dividir</strong> reparte o lucro da personalização com o investidor. Sem ela, a personalização continua 100% com a SHIR7.</p>
               </div>
               <div class="sales-paste__actions">
                 <button type="button" class="btn btn--primary" id="btn-paste-register-all">Cadastrar todos</button>

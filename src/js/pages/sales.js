@@ -23,7 +23,6 @@ import {
   DEFAULT_SALE_PRICE,
   SHARED_PERSONALIZATION_TABLE,
   SHARED_PERSONALIZATION_SPLIT,
-  SHARED_PERSONALIZATION_SHIRT_PRICE,
   resolveSharedPersonalization,
   sharedPersonalizationInvestorAmount,
 } from '../utils/calculations.js';
@@ -55,7 +54,6 @@ let globalSettings = { ...DEFAULT_SETTINGS };
 let couponsDraft = [];
 let persTypesDraft = [];
 let pasteStockOverrides = {};
-let pastePricingOverrides = {};
 let lastPasteOrders = [];
 
 const saleForm = qs('#sale-form');
@@ -641,32 +639,6 @@ function getOrderFallbackUnitPrice(order) {
   return entry?.suggestedSalePrice || DEFAULT_SALE_PRICE;
 }
 
-function sharedPersonalizationOptionsHtml(selectedPrice) {
-  const selected = String(selectedPrice ?? '0');
-  const none = `<option value="0"${selected === '0' ? ' selected' : ''}>Sem personalização</option>`;
-  const rows = SHARED_PERSONALIZATION_TABLE.map((row) => {
-    const rule = resolveSharedPersonalization(row.price);
-    const isSelected = selected === String(row.price) ? ' selected' : '';
-    return `<option value="${row.price}"${isSelected}>${row.count} — ${formatCurrency(row.price)} · custo ${formatCurrency(row.cost)} · lucro ${formatCurrency(rule.profit)}</option>`;
-  }).join('');
-  return none + rows;
-}
-
-function fillSharedPersonalizationOptions() {
-  const select = qs('#paste-pers-price');
-  if (!select || select.dataset.ready === '1') return;
-  const current = select.value || '0';
-  select.innerHTML = sharedPersonalizationOptionsHtml(current);
-  select.dataset.ready = '1';
-}
-
-function pricingInputValue(value) {
-  const raw = String(value ?? '').trim().replace(',', '.');
-  if (!raw) return '';
-  const num = Number(raw);
-  return Number.isFinite(num) ? String(num) : '';
-}
-
 function persPriceFromTextNumber(rawNumber) {
   const n = Number(String(rawNumber ?? '').replace(',', '.'));
   if (!Number.isFinite(n) || n < 0) return null;
@@ -692,42 +664,25 @@ function extractPasteLinePricing(raw) {
   return {
     persPrice,
     shirtPrice: Number.isFinite(shirtPrice) && shirtPrice > 0 ? shirtPrice : null,
-  };
-}
-
-function orderPricingValues(index) {
-  const fromLine = extractPasteLinePricing(lastPasteOrders[index]?.raw || '');
-  const override = pastePricingOverrides[index];
-  return {
-    shirtPrice: fromLine.shirtPrice != null
-      ? fromLine.shirtPrice
-      : (override?.shirtPrice != null
-        ? override.shirtPrice
-        : (qs('#paste-shirt-price')?.value || SHARED_PERSONALIZATION_SHIRT_PRICE)),
-    persPrice: fromLine.persPrice != null
-      ? fromLine.persPrice
-      : (override?.persPrice != null
-        ? override.persPrice
-        : (qs('#paste-pers-price')?.value || '0')),
+    divide: /\bdivid(?:ir|e)\b/i.test(text),
   };
 }
 
 function readOrderSharedConfig(index) {
-  const enabled = !!qs('#paste-shared-toggle')?.checked;
-  if (!enabled) return { enabled: false, valid: true, rule: null, shirtPrice: 0 };
+  const fromLine = extractPasteLinePricing(lastPasteOrders[index]?.raw || '');
+  if (!fromLine.divide) return { enabled: false, valid: true, rule: null, shirtPrice: 0 };
 
-  const values = orderPricingValues(index);
-  const shirtPrice = Number(values.shirtPrice);
-  const rule = resolveSharedPersonalization(values.persPrice);
+  const shirtPrice = Number(fromLine.shirtPrice);
+  const rule = fromLine.persPrice == null ? null : resolveSharedPersonalization(fromLine.persPrice);
 
   if (!(shirtPrice > 0)) {
-    return { enabled: true, valid: false, error: 'Informe o valor da camisa deste pedido.', shirtPrice, rule: null };
+    return { enabled: true, valid: false, error: 'Escreva o preço da camisa nesta linha. Ex.: camisa 139,90', shirtPrice, rule: null };
   }
   if (!rule) {
     return {
       enabled: true,
       valid: false,
-      error: 'Escolha a personalização deste pedido.',
+      error: 'Escreva a personalização nesta linha. Ex.: 1 personalização',
       shirtPrice,
       rule: null,
     };
@@ -737,7 +692,6 @@ function readOrderSharedConfig(index) {
 }
 
 function applyPastePricingErrors(batch) {
-  if (!qs('#paste-shared-toggle')?.checked) return batch;
   const orders = batch.orders.map((order, index) => {
     const shared = readOrderSharedConfig(index);
     if (order.isSample || shared.valid) return order;
@@ -892,30 +846,15 @@ function renderSharedPasteNote(order, shared) {
 }
 
 function renderPasteOrderPricing(order, index) {
-  if (!qs('#paste-shared-toggle')?.checked || order.isSample) return '';
-  const values = orderPricingValues(index);
   const shared = readOrderSharedConfig(index);
-  return `
-    <div class="sales-paste-preview__pricing">
-      <div class="form-group">
-        <label class="form-group__label" for="paste-order-shirt-${index}">Valor da camisa (R$)</label>
-        <input class="form-input paste-order-shirt" id="paste-order-shirt-${index}" data-order-index="${index}" type="number" min="0.01" step="0.01" value="${pricingInputValue(values.shirtPrice)}">
-      </div>
-      <div class="form-group">
-        <label class="form-group__label" for="paste-order-pers-${index}">Personalização</label>
-        <select class="form-input form-select paste-order-pers" id="paste-order-pers-${index}" data-order-index="${index}">
-          ${sharedPersonalizationOptionsHtml(values.persPrice)}
-        </select>
-      </div>
-    </div>
-    <div id="paste-shared-note-${index}">${renderSharedPasteNote(order, shared)}</div>
-  `;
+  if (!shared.enabled || order.isSample) return '';
+  return renderSharedPasteNote(order, shared);
 }
 
 function renderPastePreview(batch) {
   const el = qs('#sales-paste-preview');
   if (!el) return;
-  const sharedEnabled = !!qs('#paste-shared-toggle')?.checked;
+  const sharedEnabled = batch.orders.some((_, index) => readOrderSharedConfig(index).enabled);
 
   if (!batch.orders.length) {
     el.innerHTML = '<p class="text-muted">Cole os pedidos acima para ver o resumo.</p>';
@@ -960,7 +899,7 @@ function renderPastePreview(batch) {
   }).join('');
 
   const sharedBanner = sharedEnabled
-    ? '<p class="sales-paste-preview__summary">Cada linha pode trazer a personalização e o preço da camisa. O padrão de cima vale só para a linha que não trouxer esses valores.</p>'
+    ? '<p class="sales-paste-preview__summary">Linhas com dividir usam o preço da camisa e a personalização escritos no texto.</p>'
     : '';
 
   el.innerHTML = `
@@ -1007,18 +946,6 @@ function previewPasteOrders() {
   batch = applyPastePricingErrors(batch);
   renderPastePreview(batch);
   return batch;
-}
-
-function updatePastePricingNote(index) {
-  const note = qs(`#paste-shared-note-${index}`);
-  const card = note?.closest('.sales-paste-preview__item');
-  if (!note || !card) return;
-  const order = {
-    isSample: card.dataset.sample === '1',
-    stockEntryId: card.dataset.stockId || '',
-    sizes: [{ quantity: Number(card.dataset.qty) || 1 }],
-  };
-  note.innerHTML = renderSharedPasteNote(order, readOrderSharedConfig(index));
 }
 
 function onPasteOrderStockChange(index, stockEntryId) {
@@ -1221,7 +1148,6 @@ async function registerAllPasteOrders() {
     if (!failures.length) {
       qs('#sales-paste-input').value = '';
       pasteStockOverrides = {};
-      pastePricingOverrides = {};
       renderPastePreview({ orders: [], valid: [], invalid: [], total: 0 });
     }
     await loadData({ freshSales: true });
@@ -1886,57 +1812,14 @@ function initEvents() {
   qs('#btn-paste-apply-stock-all')?.addEventListener('click', applyPasteStockToAll);
   qs('#btn-paste-auto-match')?.addEventListener('click', resetPasteStockMatching);
 
-  qs('#sales-paste-preview')?.addEventListener('input', (event) => {
-    const shirt = event.target.closest('.paste-order-shirt');
-    if (!shirt) return;
-    const index = Number(shirt.dataset.orderIndex);
-    const current = orderPricingValues(index);
-    pastePricingOverrides[index] = {
-      shirtPrice: shirt.value,
-      persPrice: current.persPrice,
-    };
-    updatePastePricingNote(index);
-  });
-
   qs('#sales-paste-preview')?.addEventListener('change', (event) => {
-    const pers = event.target.closest('.paste-order-pers');
-    if (pers) {
-      const index = Number(pers.dataset.orderIndex);
-      const current = orderPricingValues(index);
-      pastePricingOverrides[index] = {
-        shirtPrice: current.shirtPrice,
-        persPrice: pers.value,
-      };
-      previewPasteOrders();
-      return;
-    }
-    const shirt = event.target.closest('.paste-order-shirt');
-    if (shirt) {
-      previewPasteOrders();
-      return;
-    }
     const select = event.target.closest('.paste-order-stock');
     if (!select) return;
     onPasteOrderStockChange(Number(select.dataset.orderIndex), select.value);
   });
 
-  fillSharedPersonalizationOptions();
-  if (!qs('#paste-shirt-price')?.value) {
-    qs('#paste-shirt-price').value = SHARED_PERSONALIZATION_SHIRT_PRICE;
-  }
-  qs('#paste-shared-toggle')?.addEventListener('change', () => {
-    const fields = qs('#paste-shared-fields');
-    if (fields) fields.hidden = !qs('#paste-shared-toggle').checked;
-    previewPasteOrders();
-  });
-  ['#paste-shirt-price', '#paste-pers-price'].forEach((sel) => {
-    qs(sel)?.addEventListener('input', () => previewPasteOrders());
-    qs(sel)?.addEventListener('change', () => previewPasteOrders());
-  });
-
   qs('#btn-paste-register-all')?.addEventListener('click', registerAllPasteOrders);
   qs('#sales-paste-input')?.addEventListener('input', () => {
-    pastePricingOverrides = {};
     if (qs('#sales-paste-input')?.value?.trim()) {
       previewPasteOrders();
     }
