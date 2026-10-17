@@ -4,6 +4,7 @@
  *
  * Formato:
  * { orderId: '#1234', size: 'G', sizeLabel: 'G (L)', name: 'NOME', number: '10', productId: 'br-home-amarela' }
+ * size XG → sizeLabel: 'XGG (XG / 2XL / XXL)'
  *
  * productId opcional se a fila tiver productId padrão.
  * Pedidos com 2 peças: #1234 e #1234-2
@@ -269,7 +270,7 @@ export const QUEUES = [
       {
         orderId: '#1924',
         size: 'XG',
-        sizeLabel: 'XGG (XG)',
+        sizeLabel: 'XGG (XG / 2XL / XXL)',
         name: 'Bolsonaro',
         number: '',
         productId: 'br-home-amarela',
@@ -296,7 +297,7 @@ export const QUEUES = [
       {
         orderId: '#1921',
         size: 'XG',
-        sizeLabel: 'XGG (XG)',
+        sizeLabel: 'XGG (XG / 2XL / XXL)',
         name: 'Lula',
         number: '13',
         productId: 'br-tor-vermelha',
@@ -372,7 +373,7 @@ export const QUEUES = [
       {
         orderId: '#1929',
         size: 'XG',
-        sizeLabel: 'XGG (XG)',
+        sizeLabel: 'XGG (XG / 2XL / XXL)',
         name: 'Diogo',
         number: '22',
         productId: 'br-home-amarela',
@@ -398,7 +399,7 @@ export const QUEUES = [
       { orderId: '#1940', size: 'M', sizeLabel: 'M (M)', name: 'Batata', number: '10', productId: 'br-home-amarela' },
 
       // #1941 — amarela · nome/número
-      { orderId: '#1941', size: 'XG', sizeLabel: 'XGG (XG)', name: 'Franzen L.', number: '22', productId: 'br-home-amarela' },
+      { orderId: '#1941', size: 'XG', sizeLabel: 'XGG (XG / 2XL / XXL)', name: 'Franzen L.', number: '22', productId: 'br-home-amarela' },
 
       // #1943 — 3 peças amarela (linha com qtd 2 + linha com qtd 1)
       { orderId: '#1943', size: 'G', sizeLabel: 'G (L)', name: 'Jeferson C. Jesus', number: '22', productId: 'br-home-amarela' },
@@ -551,7 +552,7 @@ export const QUEUES = [
       {
         orderId: '#1951',
         size: 'XG',
-        sizeLabel: 'XGG (XG)',
+        sizeLabel: 'XGG (XG / 2XL / XXL)',
         name: 'Antunes',
         number: '22',
         productId: 'br-home-amarela',
@@ -714,7 +715,7 @@ export const QUEUES = [
       {
         orderId: '#1960',
         size: 'XG',
-        sizeLabel: 'XGG (XG)',
+        sizeLabel: 'XGG (XG / 2XL / XXL)',
         name: 'BOLSONARO',
         number: '22',
         productId: 'br-home-amarela',
@@ -765,7 +766,7 @@ export const QUEUES = [
       },
 
       // #1963 — amarela · nome/número
-      { orderId: '#1963', size: 'XG', sizeLabel: 'XGG (XG)', name: 'Rafael blau', number: '10', productId: 'br-home-amarela' },
+      { orderId: '#1963', size: 'XG', sizeLabel: 'XGG (XG / 2XL / XXL)', name: 'Rafael blau', number: '10', productId: 'br-home-amarela' },
 
       // #1957 — amarela · nome/número
       { orderId: '#1957', size: 'G', sizeLabel: 'G (L)', name: 'Kaká', number: '22', productId: 'br-home-amarela' },

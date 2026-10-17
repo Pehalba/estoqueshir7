@@ -1,4 +1,25 @@
-export const SIZE_ORDER = ['P', 'M', 'G', 'GG', 'XG'];
+export const SIZE_ORDER = ['P', 'M', 'G', 'GG', 'XG', '3XL'];
+
+/** Rótulos exibidos (variantes internacionais / loja). */
+export const SIZE_DISPLAY = {
+  P: 'P (S)',
+  M: 'M (M)',
+  G: 'G (L)',
+  GG: 'GG (XL)',
+  XG: 'XGG (XG / 2XL / XXL)',
+  '3XL': '3XL',
+};
+
+export function displaySizeLabel(size) {
+  return SIZE_DISPLAY[size] || size;
+}
+
+/** Normaliza XGG / 2XL / XXL → XG. */
+export function normalizeSize(value) {
+  const v = String(value || '').trim().toUpperCase();
+  if (v === 'XGG' || v === '2XL' || v === 'XXL') return 'XG';
+  return v;
+}
 
 export function sortSizes(sizes) {
   return [...(sizes || [])].sort((a, b) => {

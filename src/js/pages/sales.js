@@ -845,6 +845,12 @@ function renderSharedPasteNote(order, shared) {
   return `<p><strong>Cadastro:</strong> camisa ${formatCurrency(shirtTotal)} · personalização ${formatCurrency(persTotal)} (${rule.count} por peça) · custo ${formatCurrency(costTotal)} · lucro ${formatCurrency(profitTotal)}${splitText}</p>`;
 }
 
+function pasteOrderShowsPersonalized(order, index) {
+  const shared = readOrderSharedConfig(index);
+  if (shared.enabled && shared.valid) return shared.rule.count > 0;
+  return !!order.isPersonalized;
+}
+
 function renderPasteOrderPricing(order, index) {
   const shared = readOrderSharedConfig(index);
   if (!shared.enabled || order.isSample) return '';
@@ -888,7 +894,7 @@ function renderPastePreview(batch) {
         ${order.splitFromQuantity > 1 ? `<p class="text-sm text-muted">Gerado da qtd ${order.splitFromQuantity} na planilha (pedido ${order.splitPart}/${order.splitFromQuantity})</p>` : ''}
         ${order.isSample ? '<p><strong>Faturamento:</strong> <span class="badge badge--neutral">Amostra</span> R$ 0,00</p>' : ''}
         ${!order.isSample && order.unitPrice > 0 ? `<p><strong>Faturamento:</strong> ${formatCurrency(order.unitPrice)}${order.listPrice > order.unitPrice ? ` <span class="text-muted">(lista ${formatCurrency(order.listPrice)})</span>` : ''}</p>` : ''}
-        <p><strong>Pers.:</strong> ${order.isPersonalized ? 'Sim' : 'Não'}
+        <p><strong>Pers.:</strong> ${pasteOrderShowsPersonalized(order, index) ? 'Sim' : 'Não'}
           · <strong>Cupom:</strong> ${formatCouponUsedLabel(order.coupon)}
           · <strong>Frete:</strong> ${formatCurrency(order.freight)}</p>
         ${renderPasteOrderPricing(order, index)}

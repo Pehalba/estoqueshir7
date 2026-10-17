@@ -4,8 +4,8 @@ import {
   formatBatchDate,
   listBatchDates,
 } from '../../data/personalization-alba-fedex-03.js';
+import { SIZE_ORDER, displaySizeLabel } from '../utils/sizes.js';
 
-const SIZE_ORDER = ['P', 'M', 'G', 'GG', 'XG'];
 const STORAGE_KEY = 'shir7-pers-done';
 const BATCH_DATES = listBatchDates();
 const PRODUCT_FILTERS = [
@@ -31,6 +31,8 @@ const PRODUCT_SORT_ORDER = {
 
 let activeProduct = 'all';
 let activeSize = 'all';
+/** Quantidade de peças do pedido: 'all' | '1' | '2' | '3' */
+let activeUnits = 'all';
 let activeStatus = 'pending';
 /** Data de cadastro ativa (YYYY-MM-DD) ou 'all'. Padrão: lote mais recente. */
 let activeDate = BATCH_DATES[0] || 'all';
@@ -139,6 +141,24 @@ function parseOrderSortKey(orderId) {
   };
 }
 
+/** Base do pedido: #1951-2 → 1951 */
+function baseOrderId(orderId) {
+  const parsed = parseOrderSortKey(orderId);
+  if (parsed.n !== Number.MAX_SAFE_INTEGER) return String(parsed.n);
+  return String(orderId ?? '').replace(/^#/, '').trim().toLowerCase();
+}
+
+/** Conta peças por pedido no escopo da data (ignora placeholder). */
+function buildOrderUnitCounts(items) {
+  const counts = new Map();
+  for (const item of items) {
+    if (item.placeholder) continue;
+    const key = baseOrderId(item.orderId);
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return counts;
+}
+
 /** Pedido mais antigo → mais novo; depois peça (-2); depois desabilitados. */
 function sortItemsForDisplay(items) {
   return [...items].sort((a, b) => {
@@ -180,11 +200,20 @@ function getVisibleItems() {
 
 function filterItems() {
   const q = searchQuery.trim().toLowerCase();
+  const unitCounts = activeUnits === 'all'
+    ? null
+    : buildOrderUnitCounts(getItemsByDate());
+  const wantedUnits = activeUnits === 'all' ? null : Number(activeUnits);
+
   return sortItemsForDisplay(getVisibleItems().filter((item) => {
     const done = isDone(item);
     if (activeStatus === 'pending' && done) return false;
     if (activeStatus === 'done' && !done) return false;
     if (activeSize !== 'all' && item.size !== activeSize) return false;
+    if (wantedUnits != null) {
+      const units = unitCounts.get(baseOrderId(item.orderId)) || 0;
+      if (units !== wantedUnits) return false;
+    }
     if (!q) return true;
     return (
       item.orderId.toLowerCase().includes(q)
@@ -243,9 +272,8 @@ function getSummarySizes(groups) {
   });
 }
 
-function sizeLabelFor(group, size) {
-  const sample = group.items.find((item) => item.size === size);
-  return sample?.sizeLabel?.split(' ')[0] || size;
+function sizeLabelFor(_group, size) {
+  return displaySizeLabel(size);
 }
 
 function renderSummaryMatrix(groups, sizes) {
@@ -319,7 +347,14 @@ function renderSummaryDetails(groups) {
 
   const cards = groups.map((group) => {
     const sizeRows = Object.entries(group.sizes)
-      .sort(([a], [b]) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b))
+      .sort(([a], [b]) => {
+        const idxA = SIZE_ORDER.indexOf(a);
+        const idxB = SIZE_ORDER.indexOf(b);
+        if (idxA === -1 && idxB === -1) return a.localeCompare(b);
+        if (idxA === -1) return 1;
+        if (idxB === -1) return -1;
+        return idxA - idxB;
+      })
       .map(([size, count]) => {
         const orders = group.items
           .filter((item) => item.size === size)
@@ -611,10 +646,12 @@ function renderDateFilters() {
       activeDate = el.dataset.date || 'all';
       activeProduct = 'all';
       activeSize = 'all';
+      activeUnits = 'all';
       updateSubtitle();
       renderDateFilters();
       renderProductFilters();
       renderSizeFilters();
+      renderUnitsFilters();
       renderStats();
       if (activeTab === 'summary') renderSummary();
       else renderGrid();
@@ -661,18 +698,23 @@ function renderStatusFilters() {
 
 function renderSizeFilters() {
   const scope = getVisibleItems().filter((i) => i.size);
-  const sizesInScope = [...new Set(scope.map((i) => i.size))].sort(
-    (a, b) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b),
-  );
+  const sizesInScope = [...new Set(scope.map((i) => i.size))].sort((a, b) => {
+    const idxA = SIZE_ORDER.indexOf(a);
+    const idxB = SIZE_ORDER.indexOf(b);
+    if (idxA === -1 && idxB === -1) return a.localeCompare(b);
+    if (idxA === -1) return 1;
+    if (idxB === -1) return -1;
+    return idxA - idxB;
+  });
 
   renderPillGroup(
     'pers-size-filters',
     [
       { id: 'all', label: 'Todos' },
-      ...sizesInScope.map((size) => {
-        const sample = scope.find((i) => i.size === size);
-        return { id: size, label: sample?.sizeLabel?.split(' ')[0] || size };
-      }),
+      ...sizesInScope.map((size) => ({
+        id: size,
+        label: size === 'XG' ? 'XG / XGG' : size,
+      })),
     ],
     activeSize,
     'size',
@@ -682,6 +724,28 @@ function renderSizeFilters() {
     el.addEventListener('click', () => {
       activeSize = el.dataset.size || 'all';
       renderSizeFilters();
+      renderGrid();
+    });
+  });
+}
+
+function renderUnitsFilters() {
+  renderPillGroup(
+    'pers-units-filters',
+    [
+      { id: 'all', label: 'Todos' },
+      { id: '1', label: '1 unidade' },
+      { id: '2', label: '2 unidades' },
+      { id: '3', label: '3 unidades' },
+    ],
+    activeUnits,
+    'units',
+  );
+
+  document.getElementById('pers-units-filters')?.querySelectorAll('[data-units]').forEach((el) => {
+    el.addEventListener('click', () => {
+      activeUnits = el.dataset.units || 'all';
+      renderUnitsFilters();
       renderGrid();
     });
   });
@@ -1002,6 +1066,7 @@ function init() {
   renderProductFilters();
   renderStatusFilters();
   renderSizeFilters();
+  renderUnitsFilters();
   renderStats();
   setActiveTab('queue');
 }

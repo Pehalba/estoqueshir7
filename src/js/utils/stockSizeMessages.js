@@ -1,9 +1,8 @@
 import { availableQty } from './calculations.js';
-import { SIZE_ORDER } from './sizes.js';
+import { SIZE_ORDER, normalizeSize } from './sizes.js';
 
 export function normalizeStockSize(size) {
-  const value = String(size || '').trim().toUpperCase();
-  return value === 'XGG' ? 'XG' : value;
+  return normalizeSize(size);
 }
 
 /** Tamanhos cadastrados no lote, ordenados (P → XG). */

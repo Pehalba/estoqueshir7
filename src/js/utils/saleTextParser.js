@@ -1,7 +1,7 @@
 import { parseSizesQuickInput } from './validators.js';
 import { formatMissingSizeInStockError } from './stockSizeMessages.js';
 
-const SIZE_TOKEN = /(\d+)\s*([PXMG]{1,2}|GG|XG)\b/gi;
+const SIZE_TOKEN = /(\d+)\s*(2XL|XXL|XGG|[PXMG]{1,2}|GG|XG)\b/gi;
 
 export function normalizeSaleText(text) {
   return String(text || '')
@@ -169,23 +169,23 @@ export function extractSizes(text) {
   const regex = new RegExp(SIZE_TOKEN.source, SIZE_TOKEN.flags);
   while ((match = regex.exec(text)) !== null) {
     results.push({
-      size: match[2].toUpperCase(),
+      size: normalizeOrderSizeLocal(match[2]),
       quantity: Number(match[1]),
     });
   }
 
   if (!results.length) {
     const trimmed = String(text || '').trim();
-    if (/^([PXMG]{1,2}|GG|XG)$/i.test(trimmed)) {
-      results.push({ size: trimmed.toUpperCase(), quantity: 1 });
+    if (/^(2XL|XXL|XGG|[PXMG]{1,2}|GG|XG)$/i.test(trimmed)) {
+      results.push({ size: normalizeOrderSizeLocal(trimmed), quantity: 1 });
       return results;
     }
 
-    const single = String(text || '').match(/\btamanho\s+([PXMG]{1,2}|GG|XG)\b/i)
-      || String(text || '').match(/\b(?:tam\.?|tamanho)\s*([PXMG]{1,2}|GG|XG)\b/i)
-      || String(text || '').match(/\b([PXMG]{1,2}|GG|XG)\b(?=\s*(?:sem|com|cupom|frete|$))/i);
+    const single = String(text || '').match(/\btamanho\s+(2XL|XXL|XGG|[PXMG]{1,2}|GG|XG)\b/i)
+      || String(text || '').match(/\b(?:tam\.?|tamanho)\s*(2XL|XXL|XGG|[PXMG]{1,2}|GG|XG)\b/i)
+      || String(text || '').match(/\b(2XL|XXL|XGG|[PXMG]{1,2}|GG|XG)\b(?=\s*(?:sem|com|cupom|frete|$))/i);
     if (single) {
-      results.push({ size: single[1].toUpperCase(), quantity: 1 });
+      results.push({ size: normalizeOrderSizeLocal(single[1]), quantity: 1 });
     }
   }
 
@@ -220,7 +220,7 @@ function isStructuredHeaderRow(cols) {
   );
 }
 
-const SIZE_ONLY = /^(PP|P|M|G|GG|XG|XGG)$/i;
+const SIZE_ONLY = /^(PP|P|M|G|GG|XG|XGG|2XL|XXL)$/i;
 
 const COMPACT_PERS_MARKERS = /^(cp|sp|c\s*p|com\s*pers?|pers?|personalizacao|personalização)$/i;
 
@@ -371,7 +371,7 @@ export function parseMoneyValue(text) {
 
 function parseSizeOnly(sizeText) {
   const trimmed = String(sizeText || '').trim();
-  if (/^XGG$/i.test(trimmed)) return 'XG';
+  if (/^(XGG|2XL|XXL)$/i.test(trimmed)) return 'XG';
   if (SIZE_ONLY.test(trimmed)) {
     return trimmed.toUpperCase();
   }
@@ -553,7 +553,7 @@ function resolveStockEntry(context, matchText) {
 
 function normalizeOrderSizeLocal(size) {
   const value = String(size || '').trim().toUpperCase();
-  if (value === 'XGG') return 'XG';
+  if (value === 'XGG' || value === '2XL' || value === 'XXL') return 'XG';
   return value;
 }
 

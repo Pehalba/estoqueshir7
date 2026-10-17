@@ -34,7 +34,7 @@ import {
 } from '../utils/calculations.js';
 import { validateProduct, validateStockEntry, parseSizesQuickInput } from '../utils/validators.js';
 import { formatCurrency } from '../utils/formatCurrency.js';
-import { SIZE_ORDER, sortSizes } from '../utils/sizes.js';
+import { SIZE_ORDER, sortSizes, displaySizeLabel } from '../utils/sizes.js';
 import {
   qs,
   qsa,
@@ -81,7 +81,7 @@ const stockFormErrors = qs('#stock-form-errors');
 
 function sizeSelectHtml(selected = '') {
   const options = SIZE_ORDER.map(
-    (s) => `<option value="${s}" ${s === selected ? 'selected' : ''}>${s}</option>`
+    (s) => `<option value="${s}" ${s === selected ? 'selected' : ''}>${displaySizeLabel(s)}</option>`
   ).join('');
   return `<option value="">Tam.</option>${options}`;
 }
