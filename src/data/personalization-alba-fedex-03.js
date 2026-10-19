@@ -134,6 +134,7 @@ export const PRODUCTS = {
  */
 
 const ART_AMARELA = '../src/assets/images/personalization/artes/Camisa Jogador Seleção Brasileira Amarela Copa do mundo home I 2026 - 2027';
+const ART_AZUL = '../src/assets/images/personalization/artes/Camisa Azul Jogador - Torcedor — Seleção Brasileira';
 const ART_VERMELHA = '../src/assets/images/personalization/artes/Camisa Vermelha Brasil 26-27 — Masculina e Feminina';
 const ART_PRETA = '../src/assets/images/personalization/artes/Camisa Preta Jordan — Seleção Brasileira';
 
@@ -784,6 +785,1204 @@ export const QUEUES = [
             place: 'Costas',
             label: 'Bolsonaro 22 arte 1',
             image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'pers-2026-10-17',
+    date: '2026-10-17',
+    title: 'Personalização — 17/10/2026',
+    items: [
+      // #1966 — amarela · Bolsonaro 22 arte 1
+      {
+        orderId: '#1966',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Bolsonaro',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1968 — 2 peças amarela (Jakson + Jeane)
+      {
+        orderId: '#1968',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'Jakson',
+        number: '10',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Neymar arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Neymar arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+      {
+        orderId: '#1968-2',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Jeane',
+        number: '10',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Neymar arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Neymar arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1969 — amarela · Bolsonaro 22 arte 3 + manga
+      {
+        orderId: '#1969',
+        size: '3XL',
+        sizeLabel: '3XL',
+        name: 'Drobenko',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga direita', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #1978 — 2 peças amarela (P + G · gola escura)
+      {
+        orderId: '#1978',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'WALTRICK',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+      },
+      {
+        orderId: '#1978-2',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'BUBLITZ',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+      },
+
+      // #1979 — P · gola escura
+      {
+        orderId: '#1979',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'BOLSONARO',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1980 — G amarela · gola escura
+      {
+        orderId: '#1980',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'Marlos',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga direita', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #1981 — M · gola clara
+      {
+        orderId: '#1981',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Bolsonaro',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1983 — M · gola clara · 5 personalizações
+      {
+        orderId: '#1983',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'BOLSONARO',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: '2222',
+            image: art(ART_AMARELA, 'Frente — peito', '2222.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga esquerda', 'Nikolas.webp'),
+          },
+        ],
+      },
+
+      // #1984 — P · gola escura
+      {
+        orderId: '#1984',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Neymar jr',
+        number: '10',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Neymar arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Neymar arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1985 — vermelha P · sem gola (só amarela tem regra)
+      {
+        orderId: '#1985',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Tarsylla',
+        number: '13',
+        productId: 'br-tor-vermelha',
+      },
+
+      // #1986 — XG (2XL) · gola escura
+      {
+        orderId: '#1986',
+        size: 'XG',
+        sizeLabel: 'XGG (XG / 2XL / XXL)',
+        name: 'ANTIPETISTA',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Caveira - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Caveira - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga direita', 'God Loves Brazil.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #1987 — 5 peças (kits infantis → P azul)
+      {
+        orderId: '#1987',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'Oseas',
+        number: '22',
+        productId: 'br-away-azul',
+        extras: [
+          {
+            place: 'Frente — peito',
+            label: 'Caveira - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Caveira - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga direita', 'Nikolas.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+      {
+        orderId: '#1987-2',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Fabi',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga direita', 'Nikolas.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+      {
+        orderId: '#1987-3',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'BEL',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Frente — peito',
+            label: '2222',
+            image: art(ART_AMARELA, 'Frente — peito', '2222.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+      {
+        orderId: '#1987-4',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'T-THEO',
+        number: '10',
+        // Print isolado do 10 (Neymar) no lugar do número — não o mockup azul
+        numberArt: '../src/assets/images/personalization/numbers/neymar-10-print.png',
+        productId: 'br-away-azul',
+        extras: [
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+      {
+        orderId: '#1987-5',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'JOSÉ',
+        number: '10',
+        // Print isolado do 10 (Neymar) no lugar do número — não o mockup azul
+        numberArt: '../src/assets/images/personalization/numbers/neymar-10-print.png',
+        productId: 'br-away-azul',
+        extras: [
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #1991 — GG amarela · gola clara
+      {
+        orderId: '#1991',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'Antonio Alves',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Caveira - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Caveira - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1992 — P amarela · só Patriótica costas · gola escura
+      {
+        orderId: '#1992',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: '',
+        number: '',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Patriótica - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1994 — G amarela · gola escura
+      {
+        orderId: '#1994',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'Lucas',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: '2222',
+            image: art(ART_AMARELA, 'Frente — peito', '2222.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1996 — M amarela (clara) + G azul (sem gola)
+      {
+        orderId: '#1996',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'NEYMAR JR',
+        number: '10',
+        productId: 'br-away-azul',
+        extras: [
+          {
+            place: 'Manga',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AZUL, 'Manga', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+      {
+        orderId: '#1996-2',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'COSME',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #1998 — M amarela · gola clara
+      {
+        orderId: '#1998',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Carol',
+        number: '85',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Manga direita',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga direita', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #1999 — XG · gola escura
+      {
+        orderId: '#1999',
+        size: 'XG',
+        sizeLabel: 'XGG (XG / 2XL / XXL)',
+        name: 'Bolsonaro',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 2',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 2.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: '2222',
+            image: art(ART_AMARELA, 'Frente — peito', '2222.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga esquerda', 'Nikolas.webp'),
+          },
+        ],
+      },
+
+      // #2001 — P · gola escura
+      {
+        orderId: '#2001',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Leka souza',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2003 — G · só artes · gola escura
+      {
+        orderId: '#2003',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: '',
+        number: '',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Acorda Brasil',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Acorda Brasil.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: '2222',
+            image: art(ART_AMARELA, 'Frente — peito', '2222.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #2005 — GG · gola clara
+      {
+        orderId: '#2005',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'MARTINS',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #2006 — G · gola escura
+      {
+        orderId: '#2006',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'BOLSONARO',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 2',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 2.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga direita', 'Nikolas.webp'),
+          },
+        ],
+      },
+
+      // #2007 — GG clara + G clara (exceção: só neste pedido a G é clara)
+      {
+        orderId: '#2007',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: '',
+        number: '',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+      },
+      {
+        orderId: '#2007-2',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'Douglas',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+      },
+
+      // #2008 — M · gola clara
+      {
+        orderId: '#2008',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'F. BOLSONARO',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2009 — P · gola escura
+      {
+        orderId: '#2009',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'ELLEN',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2010 — P amarela · nome/número · gola escura
+      {
+        orderId: '#2010',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Neymar Jr.',
+        number: '10',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+      },
+
+      // #2012 — G amarela · nome/número · gola escura
+      {
+        orderId: '#2012',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'Wilklin Santos',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+      },
+
+      // #2013 — 3 peças (Retro 98 + 2 amarelas)
+      {
+        orderId: '#2013',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'RONALDO',
+        number: '9',
+        productId: 'br-retro-98',
+        persSides: 'frente e atrás',
+      },
+      {
+        orderId: '#2013-2',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'LILIAN',
+        number: '17',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+      },
+      {
+        orderId: '#2013-3',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'BRUNO',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+      },
+
+      // #2015 — G · gola escura
+      {
+        orderId: '#2015',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'VOTO SECRETO',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga esquerda', 'Nikolas.webp'),
+          },
+        ],
+      },
+
+      // #2016 — G · gola escura
+      {
+        orderId: '#2016',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'Bolsonaro',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'pers-2026-10-18',
+    date: '2026-10-18',
+    title: 'Personalização — 18/10/2026',
+    items: [
+      // #2017 — P · nome/número · gola escura
+      {
+        orderId: '#2017',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Sem',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+      },
+
+      // #2018 — 2× amarela (P+GG) · Bolsonaro 22 arte 1 · mix → gola escura
+      {
+        orderId: '#2018',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Bolsonaro',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+      {
+        orderId: '#2018-2',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'Bolsonaro',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2019 — P · arte 2 + peito · gola escura
+      {
+        orderId: '#2019',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'F. Bolsonaro',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 2',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 2.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2020 — GG · arte 3 · gola clara
+      {
+        orderId: '#2020',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'BOLSONARO',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+        ],
+      },
+
+      // #2021 — M · nome/número · gola clara
+      {
+        orderId: '#2021',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Medrado',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+      },
+
+      // #2022 — G · arte 1 · gola escura
+      {
+        orderId: '#2022',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'Borsatti',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2024 — M · só Patriótica costas · gola clara
+      {
+        orderId: '#2024',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: '',
+        number: '',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Patriótica - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2026 — M · nome/número · gola clara
+      {
+        orderId: '#2026',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'GABRIEL',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+      },
+
+      // #2027 — G · nome/número · gola escura
+      {
+        orderId: '#2027',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'bap sucessada',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+      },
+
+      // #2028 — M · Bolsonaro 22 arte 2 · gola clara
+      {
+        orderId: '#2028',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Bolsonaro',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 2',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 2.webp'),
+          },
+        ],
+      },
+
+      // #2030 — GG · 4 pers · gola clara
+      {
+        orderId: '#2030',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'SPAKI',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #2032 — G · 4 pers · gola escura
+      {
+        orderId: '#2032',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'Rodrigo',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Caveira - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Caveira - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #2034 — GG · 2 nomes no pedido → 2 cards · gola clara
+      {
+        orderId: '#2034',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'Zé Lima',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+      },
+      {
+        orderId: '#2034-2',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'Zé Henrique',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+      },
+
+      // #2035 — M · Patriótica costas + peito · gola clara
+      {
+        orderId: '#2035',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: '',
+        number: '',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2036 — 2× GG
+      {
+        orderId: '#2036',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'VK',
+        number: '4',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+      },
+      {
+        orderId: '#2036-2',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'Victor',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga direita', 'Nikolas.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #2037 — azul + amarela (M)
+      {
+        orderId: '#2037',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Bolsonaro BR',
+        number: '22',
+        productId: 'br-away-azul',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AZUL, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AZUL, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+      {
+        orderId: '#2037-2',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Bolsonaro BR',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga direita', 'God Loves Brazil.webp'),
           },
         ],
       },

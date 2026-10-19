@@ -31,13 +31,15 @@ const PRODUCT_SORT_ORDER = {
 
 let activeProduct = 'all';
 let activeSize = 'all';
-/** Quantidade de peças do pedido: 'all' | '1' | '2' | '3' */
+/** Quantidade de peças do pedido: 'all' | '1' | '2' | '3' | '4plus' */
 let activeUnits = 'all';
 let activeStatus = 'pending';
 /** Data de cadastro ativa (YYYY-MM-DD) ou 'all'. Padrão: lote mais recente. */
 let activeDate = BATCH_DATES[0] || 'all';
 let activeTab = 'queue';
 let searchQuery = '';
+let hideGolaNotes = false;
+let hideExtrasText = false;
 let doneSet = loadDoneSet();
 
 function loadDoneSet() {
@@ -86,30 +88,42 @@ const NUMBER_FONT_ARTS = {
 };
 
 /**
- * Bolsonaro 22 arte → mostra a arte no lugar do número.
+ * numberArt / Bolsonaro 22 / Neymar arte → mostra a arte no lugar do número.
  * Número puro (ex.: 22) → mostra a fonte do número.
  * Outros → texto.
  */
 function resolveNumberDisplay(item) {
-  const extras = Array.isArray(item.extras) ? item.extras : [];
-  const bolsonaroArt = extras.find((extra) =>
-    /bolsonaro\s*22\s*arte/i.test(String(extra.label || '')) && extra.image,
-  );
-  if (bolsonaroArt) {
-    return {
-      type: 'art',
-      src: bolsonaroArt.image,
-      label: bolsonaroArt.label,
-      kind: 'bolsonaro',
-    };
-  }
-
   if (item.numberArt) {
+    const src = String(item.numberArt);
+    const kind = /neymar/i.test(src)
+      ? 'neymar'
+      : /bolsonaro/i.test(src)
+        ? 'bolsonaro'
+        : 'number';
     return {
       type: 'art',
       src: item.numberArt,
       label: displayNumber(item.number),
-      kind: 'number',
+      kind,
+    };
+  }
+
+  const extras = Array.isArray(item.extras) ? item.extras : [];
+  const costasArt = extras.find((extra) => {
+    const label = String(extra.label || '');
+    const place = String(extra.place || '');
+    if (!extra.image) return false;
+    if (/bolsonaro\s*22\s*arte/i.test(label)) return true;
+    if (/neymar\s*arte/i.test(label) && /costas/i.test(place)) return true;
+    return false;
+  });
+  if (costasArt) {
+    const isNeymar = /neymar/i.test(String(costasArt.label || ''));
+    return {
+      type: 'art',
+      src: costasArt.image,
+      label: costasArt.label,
+      kind: isNeymar ? 'neymar' : 'bolsonaro',
     };
   }
 
@@ -203,16 +217,21 @@ function filterItems() {
   const unitCounts = activeUnits === 'all'
     ? null
     : buildOrderUnitCounts(getItemsByDate());
-  const wantedUnits = activeUnits === 'all' ? null : Number(activeUnits);
+  const filterFourPlus = activeUnits === '4plus';
+  const wantedUnits = activeUnits === 'all' || filterFourPlus ? null : Number(activeUnits);
 
   return sortItemsForDisplay(getVisibleItems().filter((item) => {
     const done = isDone(item);
     if (activeStatus === 'pending' && done) return false;
     if (activeStatus === 'done' && !done) return false;
     if (activeSize !== 'all' && item.size !== activeSize) return false;
-    if (wantedUnits != null) {
+    if (unitCounts) {
       const units = unitCounts.get(baseOrderId(item.orderId)) || 0;
-      if (units !== wantedUnits) return false;
+      if (filterFourPlus) {
+        if (units < 4) return false;
+      } else if (wantedUnits != null && units !== wantedUnits) {
+        return false;
+      }
     }
     if (!q) return true;
     return (
@@ -543,7 +562,7 @@ function renderCard(item) {
               : []
           ).map((extra) => `
             <figure class="pers-card__alert-figure">
-              <img class="pers-card__alert-image" src="${escapeHtml(extra.image)}" alt="${escapeHtml(`${extra.place} ${extra.label}`.trim())}" loading="lazy">
+              <img class="pers-card__alert-image" src="${escapeHtml(extra.image)}" alt="${escapeHtml(`${extra.place} ${extra.label}`.trim())}" loading="eager" decoding="async">
               ${extra.place ? `<figcaption>${escapeHtml(extra.place)}</figcaption>` : ''}
             </figure>`).join('')}
         </div>` : ''}
@@ -557,7 +576,8 @@ function renderCard(item) {
          class="pers-card__number-art pers-card__number-art--${escapeHtml(numberDisplay.kind || 'number')}"
          src="${escapeHtml(numberDisplay.src)}"
          alt="${escapeHtml(numberDisplay.label || 'Número')}"
-         loading="lazy"
+         loading="eager"
+         decoding="async"
        >`
     : `<span class="pers-card__number">${escapeHtml(numberDisplay.value)}</span>`;
 
@@ -577,7 +597,8 @@ function renderCard(item) {
             class="pers-card__image"
             src="${escapeHtml(item.imageUrl)}"
             alt=""
-            loading="lazy"
+            loading="eager"
+            decoding="async"
           >
           <span class="pers-card__size">${escapeHtml(item.sizeLabel)}</span>
           ${fontBtn}
@@ -737,6 +758,7 @@ function renderUnitsFilters() {
       { id: '1', label: '1 unidade' },
       { id: '2', label: '2 unidades' },
       { id: '3', label: '3 unidades' },
+      { id: '4plus', label: '4 ou mais' },
     ],
     activeUnits,
     'units',
@@ -749,6 +771,39 @@ function renderUnitsFilters() {
       renderGrid();
     });
   });
+}
+
+function syncAlertVisibility() {
+  document.body.classList.toggle('pers-hide-gola-notes', hideGolaNotes);
+  document.body.classList.toggle('pers-hide-extras-text', hideExtrasText);
+
+  const golaBtn = document.getElementById('pers-toggle-gola');
+  if (golaBtn) {
+    golaBtn.classList.toggle('pers-pill--active', hideGolaNotes);
+    golaBtn.setAttribute('aria-pressed', hideGolaNotes ? 'true' : 'false');
+    golaBtn.textContent = hideGolaNotes ? 'Mostrar gola' : 'Ocultar gola';
+  }
+
+  const extrasBtn = document.getElementById('pers-toggle-extras-text');
+  if (extrasBtn) {
+    extrasBtn.classList.toggle('pers-pill--active', hideExtrasText);
+    extrasBtn.setAttribute('aria-pressed', hideExtrasText ? 'true' : 'false');
+    extrasBtn.textContent = hideExtrasText ? 'Mostrar textos' : 'Ocultar textos';
+  }
+}
+
+function bindAlertToggles() {
+  document.getElementById('pers-toggle-gola')?.addEventListener('click', () => {
+    hideGolaNotes = !hideGolaNotes;
+    syncAlertVisibility();
+  });
+
+  document.getElementById('pers-toggle-extras-text')?.addEventListener('click', () => {
+    hideExtrasText = !hideExtrasText;
+    syncAlertVisibility();
+  });
+
+  syncAlertVisibility();
 }
 
 function updateSubtitle() {
@@ -978,11 +1033,34 @@ function applyPrintPageStyle(format) {
   style.id = 'pers-print-page-style';
   style.textContent = format === 'thermal'
     ? '@page { size: 80mm auto; margin: 2mm; }'
-    : '@page { size: A4 portrait; margin: 8mm; }';
+    : '@page { size: A4 portrait; margin: 5mm; }';
   document.head.appendChild(style);
 }
 
-function runPrint() {
+function waitForPrintImages(root = document) {
+  const imgs = [...root.querySelectorAll('.pers-card img, .pers-card__alert-image, .pers-card__number-art')];
+  return Promise.all(
+    imgs.map(
+      (img) =>
+        new Promise((resolve) => {
+          if (img.complete && img.naturalWidth > 0) {
+            resolve();
+            return;
+          }
+          const done = () => resolve();
+          img.addEventListener('load', done, { once: true });
+          img.addEventListener('error', done, { once: true });
+          // Força o browser a buscar a imagem (útil após lazy/print).
+          if (img.src) {
+            // eslint-disable-next-line no-self-assign
+            img.src = img.src;
+          }
+        }),
+    ),
+  );
+}
+
+async function runPrint() {
   const scope = document.querySelector('input[name="pers-print-scope"]:checked')?.value || 'all';
   const format = document.querySelector('input[name="pers-print-format"]:checked')?.value || 'a4';
   const unitId = document.getElementById('pers-print-unit')?.value || '';
@@ -1017,12 +1095,16 @@ function runPrint() {
   };
   window.addEventListener('afterprint', cleanup);
 
-  // Pequeno delay para o browser aplicar as classes de print.
+  try {
+    await waitForPrintImages(document.getElementById('pers-grid') || document);
+  } catch {
+    /* segue mesmo se alguma imagem falhar */
+  }
+
   window.setTimeout(() => {
     window.print();
-    // Fallback se afterprint não disparar em alguns browsers.
     window.setTimeout(cleanup, 1500);
-  }, 50);
+  }, 80);
 }
 
 function bindPrintModal() {
@@ -1060,6 +1142,7 @@ function init() {
 
   bindPrintModal();
   bindFontModal();
+  bindAlertToggles();
   bindTabs();
   updateSubtitle();
   renderDateFilters();

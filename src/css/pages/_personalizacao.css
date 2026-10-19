@@ -712,7 +712,8 @@
   object-fit: contain;
 }
 
-.pers-card__number-art--bolsonaro {
+.pers-card__number-art--bolsonaro,
+.pers-card__number-art--neymar {
   max-height: 7rem;
   border-radius: 8px;
   border: 1px solid #e5e1ef;
@@ -818,6 +819,15 @@
   border: 2px solid #ea580c;
   border-radius: 8px;
   background: #fff;
+}
+
+/* Menu: ocultar só textos dos avisos (mantém artes/imagens) */
+body.pers-hide-gola-notes .pers-card__note {
+  display: none !important;
+}
+
+body.pers-hide-extras-text .pers-card__alert-text {
+  display: none !important;
 }
 
 .pers-card__alert-label {
@@ -1371,6 +1381,15 @@
     display: none !important;
   }
 
+  /* Textos de aviso/extras seguem os toggles do menu (não forçam ocultar na impressão) */
+  body.pers-hide-gola-notes .pers-card__note {
+    display: none !important;
+  }
+
+  body.pers-hide-extras-text .pers-card__alert-text {
+    display: none !important;
+  }
+
   html,
   body.pers-page {
     width: auto !important;
@@ -1401,9 +1420,10 @@
 
   .pers-grid {
     display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     width: 100%;
     margin: 0;
-    gap: 4mm;
+    gap: 2mm;
     align-items: stretch;
   }
 
@@ -1456,8 +1476,18 @@
   }
 
   .pers-card__image {
+    display: block !important;
     max-height: 18mm !important;
     width: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .pers-card__alert-image,
+  .pers-card__number-art {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 
   .pers-card__size {
@@ -1490,7 +1520,8 @@
     max-height: 28mm !important;
   }
 
-  .pers-card__number-art--bolsonaro {
+  .pers-card__number-art--bolsonaro,
+  .pers-card__number-art--neymar {
     max-height: 34mm !important;
   }
 
@@ -1529,14 +1560,108 @@
     max-width: 16mm !important;
   }
 
-  /* —— A4: grade uniforme 2 colunas —— */
+  /* —— A4: grade densa (mais cards / menos papel) —— */
   body.pers-print-format-a4 .pers-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 4mm !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 2mm !important;
   }
 
   body.pers-print-format-a4 .pers-card {
-    min-height: 62mm;
+    min-height: 0;
+  }
+
+  body.pers-print-format-a4 .pers-card__head {
+    padding: 1.2mm 1.8mm !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__order {
+    font-size: 9pt !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__model {
+    font-size: 6.5pt !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__kit {
+    font-size: 5.5pt !important;
+    padding: 0.5mm 1.2mm !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__main {
+    grid-template-columns: 15mm 1fr !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__thumb {
+    padding: 1.2mm !important;
+    gap: 1mm !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__image {
+    max-height: 11mm !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__size {
+    padding: 0.6mm !important;
+    font-size: 6.5pt !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__pers {
+    padding: 1.5mm 2mm !important;
+    gap: 0.6mm !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__badge {
+    font-size: 5.5pt !important;
+    padding: 0.3mm 1mm !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__name {
+    font-size: 11pt !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__number {
+    font-size: 15pt !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__number-art {
+    max-height: 16mm !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__number-art--bolsonaro,
+  body.pers-print-format-a4 .pers-card__number-art--neymar {
+    max-height: 20mm !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__alert {
+    gap: 1.2mm !important;
+    padding: 1.2mm 1.5mm !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__note,
+  body.pers-print-format-a4 .pers-card__alert-text {
+    padding: 1mm 1.2mm !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__note,
+  body.pers-print-format-a4 .pers-card__alert-msg,
+  body.pers-print-format-a4 .pers-card__alert-place,
+  body.pers-print-format-a4 .pers-card__alert-label,
+  body.pers-print-format-a4 .pers-card__note-label {
+    font-size: 6pt !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__alert-gallery {
+    gap: 1mm !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__alert-image {
+    width: 9mm !important;
+    height: 9mm !important;
+  }
+
+  body.pers-print-format-a4 .pers-card__alert-figure figcaption {
+    font-size: 5pt !important;
+    max-width: 11mm !important;
   }
 
   /* —— Térmica 80mm: etiqueta grande e legível —— */
@@ -1611,7 +1736,8 @@
     max-height: 32mm !important;
   }
 
-  body.pers-print-format-thermal .pers-card__number-art--bolsonaro {
+  body.pers-print-format-thermal .pers-card__number-art--bolsonaro,
+  body.pers-print-format-thermal .pers-card__number-art--neymar {
     max-height: 40mm !important;
   }
 
@@ -1660,9 +1786,13 @@
     max-width: 95mm;
     min-height: 0;
   }
+
+  body.pers-print-format-a4.pers-print-scope-one .pers-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 @page {
   size: A4 portrait;
-  margin: 8mm;
+  margin: 5mm;
 }
