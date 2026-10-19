@@ -1988,6 +1988,153 @@ export const QUEUES = [
       },
     ],
   },
+  {
+    id: 'pers-2026-10-19',
+    date: '2026-10-19',
+    title: 'Personalização — 19/10/2026',
+    items: [
+      // #2039 — P · arte 1 + peito + mangas · gola escura
+      {
+        orderId: '#2039',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Antipetista',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga direita', 'Nikolas.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #2040 — M · arte 2 + cintura + peito + mangas · gola clara
+      {
+        orderId: '#2040',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'ZWAN',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 2',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 2.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga direita', 'Nikolas.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #2041 — P · Nikolas Ferreira 22 · gola escura
+      {
+        orderId: '#2041',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'TIAGO P.',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais escura',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Nikolas Ferreira 22',
+            image: art(ART_AMARELA, 'Costas', 'Nikolas Ferreira 22.webp'),
+          },
+        ],
+      },
+
+      // #2043 — 4× Retro 98 M · nome/número
+      {
+        orderId: '#2043',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'José Miguel',
+        number: '22',
+        productId: 'br-retro-98',
+      },
+      {
+        orderId: '#2043-2',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'João Guilherme',
+        number: '22',
+        productId: 'br-retro-98',
+      },
+      {
+        orderId: '#2043-3',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Anna',
+        number: '22',
+        productId: 'br-retro-98',
+      },
+      {
+        orderId: '#2043-4',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Guilherme',
+        number: '22',
+        productId: 'br-retro-98',
+      },
+
+      // #2044 — M · arte 1 · gola clara
+      {
+        orderId: '#2044',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Farias',
+        number: '22',
+        productId: 'br-home-amarela',
+        note: 'Gola mais clara',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 /** Formata YYYY-MM-DD → DD/MM/YYYY */

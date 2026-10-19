@@ -178,8 +178,14 @@ const NUMBER_FONT_ARTS = {
   22: '../src/assets/images/personalization/numbers/22.png',
 };
 
+/** Fonte do 22 específica da Retro 98 (verde + contorno azul). */
+const RETRO_98_NUMBER_ARTS = {
+  22: '../src/assets/images/personalization/numbers/22-retro-98.png',
+};
+
 /**
  * numberArt / Bolsonaro 22 / Neymar arte → mostra a arte no lugar do número.
+ * Retro 98 → usa o print próprio do 22.
  * Número puro (ex.: 22) → mostra a fonte do número.
  * Outros → texto.
  */
@@ -205,6 +211,7 @@ function resolveNumberDisplay(item) {
     const place = String(extra.place || '');
     if (!extra.image) return false;
     if (/bolsonaro\s*22\s*arte/i.test(label)) return true;
+    if (/nikolas\s*ferreira\s*22/i.test(label) && /costas/i.test(place)) return true;
     if (/neymar\s*arte/i.test(label) && /costas/i.test(place)) return true;
     return false;
   });
@@ -219,6 +226,14 @@ function resolveNumberDisplay(item) {
   }
 
   const num = String(item.number ?? '').trim();
+  if (item.productId === 'br-retro-98' && num && RETRO_98_NUMBER_ARTS[num]) {
+    return {
+      type: 'art',
+      src: RETRO_98_NUMBER_ARTS[num],
+      label: num,
+      kind: 'number',
+    };
+  }
   if (num && NUMBER_FONT_ARTS[num]) {
     return {
       type: 'art',
