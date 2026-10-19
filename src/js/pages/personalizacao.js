@@ -7,6 +7,7 @@ import {
 import { SIZE_ORDER, displaySizeLabel } from '../utils/sizes.js';
 
 const STORAGE_KEY = 'shir7-pers-done';
+const REVIEW_KEY = 'shir7-pers-review';
 const SENT_DESCHAPADO_KEY = 'shir7-pers-sent-deschapado';
 const SENT_GRAFICA_KEY = 'shir7-pers-sent-grafica';
 const BATCH_DATES = listBatchDates();
@@ -44,6 +45,7 @@ let searchQuery = '';
 let hideGolaNotes = false;
 let hideExtrasText = false;
 let doneSet = loadDoneSet();
+let reviewSet = loadReviewSet();
 let sentDeschapado = loadDateFlagSet(SENT_DESCHAPADO_KEY);
 let sentGrafica = loadDateFlagSet(SENT_GRAFICA_KEY);
 
@@ -59,6 +61,20 @@ function loadDoneSet() {
 
 function saveDoneSet() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([...doneSet]));
+}
+
+function loadReviewSet() {
+  try {
+    const raw = localStorage.getItem(REVIEW_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveReviewSet() {
+  localStorage.setItem(REVIEW_KEY, JSON.stringify([...reviewSet]));
 }
 
 function loadDateFlagSet(key) {
@@ -99,6 +115,17 @@ function itemKey(item) {
 
 function isDone(item) {
   return doneSet.has(itemKey(item));
+}
+
+function isReview(item) {
+  return reviewSet.has(itemKey(item));
+}
+
+function dateHasReview(date) {
+  if (!date || date === 'all') return false;
+  return ALL_ITEMS.some(
+    (item) => item.createdAt === date && !item.placeholder && reviewSet.has(itemKey(item)),
+  );
 }
 
 function escapeHtml(value) {
@@ -544,6 +571,7 @@ function renderCard(item) {
   const numberDisplay = resolveNumberDisplay(item);
   const key = itemKey(item);
   const done = isDone(item);
+  const review = isReview(item);
   const kitType = item.kitType || 'jogador';
   const kitClass = ` pers-card--${kitType}`;
   const headClass = kitType === 'torcedor'
@@ -619,7 +647,7 @@ function renderCard(item) {
     : `<span class="pers-card__number">${escapeHtml(numberDisplay.value)}</span>`;
 
   return `
-    <article class="pers-card${kitClass}${done ? ' pers-card--done' : ''}${placeholderClass}${disabledClass}${hasAlertBlock ? ' pers-card--alert' : ''}" data-id="${escapeHtml(key)}">
+    <article class="pers-card${kitClass}${done ? ' pers-card--done' : ''}${review ? ' pers-card--review' : ''}${placeholderClass}${disabledClass}${hasAlertBlock ? ' pers-card--alert' : ''}" data-id="${escapeHtml(key)}">
       <header class="pers-card__head${headClass}">
         <div class="pers-card__head-row">
           <span class="pers-card__order">${escapeHtml(item.orderId)}${alertGif}</span>
@@ -641,7 +669,7 @@ function renderCard(item) {
           ${fontBtn}
         </div>
         <div class="pers-card__pers">
-          ${statusBadge}${dateBadge}
+          ${statusBadge}${dateBadge}${review ? '<span class="pers-card__badge pers-card__badge--review">Revisão</span>' : ''}
           ${sidesNote}
           <span class="pers-card__name">${escapeHtml(name)}</span>
           ${numberBlock}
@@ -659,6 +687,15 @@ function renderCard(item) {
         >
           <span class="pers-done-btn__icon" aria-hidden="true"></span>
           <span class="pers-done-btn__label">${item.disabled ? 'Aguardar' : done ? 'Feito' : 'Marcar feito'}</span>
+        </button>
+        <button
+          type="button"
+          class="pers-review-btn${review ? ' pers-review-btn--active' : ''}"
+          data-toggle-review="${escapeHtml(key)}"
+          aria-pressed="${review ? 'true' : 'false'}"
+          ${item.disabled ? 'disabled' : ''}
+        >
+          <span class="pers-review-btn__label">${review ? 'Em revisão' : 'Precisa de revisão'}</span>
         </button>
         <button
           type="button"
@@ -691,6 +728,7 @@ function renderPillGroup(containerId, buttons, activeId, dataAttr, pillClass = '
 function datePillClass(date) {
   const classes = ['pers-pill'];
   if (activeDate === date) classes.push('pers-pill--active');
+  if (dateHasReview(date)) classes.push('pers-pill--review');
   if (isDateGraficaSent(date)) classes.push('pers-pill--grafica');
   if (isDateDespachado(date)) classes.push('pers-pill--despachado');
   return classes.join(' ');
@@ -933,6 +971,8 @@ function bindDoneButtons() {
       if (doneSet.has(id)) doneSet.delete(id);
       else {
         doneSet.add(id);
+        reviewSet.delete(id);
+        saveReviewSet();
         // Evita o card sumir se o filtro estiver em Pendentes
         if (activeStatus === 'pending') {
           activeStatus = 'all';
@@ -941,6 +981,26 @@ function bindDoneButtons() {
       }
 
       saveDoneSet();
+      renderDateFilters();
+      renderStats();
+      renderGrid();
+    });
+  });
+
+  document.querySelectorAll('[data-toggle-review]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.toggleReview;
+      if (!id) return;
+
+      if (reviewSet.has(id)) reviewSet.delete(id);
+      else {
+        reviewSet.add(id);
+        doneSet.delete(id);
+        saveDoneSet();
+      }
+
+      saveReviewSet();
+      renderDateFilters();
       renderStats();
       renderGrid();
     });
