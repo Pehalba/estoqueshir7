@@ -627,6 +627,23 @@
   color: #b91c1c;
 }
 
+.pers-card--grafica:not(.pers-card--review) {
+  border-color: #ea580c;
+  box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.2);
+  background: #fff7ed;
+}
+
+.pers-card--grafica:not(.pers-card--review) .pers-card__head {
+  background: linear-gradient(135deg, #c2410c 0%, #ea580c 100%) !important;
+  color: #fff;
+}
+
+.pers-card__badge--grafica {
+  background: #ffedd5;
+  border: 1px solid #fdba74;
+  color: #c2410c;
+}
+
 .pers-card--placeholder {
   border-style: dashed;
   border-color: #d4a017;
@@ -1468,6 +1485,45 @@ body.pers-hide-extras-text .pers-card__alert-text {
 .pers-review-btn--active:hover {
   background: #b91c1c;
   border-color: #b91c1c;
+  color: #fff;
+}
+
+.pers-grafica-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.45rem 1rem;
+  border: 2px solid #fdba74;
+  border-radius: var(--radius-md, 10px);
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #c2410c;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+}
+
+.pers-grafica-btn:hover {
+  background: #fff7ed;
+  border-color: #ea580c;
+  color: #9a3412;
+}
+
+.pers-grafica-btn:active {
+  transform: scale(0.98);
+}
+
+.pers-grafica-btn--active {
+  background: #ea580c;
+  border-color: #ea580c;
+  color: #fff;
+}
+
+.pers-grafica-btn--active:hover {
+  background: #c2410c;
+  border-color: #c2410c;
   color: #fff;
 }
 

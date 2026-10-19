@@ -8,6 +8,7 @@ import { SIZE_ORDER, displaySizeLabel } from '../utils/sizes.js';
 
 const STORAGE_KEY = 'shir7-pers-done';
 const REVIEW_KEY = 'shir7-pers-review';
+const GRAFICA_ITEM_KEY = 'shir7-pers-grafica-items';
 const SENT_DESCHAPADO_KEY = 'shir7-pers-sent-deschapado';
 const SENT_GRAFICA_KEY = 'shir7-pers-sent-grafica';
 const BATCH_DATES = listBatchDates();
@@ -46,6 +47,7 @@ let hideGolaNotes = false;
 let hideExtrasText = false;
 let doneSet = loadDoneSet();
 let reviewSet = loadReviewSet();
+let graficaItemSet = loadGraficaItemSet();
 let sentDeschapado = loadDateFlagSet(SENT_DESCHAPADO_KEY);
 let sentGrafica = loadDateFlagSet(SENT_GRAFICA_KEY);
 
@@ -75,6 +77,20 @@ function loadReviewSet() {
 
 function saveReviewSet() {
   localStorage.setItem(REVIEW_KEY, JSON.stringify([...reviewSet]));
+}
+
+function loadGraficaItemSet() {
+  try {
+    const raw = localStorage.getItem(GRAFICA_ITEM_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveGraficaItemSet() {
+  localStorage.setItem(GRAFICA_ITEM_KEY, JSON.stringify([...graficaItemSet]));
 }
 
 function loadDateFlagSet(key) {
@@ -121,10 +137,21 @@ function isReview(item) {
   return reviewSet.has(itemKey(item));
 }
 
+function isGraficaItem(item) {
+  return graficaItemSet.has(itemKey(item));
+}
+
 function dateHasReview(date) {
   if (!date || date === 'all') return false;
   return ALL_ITEMS.some(
     (item) => item.createdAt === date && !item.placeholder && reviewSet.has(itemKey(item)),
+  );
+}
+
+function dateHasGraficaItem(date) {
+  if (!date || date === 'all') return false;
+  return ALL_ITEMS.some(
+    (item) => item.createdAt === date && !item.placeholder && graficaItemSet.has(itemKey(item)),
   );
 }
 
@@ -572,6 +599,7 @@ function renderCard(item) {
   const key = itemKey(item);
   const done = isDone(item);
   const review = isReview(item);
+  const naGrafica = isGraficaItem(item);
   const kitType = item.kitType || 'jogador';
   const kitClass = ` pers-card--${kitType}`;
   const headClass = kitType === 'torcedor'
@@ -647,7 +675,7 @@ function renderCard(item) {
     : `<span class="pers-card__number">${escapeHtml(numberDisplay.value)}</span>`;
 
   return `
-    <article class="pers-card${kitClass}${done ? ' pers-card--done' : ''}${review ? ' pers-card--review' : ''}${placeholderClass}${disabledClass}${hasAlertBlock ? ' pers-card--alert' : ''}" data-id="${escapeHtml(key)}">
+    <article class="pers-card${kitClass}${done ? ' pers-card--done' : ''}${review ? ' pers-card--review' : ''}${naGrafica ? ' pers-card--grafica' : ''}${placeholderClass}${disabledClass}${hasAlertBlock ? ' pers-card--alert' : ''}" data-id="${escapeHtml(key)}">
       <header class="pers-card__head${headClass}">
         <div class="pers-card__head-row">
           <span class="pers-card__order">${escapeHtml(item.orderId)}${alertGif}</span>
@@ -669,7 +697,7 @@ function renderCard(item) {
           ${fontBtn}
         </div>
         <div class="pers-card__pers">
-          ${statusBadge}${dateBadge}${review ? '<span class="pers-card__badge pers-card__badge--review">Revisão</span>' : ''}
+          ${statusBadge}${dateBadge}${review ? '<span class="pers-card__badge pers-card__badge--review">Revisão</span>' : ''}${naGrafica ? '<span class="pers-card__badge pers-card__badge--grafica">Na gráfica</span>' : ''}
           ${sidesNote}
           <span class="pers-card__name">${escapeHtml(name)}</span>
           ${numberBlock}
@@ -696,6 +724,15 @@ function renderCard(item) {
           ${item.disabled ? 'disabled' : ''}
         >
           <span class="pers-review-btn__label">${review ? 'Em revisão' : 'Precisa de revisão'}</span>
+        </button>
+        <button
+          type="button"
+          class="pers-grafica-btn${naGrafica ? ' pers-grafica-btn--active' : ''}"
+          data-toggle-grafica="${escapeHtml(key)}"
+          aria-pressed="${naGrafica ? 'true' : 'false'}"
+          ${item.disabled ? 'disabled' : ''}
+        >
+          <span class="pers-grafica-btn__label">${naGrafica ? 'Na gráfica' : 'Personalização na gráfica'}</span>
         </button>
         <button
           type="button"
@@ -729,7 +766,7 @@ function datePillClass(date) {
   const classes = ['pers-pill'];
   if (activeDate === date) classes.push('pers-pill--active');
   if (dateHasReview(date)) classes.push('pers-pill--review');
-  if (isDateGraficaSent(date)) classes.push('pers-pill--grafica');
+  if (isDateGraficaSent(date) || dateHasGraficaItem(date)) classes.push('pers-pill--grafica');
   if (isDateDespachado(date)) classes.push('pers-pill--despachado');
   return classes.join(' ');
 }
@@ -972,7 +1009,9 @@ function bindDoneButtons() {
       else {
         doneSet.add(id);
         reviewSet.delete(id);
+        graficaItemSet.delete(id);
         saveReviewSet();
+        saveGraficaItemSet();
         // Evita o card sumir se o filtro estiver em Pendentes
         if (activeStatus === 'pending') {
           activeStatus = 'all';
@@ -996,10 +1035,33 @@ function bindDoneButtons() {
       else {
         reviewSet.add(id);
         doneSet.delete(id);
+        graficaItemSet.delete(id);
         saveDoneSet();
+        saveGraficaItemSet();
       }
 
       saveReviewSet();
+      renderDateFilters();
+      renderStats();
+      renderGrid();
+    });
+  });
+
+  document.querySelectorAll('[data-toggle-grafica]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.toggleGrafica;
+      if (!id) return;
+
+      if (graficaItemSet.has(id)) graficaItemSet.delete(id);
+      else {
+        graficaItemSet.add(id);
+        doneSet.delete(id);
+        reviewSet.delete(id);
+        saveDoneSet();
+        saveReviewSet();
+      }
+
+      saveGraficaItemSet();
       renderDateFilters();
       renderStats();
       renderGrid();
