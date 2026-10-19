@@ -369,6 +369,90 @@
   align-items: center;
 }
 
+#pers-date-filters {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+}
+
+.pers-date-filters__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.pers-date-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.pers-date-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--color-border, #e5e1ef);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  color: var(--color-text, #1a1333);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.pers-date-action--grafica:hover {
+  border-color: #ea580c;
+  color: #c2410c;
+}
+
+.pers-date-action--grafica.pers-date-action--on {
+  background: #ea580c;
+  border-color: #ea580c;
+  color: #fff;
+}
+
+.pers-date-action--despachado:hover {
+  border-color: #6b7280;
+  color: #374151;
+}
+
+.pers-date-action--despachado.pers-date-action--on {
+  background: #4b5563;
+  border-color: #4b5563;
+  color: #fff;
+}
+
+/* Data enviada à gráfica → laranja */
+#pers-date-filters .pers-pill--grafica:not(.pers-pill--active) {
+  background: #fff7ed;
+  border-color: #fb923c;
+  color: #c2410c;
+}
+
+#pers-date-filters .pers-pill--grafica.pers-pill--active {
+  background: #ea580c;
+  border-color: #ea580c;
+  color: #fff;
+}
+
+/* Data despachada → riscada */
+#pers-date-filters .pers-pill--despachado {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+#pers-date-filters .pers-pill--despachado:not(.pers-pill--active):not(.pers-pill--grafica) {
+  color: #6b7280;
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
 .pers-pill {
   display: inline-flex;
   align-items: center;
@@ -484,7 +568,30 @@
 .pers-card--done {
   border-color: #22a06b;
   background: #f6fdf9;
-  opacity: 0.88;
+}
+
+.pers-card--done .pers-card__thumb {
+  position: relative;
+}
+
+.pers-card--done .pers-card__image {
+  filter: grayscale(1) brightness(0.92);
+  opacity: 0.55;
+}
+
+/* Risca a camisa quando marcada como feito */
+.pers-card--done .pers-card__thumb::after {
+  content: '';
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 42%;
+  height: 2.5px;
+  background: #6b7280;
+  transform: rotate(-28deg);
+  pointer-events: none;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 55%);
 }
 
 .pers-card--placeholder {

@@ -7,6 +7,8 @@ import {
 import { SIZE_ORDER, displaySizeLabel } from '../utils/sizes.js';
 
 const STORAGE_KEY = 'shir7-pers-done';
+const SENT_DESCHAPADO_KEY = 'shir7-pers-sent-deschapado';
+const SENT_GRAFICA_KEY = 'shir7-pers-sent-grafica';
 const BATCH_DATES = listBatchDates();
 const PRODUCT_FILTERS = [
   { id: 'all', label: 'Todos' },
@@ -33,7 +35,8 @@ let activeProduct = 'all';
 let activeSize = 'all';
 /** Quantidade de peças do pedido: 'all' | '1' | '2' | '3' | '4plus' */
 let activeUnits = 'all';
-let activeStatus = 'pending';
+/** 'all' por padrão para “marcar feito” não sumir o card da fila */
+let activeStatus = 'all';
 /** Data de cadastro ativa (YYYY-MM-DD) ou 'all'. Padrão: lote mais recente. */
 let activeDate = BATCH_DATES[0] || 'all';
 let activeTab = 'queue';
@@ -41,6 +44,8 @@ let searchQuery = '';
 let hideGolaNotes = false;
 let hideExtrasText = false;
 let doneSet = loadDoneSet();
+let sentDeschapado = loadDateFlagSet(SENT_DESCHAPADO_KEY);
+let sentGrafica = loadDateFlagSet(SENT_GRAFICA_KEY);
 
 function loadDoneSet() {
   try {
@@ -54,6 +59,38 @@ function loadDoneSet() {
 
 function saveDoneSet() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([...doneSet]));
+}
+
+function loadDateFlagSet(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveDateFlagSet(key, set) {
+  localStorage.setItem(key, JSON.stringify([...set]));
+}
+
+function isDateDespachado(date) {
+  return Boolean(date) && date !== 'all' && sentDeschapado.has(date);
+}
+
+function isDateGraficaSent(date) {
+  return Boolean(date) && date !== 'all' && sentGrafica.has(date);
+}
+
+function toggleDateSendFlag(kind, date) {
+  if (!date || date === 'all') return;
+  const set = kind === 'deschapado' ? sentDeschapado : sentGrafica;
+  const key = kind === 'deschapado' ? SENT_DESCHAPADO_KEY : SENT_GRAFICA_KEY;
+  if (set.has(date)) set.delete(date);
+  else set.add(date);
+  saveDateFlagSet(key, set);
+  renderDateFilters();
 }
 
 function itemKey(item) {
@@ -651,8 +688,19 @@ function renderPillGroup(containerId, buttons, activeId, dataAttr, pillClass = '
     .join('');
 }
 
+function datePillClass(date) {
+  const classes = ['pers-pill'];
+  if (activeDate === date) classes.push('pers-pill--active');
+  if (isDateGraficaSent(date)) classes.push('pers-pill--grafica');
+  if (isDateDespachado(date)) classes.push('pers-pill--despachado');
+  return classes.join(' ');
+}
+
 function renderDateFilters() {
-  const buttons = [
+  const container = document.getElementById('pers-date-filters');
+  if (!container) return;
+
+  const dateButtons = [
     { id: 'all', label: 'Todas' },
     ...BATCH_DATES.map((date) => ({
       id: date,
@@ -660,9 +708,52 @@ function renderDateFilters() {
     })),
   ];
 
-  renderPillGroup('pers-date-filters', buttons, activeDate, 'date');
+  const pills = dateButtons
+    .map((btn) => {
+      if (btn.id === 'all') {
+        const active = activeDate === 'all' ? ' pers-pill--active' : '';
+        return `<button type="button" class="pers-pill${active}" data-date="all">Todas</button>`;
+      }
+      return `
+        <button
+          type="button"
+          class="${datePillClass(btn.id)}"
+          data-date="${escapeHtml(btn.id)}"
+        >${escapeHtml(btn.label)}</button>
+      `;
+    })
+    .join('');
 
-  document.getElementById('pers-date-filters')?.querySelectorAll('[data-date]').forEach((el) => {
+  const showActions = activeDate !== 'all';
+  const graficaOn = showActions && isDateGraficaSent(activeDate);
+  const despachadoOn = showActions && isDateDespachado(activeDate);
+  const actions = showActions
+    ? `
+      <div class="pers-date-actions" role="group" aria-label="Status do lote ${escapeHtml(formatBatchDate(activeDate))}">
+        <button
+          type="button"
+          class="pers-date-action pers-date-action--grafica${graficaOn ? ' pers-date-action--on' : ''}"
+          data-toggle-sent="${escapeHtml(activeDate)}"
+          data-sent-kind="grafica"
+          aria-pressed="${graficaOn ? 'true' : 'false'}"
+        >${graficaOn ? '✓ Enviado à gráfica' : 'Marcar enviado à gráfica'}</button>
+        <button
+          type="button"
+          class="pers-date-action pers-date-action--despachado${despachadoOn ? ' pers-date-action--on' : ''}"
+          data-toggle-sent="${escapeHtml(activeDate)}"
+          data-sent-kind="deschapado"
+          aria-pressed="${despachadoOn ? 'true' : 'false'}"
+        >${despachadoOn ? '✓ Despachado' : 'Marcar despachado'}</button>
+      </div>
+    `
+    : '';
+
+  container.innerHTML = `
+    <div class="pers-date-filters__pills">${pills}</div>
+    ${actions}
+  `;
+
+  container.querySelectorAll('[data-date]').forEach((el) => {
     el.addEventListener('click', () => {
       activeDate = el.dataset.date || 'all';
       activeProduct = 'all';
@@ -676,6 +767,12 @@ function renderDateFilters() {
       renderStats();
       if (activeTab === 'summary') renderSummary();
       else renderGrid();
+    });
+  });
+
+  container.querySelectorAll('[data-toggle-sent]').forEach((el) => {
+    el.addEventListener('click', () => {
+      toggleDateSendFlag(el.dataset.sentKind, el.dataset.toggleSent);
     });
   });
 }
@@ -700,9 +797,9 @@ function renderStatusFilters() {
   renderPillGroup(
     'pers-status-filters',
     [
+      { id: 'all', label: 'Todos' },
       { id: 'pending', label: 'Pendentes' },
       { id: 'done', label: 'Feitos' },
-      { id: 'all', label: 'Todos' },
     ],
     activeStatus,
     'status',
@@ -834,7 +931,14 @@ function bindDoneButtons() {
       if (!id) return;
 
       if (doneSet.has(id)) doneSet.delete(id);
-      else doneSet.add(id);
+      else {
+        doneSet.add(id);
+        // Evita o card sumir se o filtro estiver em Pendentes
+        if (activeStatus === 'pending') {
+          activeStatus = 'all';
+          renderStatusFilters();
+        }
+      }
 
       saveDoneSet();
       renderStats();
