@@ -2133,6 +2133,70 @@ export const QUEUES = [
           },
         ],
       },
+
+      // #2045 — XG · nome/número
+      {
+        orderId: '#2045',
+        size: 'XG',
+        sizeLabel: 'XGG (XG / 2XL / XXL)',
+        name: 'Thielle',
+        number: '22',
+        productId: 'br-home-amarela',
+      },
+
+      // #2047 — P · arte 3 + cintura + peito + manga
+      {
+        orderId: '#2047',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Mito',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2048 — G · arte 1 + Patriótica cintura
+      {
+        orderId: '#2048',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'Dallas',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+        ],
+      },
     ],
   },
 ];
