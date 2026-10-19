@@ -1171,6 +1171,23 @@ export const QUEUES = [
         ],
       },
 
+      // #1990 — GG · só Patriótica costas
+      {
+        orderId: '#1990',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: '',
+        number: '',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Patriótica - arte 1.webp'),
+          },
+        ],
+      },
+
       // #1991 — GG amarela · gola clara
       {
         orderId: '#1991',
