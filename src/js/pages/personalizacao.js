@@ -37,7 +37,7 @@ let activeProduct = 'all';
 let activeSize = 'all';
 /** Quantidade de peças do pedido: 'all' | '1' | '2' | '3' | '4plus' */
 let activeUnits = 'all';
-/** 'all' por padrão para “marcar feito” não sumir o card da fila */
+/** 'all' | 'pending' | 'done' | 'review' | 'grafica' */
 let activeStatus = 'all';
 /** Data de cadastro ativa (YYYY-MM-DD) ou 'all'. Padrão: lote mais recente. */
 let activeDate = BATCH_DATES[0] || 'all';
@@ -330,6 +330,8 @@ function filterItems() {
     const done = isDone(item);
     if (activeStatus === 'pending' && done) return false;
     if (activeStatus === 'done' && !done) return false;
+    if (activeStatus === 'review' && !isReview(item)) return false;
+    if (activeStatus === 'grafica' && !isGraficaItem(item)) return false;
     if (activeSize !== 'all' && item.size !== activeSize) return false;
     if (unitCounts) {
       const units = unitCounts.get(baseOrderId(item.orderId)) || 0;
@@ -890,6 +892,8 @@ function renderStatusFilters() {
       { id: 'all', label: 'Todos' },
       { id: 'pending', label: 'Pendentes' },
       { id: 'done', label: 'Feitos' },
+      { id: 'review', label: 'Revisão', tone: 'review' },
+      { id: 'grafica', label: 'Na gráfica', tone: 'grafica' },
     ],
     activeStatus,
     'status',
@@ -898,7 +902,20 @@ function renderStatusFilters() {
   document.getElementById('pers-status-filters')?.querySelectorAll('[data-status]').forEach((el) => {
     el.addEventListener('click', () => {
       activeStatus = el.dataset.status || 'all';
+      // Revisão / gráfica: mostrar em todas as datas
+      if ((activeStatus === 'review' || activeStatus === 'grafica') && activeDate !== 'all') {
+        activeDate = 'all';
+        activeProduct = 'all';
+        activeSize = 'all';
+        activeUnits = 'all';
+        updateSubtitle();
+        renderDateFilters();
+        renderProductFilters();
+        renderSizeFilters();
+        renderUnitsFilters();
+      }
       renderStatusFilters();
+      renderStats();
       renderGrid();
     });
   });

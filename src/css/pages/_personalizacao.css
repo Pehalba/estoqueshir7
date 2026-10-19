@@ -533,6 +533,28 @@
   color: #fff;
 }
 
+#pers-status-filters .pers-pill--review:hover {
+  border-color: #dc2626;
+  color: #b91c1c;
+}
+
+#pers-status-filters .pers-pill--review.pers-pill--active {
+  background: #dc2626;
+  border-color: #991b1b;
+  color: #fff;
+}
+
+#pers-status-filters .pers-pill--grafica:hover {
+  border-color: #ea580c;
+  color: #c2410c;
+}
+
+#pers-status-filters .pers-pill--grafica.pers-pill--active {
+  background: #ea580c;
+  border-color: #c2410c;
+  color: #fff;
+}
+
 /* —— Grid —— */
 .pers-main {
   max-width: 1200px;
