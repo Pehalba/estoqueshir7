@@ -2214,6 +2214,102 @@ export const QUEUES = [
           },
         ],
       },
+
+      // #2049 — G · arte 1 + peito + mangas
+      {
+        orderId: '#2049',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'MITO',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga esquerda', 'Nikolas.webp'),
+          },
+        ],
+      },
+
+      // #2050 — P · arte 2
+      {
+        orderId: '#2050',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Chora Petista',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 2',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 2.webp'),
+          },
+        ],
+      },
+
+      // #2053 — M · nome/número
+      {
+        orderId: '#2053',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Bolsonaro',
+        number: '22',
+        productId: 'br-home-amarela',
+      },
+
+      // #2055 — M · Nikolas Ferreira 22 + extras (Yampi 20/10 → lote 19)
+      {
+        orderId: '#2055',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Pierry',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Nikolas Ferreira 22',
+            image: art(ART_AMARELA, 'Costas', 'Nikolas Ferreira 22.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga esquerda', 'Nikolas.webp'),
+          },
+        ],
+      },
     ],
   },
 ];
