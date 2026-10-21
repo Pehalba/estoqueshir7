@@ -152,6 +152,15 @@ const SHIPPING_BY_ORDER = {
   '#2070': 'sedex',
   '#2072': 'sedex',
   '#2073': 'curitiba',
+  '#2076': 'curitiba',
+  '#2077': 'brasil',
+  '#2078': 'sedex',
+  '#2082': 'brasil',
+  '#2083': 'curitiba',
+  '#2084': 'sedex',
+  '#2085': 'curitiba',
+  '#2088': 'curitiba',
+  '#2090': 'curitiba',
 };
 
 /** @param {string} orderId */
@@ -2635,6 +2644,182 @@ export const QUEUES = [
             image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
           },
         ],
+      },
+    ],
+  },
+  {
+    id: 'pers-2026-10-22',
+    date: '2026-10-22',
+    title: 'Personalização — 22/10/2026',
+    items: [
+      // #2076 — M · arte 3 + Patriótica + Caveira + manga · Curitiba
+      {
+        orderId: '#2076',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Kaick M',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Caveira - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Caveira - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2077 — GG · arte 2 + cintura · Todo Brasil
+      {
+        orderId: '#2077',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'Cirson Júnior',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 2',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 2.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2078 — XG · Neymar 10 + Patriótica + manga · Sedex
+      {
+        orderId: '#2078',
+        size: 'XG',
+        sizeLabel: 'XGG (XG / 2XL / XXL)',
+        name: 'bolsonaro',
+        number: '10',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Neymar arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Neymar arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2082 — M Retro 02 · nome/número · Todo Brasil (Jordan sem pers. ignorada)
+      {
+        orderId: '#2082',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Aercio',
+        number: '22',
+        productId: 'br-retro-2002',
+      },
+
+      // #2083 — G · Patriótica costas + peito + manga · Curitiba
+      {
+        orderId: '#2083',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: '',
+        number: '',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2084 — P · nome/número · Sedex
+      {
+        orderId: '#2084',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'GREICY',
+        number: '22',
+        productId: 'br-home-amarela',
+      },
+
+      // #2085 — G · arte 1 + cintura · Curitiba
+      {
+        orderId: '#2085',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'André Rocha',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2088 — GG · nome/número · Curitiba
+      {
+        orderId: '#2088',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'BOLSONARO',
+        number: '22',
+        productId: 'br-home-amarela',
+      },
+
+      // #2090 — G · nome/número · Curitiba
+      {
+        orderId: '#2090',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'FARINA',
+        number: '22',
+        productId: 'br-home-amarela',
       },
     ],
   },
