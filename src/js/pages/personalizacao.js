@@ -3,6 +3,7 @@ import {
   ALL_ITEMS,
   formatBatchDate,
   listBatchDates,
+  shippingLabel,
 } from '../../data/personalization-alba-fedex-03.js';
 import { SIZE_ORDER, displaySizeLabel } from '../utils/sizes.js';
 
@@ -11,6 +12,8 @@ const REVIEW_KEY = 'shir7-pers-review';
 const GRAFICA_ITEM_KEY = 'shir7-pers-grafica-items';
 const SENT_DESCHAPADO_KEY = 'shir7-pers-sent-deschapado';
 const SENT_GRAFICA_KEY = 'shir7-pers-sent-grafica';
+/** Datas que já começam em “Pedidos despachados” (fora da fila ativa). */
+const DEFAULT_DESPACHADO_DATES = ['2026-10-09'];
 const BATCH_DATES = listBatchDates();
 const PRODUCT_FILTERS = [
   { id: 'all', label: 'Todos' },
@@ -39,16 +42,16 @@ let activeSize = 'all';
 let activeUnits = 'all';
 /** 'all' | 'pending' | 'done' | 'review' | 'grafica' */
 let activeStatus = 'all';
-/** Data de cadastro ativa (YYYY-MM-DD) ou 'all'. Padrão: lote mais recente. */
-let activeDate = BATCH_DATES[0] || 'all';
 let activeTab = 'queue';
+/** Data de cadastro ativa (YYYY-MM-DD) ou 'all'. */
+let activeDate = 'all';
 let searchQuery = '';
 let hideGolaNotes = false;
 let hideExtrasText = false;
 let doneSet = loadDoneSet();
 let reviewSet = loadReviewSet();
 let graficaItemSet = loadGraficaItemSet();
-let sentDeschapado = loadDateFlagSet(SENT_DESCHAPADO_KEY);
+let sentDeschapado = loadDespachadoDates();
 let sentGrafica = loadDateFlagSet(SENT_GRAFICA_KEY);
 
 function loadDoneSet() {
@@ -107,12 +110,37 @@ function saveDateFlagSet(key, set) {
   localStorage.setItem(key, JSON.stringify([...set]));
 }
 
+function loadDespachadoDates() {
+  const set = loadDateFlagSet(SENT_DESCHAPADO_KEY);
+  DEFAULT_DESPACHADO_DATES.forEach((date) => set.add(date));
+  return set;
+}
+
 function isDateDespachado(date) {
   return Boolean(date) && date !== 'all' && sentDeschapado.has(date);
 }
 
 function isDateGraficaSent(date) {
   return Boolean(date) && date !== 'all' && sentGrafica.has(date);
+}
+
+function openBatchDates() {
+  return BATCH_DATES.filter((date) => !isDateDespachado(date));
+}
+
+function despachadoBatchDates() {
+  return BATCH_DATES.filter((date) => isDateDespachado(date));
+}
+
+function datesForCurrentTab() {
+  return activeTab === 'despachados' ? despachadoBatchDates() : openBatchDates();
+}
+
+function ensureActiveDateForTab() {
+  const dates = datesForCurrentTab();
+  if (activeDate !== 'all' && !dates.includes(activeDate)) {
+    activeDate = dates[0] || 'all';
+  }
 }
 
 function toggleDateSendFlag(kind, date) {
@@ -122,7 +150,24 @@ function toggleDateSendFlag(kind, date) {
   if (set.has(date)) set.delete(date);
   else set.add(date);
   saveDateFlagSet(key, set);
+
+  if (kind === 'deschapado') {
+    // Ao despachar, a data sai da fila e vai para a aba despachados
+    if (isDateDespachado(date) && activeTab !== 'despachados') {
+      ensureActiveDateForTab();
+    } else if (!isDateDespachado(date) && activeTab === 'despachados') {
+      ensureActiveDateForTab();
+    }
+  }
+
+  updateSubtitle();
   renderDateFilters();
+  renderProductFilters();
+  renderSizeFilters();
+  renderUnitsFilters();
+  renderStats();
+  if (activeTab === 'summary') renderSummary();
+  else renderGrid();
 }
 
 function itemKey(item) {
@@ -306,7 +351,11 @@ function sortItemsForDisplay(items) {
 }
 
 function getItemsByDate() {
-  if (activeDate === 'all') return ALL_ITEMS;
+  const allowedDates = new Set(datesForCurrentTab());
+  if (activeDate === 'all') {
+    return ALL_ITEMS.filter((item) => allowedDates.has(item.createdAt));
+  }
+  if (!allowedDates.has(activeDate)) return [];
   return ALL_ITEMS.filter((item) => item.createdAt === activeDate);
 }
 
@@ -541,7 +590,9 @@ function renderSummary() {
 }
 
 function setActiveTab(tab) {
-  activeTab = tab === 'summary' ? 'summary' : 'queue';
+  if (tab === 'summary') activeTab = 'summary';
+  else if (tab === 'despachados') activeTab = 'despachados';
+  else activeTab = 'queue';
 
   document.querySelectorAll('[data-tab]').forEach((btn) => {
     const isActive = btn.dataset.tab === activeTab;
@@ -553,12 +604,22 @@ function setActiveTab(tab) {
   const summaryPanel = document.getElementById('pers-panel-summary');
   const queueControls = document.getElementById('pers-queue-controls');
   const stats = document.getElementById('pers-stats');
+  const showQueue = activeTab === 'queue' || activeTab === 'despachados';
 
-  if (queuePanel) queuePanel.hidden = activeTab !== 'queue';
+  if (queuePanel) queuePanel.hidden = !showQueue;
   if (summaryPanel) summaryPanel.hidden = activeTab !== 'summary';
-  if (queueControls) queueControls.hidden = activeTab !== 'queue';
+  if (queueControls) queueControls.hidden = !showQueue;
   if (stats) stats.hidden = activeTab === 'summary';
   document.body.classList.toggle('pers-tab-summary-active', activeTab === 'summary');
+  document.body.classList.toggle('pers-tab-despachados-active', activeTab === 'despachados');
+
+  ensureActiveDateForTab();
+  updateSubtitle();
+  renderDateFilters();
+  renderProductFilters();
+  renderSizeFilters();
+  renderUnitsFilters();
+  renderStats();
 
   if (activeTab === 'summary') {
     renderSummary();
@@ -690,13 +751,20 @@ function renderCard(item) {
          decoding="async"
        >`
     : `<span class="pers-card__number">${escapeHtml(numberDisplay.value)}</span>`;
+  const freightLabel = shippingLabel(item.shipping);
+  const freightBlock = freightLabel
+    ? `<span class="pers-card__shipping pers-card__shipping--${escapeHtml(item.shipping)}">${escapeHtml(freightLabel)}</span>`
+    : '';
 
   return `
     <article class="pers-card${kitClass}${done ? ' pers-card--done' : ''}${review ? ' pers-card--review' : ''}${naGrafica ? ' pers-card--grafica' : ''}${placeholderClass}${disabledClass}${hasAlertBlock ? ' pers-card--alert' : ''}" data-id="${escapeHtml(key)}">
       <header class="pers-card__head${headClass}">
         <div class="pers-card__head-row">
           <span class="pers-card__order">${escapeHtml(item.orderId)}${alertGif}</span>
-          <span class="pers-card__kit pers-card__kit--${escapeHtml(kitType)}">${kitTypeLabel(kitType)}</span>
+          <div class="pers-card__head-meta">
+            <span class="pers-card__kit pers-card__kit--${escapeHtml(kitType)}">${kitTypeLabel(kitType)}</span>
+            ${freightBlock}
+          </div>
         </div>
         ${showModel ? `<span class="pers-card__model${modelClass}">${escapeHtml(item.productLabel)}</span>` : ''}
       </header>
@@ -792,9 +860,10 @@ function renderDateFilters() {
   const container = document.getElementById('pers-date-filters');
   if (!container) return;
 
+  const tabDates = datesForCurrentTab();
   const dateButtons = [
-    { id: 'all', label: 'Todas' },
-    ...BATCH_DATES.map((date) => ({
+    { id: 'all', label: activeTab === 'despachados' ? 'Todas despachadas' : 'Todas' },
+    ...tabDates.map((date) => ({
       id: date,
       label: formatBatchDate(date),
     })),
@@ -804,7 +873,7 @@ function renderDateFilters() {
     .map((btn) => {
       if (btn.id === 'all') {
         const active = activeDate === 'all' ? ' pers-pill--active' : '';
-        return `<button type="button" class="pers-pill${active}" data-date="all">Todas</button>`;
+        return `<button type="button" class="pers-pill${active}" data-date="all">${escapeHtml(btn.label)}</button>`;
       }
       return `
         <button
@@ -819,6 +888,11 @@ function renderDateFilters() {
   const showActions = activeDate !== 'all';
   const graficaOn = showActions && isDateGraficaSent(activeDate);
   const despachadoOn = showActions && isDateDespachado(activeDate);
+  const emptyHint = tabDates.length === 0
+    ? `<p class="pers-date-empty">${activeTab === 'despachados'
+      ? 'Nenhuma data despachada ainda. Marque “Despachado” em um lote na fila.'
+      : 'Nenhuma data na fila.'}</p>`
+    : '';
   const actions = showActions
     ? `
       <div class="pers-date-actions" role="group" aria-label="Status do lote ${escapeHtml(formatBatchDate(activeDate))}">
@@ -835,13 +909,16 @@ function renderDateFilters() {
           data-toggle-sent="${escapeHtml(activeDate)}"
           data-sent-kind="deschapado"
           aria-pressed="${despachadoOn ? 'true' : 'false'}"
-        >${despachadoOn ? '✓ Despachado' : 'Marcar despachado'}</button>
+        >${despachadoOn
+          ? (activeTab === 'despachados' ? '✓ Despachado (voltar à fila)' : '✓ Despachado')
+          : 'Marcar despachado'}</button>
       </div>
     `
     : '';
 
   container.innerHTML = `
-    <div class="pers-date-filters__pills">${pills}</div>
+    <div class="pers-date-filters__pills">${pills || ''}</div>
+    ${emptyHint}
     ${actions}
   `;
 
@@ -1015,19 +1092,20 @@ function updateSubtitle() {
   if (!subtitle) return;
 
   const scope = getVisibleItems();
+  const tabHint = activeTab === 'despachados' ? 'despachados · ' : '';
   const dateHint = activeDate === 'all'
-    ? 'todas as datas'
+    ? (activeTab === 'despachados' ? 'todas as despachadas' : 'todas as datas')
     : formatBatchDate(activeDate);
 
   if (activeProduct === 'all') {
-    subtitle.textContent = `${scope.length} peças · ${dateHint}`;
+    subtitle.textContent = `${tabHint}${scope.length} peças · ${dateHint}`;
     return;
   }
 
   const product = PRODUCTS[activeProduct];
   const sidesHint = product?.persSides ? ' · frente e atrás' : '';
   subtitle.textContent = product
-    ? `${product.label} · ${scope.length} peças · ${dateHint}${sidesHint}`
+    ? `${tabHint}${product.label} · ${scope.length} peças · ${dateHint}${sidesHint}`
     : '';
 }
 
@@ -1328,8 +1406,8 @@ async function runPrint() {
     return;
   }
 
-  // Impressão sempre na fila (não no resumo de tamanhos).
-  if (activeTab !== 'queue') setActiveTab('queue');
+  // Impressão na fila/despachados (não no resumo de tamanhos).
+  if (activeTab === 'summary') setActiveTab('queue');
 
   clearPrintMode();
   applyPrintPageStyle(format);
@@ -1398,17 +1476,14 @@ function init() {
     }
   });
 
+  // Garante que datas padrão (ex.: 09/10) fiquem salvas como despachadas
+  saveDateFlagSet(SENT_DESCHAPADO_KEY, sentDeschapado);
+  activeDate = openBatchDates()[0] || 'all';
+
   bindPrintModal();
   bindFontModal();
   bindAlertToggles();
   bindTabs();
-  updateSubtitle();
-  renderDateFilters();
-  renderProductFilters();
-  renderStatusFilters();
-  renderSizeFilters();
-  renderUnitsFilters();
-  renderStats();
   setActiveTab('queue');
 }
 

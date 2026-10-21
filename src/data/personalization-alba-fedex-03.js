@@ -129,9 +129,43 @@ export const PRODUCTS = {
  *   alert?: string,
  *   alertImage?: string,
  *   extras?: PersExtra[],
- *   persSides?: string
+ *   persSides?: string,
+ *   shipping?: 'curitiba' | 'sedex' | 'brasil'
  * }} PersItem
  */
+
+/** Frete por pedido (base do orderId, sem sufixo -2/-3). */
+const SHIPPING_BY_ORDER = {
+  '#2049': 'sedex',
+  '#2050': 'brasil',
+  '#2053': 'curitiba',
+  '#2055': 'sedex',
+  '#2058': 'brasil',
+  '#2060': 'curitiba',
+  '#2061': 'curitiba',
+  '#2062': 'curitiba',
+  '#2064': 'sedex',
+  '#2065': 'curitiba',
+  '#2067': 'curitiba',
+  '#2068': 'brasil',
+  '#2069': 'brasil',
+  '#2070': 'sedex',
+  '#2072': 'sedex',
+  '#2073': 'curitiba',
+};
+
+/** @param {string} orderId */
+function baseOrderId(orderId) {
+  return String(orderId || '').replace(/-\d+$/, '');
+}
+
+/** @param {'curitiba' | 'sedex' | 'brasil' | string} shipping */
+export function shippingLabel(shipping) {
+  if (shipping === 'curitiba') return 'Curitiba 1 dia';
+  if (shipping === 'sedex') return 'Sedex 3 dias';
+  if (shipping === 'brasil') return 'Todo Brasil 7 dias';
+  return '';
+}
 
 const ART_AMARELA = '../src/assets/images/personalization/artes/Camisa Jogador Seleção Brasileira Amarela Copa do mundo home I 2026 - 2027';
 const ART_AZUL = '../src/assets/images/personalization/artes/Camisa Azul Jogador - Torcedor — Seleção Brasileira';
@@ -2312,6 +2346,298 @@ export const QUEUES = [
       },
     ],
   },
+  {
+    id: 'pers-2026-10-21',
+    date: '2026-10-21',
+    title: 'Personalização — 21/10/2026',
+    items: [
+      // #2058 — M vermelha torcedor · nome/número
+      {
+        orderId: '#2058',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'yaya',
+        number: '10',
+        productId: 'br-tor-vermelha',
+      },
+
+      // #2060 — M · nome/número
+      {
+        orderId: '#2060',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Fabio Ramos',
+        number: '22',
+        productId: 'br-home-amarela',
+      },
+
+      // #2061 — XG · arte 3 + cintura + manga
+      {
+        orderId: '#2061',
+        size: 'XG',
+        sizeLabel: 'XGG (XG / 2XL / XXL)',
+        name: 'ACiiiD',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga direita', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #2062 — GG · nome/número (só a peça personalizada)
+      {
+        orderId: '#2062',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'Daniel',
+        number: '22',
+        productId: 'br-home-amarela',
+      },
+
+      // #2064 — GG · arte 1 + Patriótica + Caveira + Nikolas 2×
+      {
+        orderId: '#2064',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'JOCEMAR R.G',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Caveira - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Caveira - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga direita', 'Nikolas.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga esquerda', 'Nikolas.webp'),
+          },
+        ],
+      },
+
+      // #2065 — G · nome/número + Caveira peito
+      {
+        orderId: '#2065',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: '22 DEU PT NO PT',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Frente — peito',
+            label: 'Caveira - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Caveira - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2067 — P · arte 1 + Patriótica + peito + mangas
+      {
+        orderId: '#2067',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'MITO',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga direita', 'Nikolas.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #2068 — M · peito + God Loves
+      {
+        orderId: '#2068',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Goti',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+
+      // #2069 — G · nome/número
+      {
+        orderId: '#2069',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'LuCa',
+        number: '22',
+        productId: 'br-home-amarela',
+      },
+
+      // #2070 — XG · arte 1 + cintura + 2222 + mangas (só a personalizada)
+      {
+        orderId: '#2070',
+        size: 'XG',
+        sizeLabel: 'XGG (XG / 2XL / XXL)',
+        name: 'Maike',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: '2222',
+            image: art(ART_AMARELA, 'Frente — peito', '2222.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga esquerda', 'Nikolas.webp'),
+          },
+        ],
+      },
+
+      // #2072 — G · arte 1 + Patriótica + peito + mangas
+      {
+        orderId: '#2072',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'Schutz',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'Nikolas',
+            image: art(ART_AMARELA, 'Manga esquerda', 'Nikolas.webp'),
+          },
+        ],
+      },
+
+      // #2073 — GG · arte 1 + Acorda Brasil + peito + manga
+      {
+        orderId: '#2073',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'Bonfanti',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Acorda Brasil',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Acorda Brasil.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 /** Formata YYYY-MM-DD → DD/MM/YYYY */
@@ -2338,12 +2664,14 @@ export const ALL_ITEMS = QUEUES.flatMap((queue) =>
       .join(' · ');
     const alert = item.alert || alertFromExtras || '';
     const alertImage = item.alertImage || extras.find((extra) => extra.image)?.image || '';
+    const shipping = item.shipping || SHIPPING_BY_ORDER[baseOrderId(item.orderId)] || '';
     return {
       ...item,
       createdAt,
       extras,
       alert,
       alertImage,
+      shipping,
       queueId: queue.id,
       queueTitle: queue.title,
       productId,
