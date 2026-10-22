@@ -161,6 +161,8 @@ const SHIPPING_BY_ORDER = {
   '#2085': 'curitiba',
   '#2088': 'curitiba',
   '#2090': 'curitiba',
+  '#2094': 'sedex',
+  '#2095': 'curitiba',
 };
 
 /** @param {string} orderId */
@@ -2653,6 +2655,34 @@ export const QUEUES = [
     date: '2026-10-22',
     title: 'Personalização — 22/10/2026',
     items: [
+      // #2083 — G · Patriótica costas + peito + manga · Curitiba
+      {
+        orderId: '#2083',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: '',
+        number: '',
+        productId: 'br-home-amarela',
+        first: true,
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
       // #2076 — M · arte 3 + Patriótica + Caveira + manga · Curitiba
       {
         orderId: '#2076',
@@ -2751,33 +2781,6 @@ export const QUEUES = [
         ],
       },
 
-      // #2083 — G · Patriótica costas + peito + manga · Curitiba
-      {
-        orderId: '#2083',
-        size: 'G',
-        sizeLabel: 'G (L)',
-        name: '',
-        number: '',
-        productId: 'br-home-amarela',
-        extras: [
-          {
-            place: 'Costas',
-            label: 'Patriótica - arte 1',
-            image: art(ART_AMARELA, 'Costas', 'Patriótica - arte 1.webp'),
-          },
-          {
-            place: 'Frente — peito',
-            label: 'Bolsonaro - arte 1',
-            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
-          },
-          {
-            place: 'Manga direita',
-            label: 'Bolsonaro - arte 1',
-            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
-          },
-        ],
-      },
-
       // #2084 — P · nome/número · Sedex
       {
         orderId: '#2084',
@@ -2828,6 +2831,65 @@ export const QUEUES = [
         name: 'FARINA',
         number: '22',
         productId: 'br-home-amarela',
+      },
+
+      // #2094 — M Jennifer 10 + P Sofia 10 · Patriótica · Sedex
+      {
+        orderId: '#2094',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Jennifer',
+        number: '10',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+        ],
+      },
+      {
+        orderId: '#2094-2',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'Sofia',
+        number: '10',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2095 — P · arte 1 + peito Bolsonaro + 2222 · Curitiba
+      {
+        orderId: '#2095',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'MILENA',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: '2222',
+            image: art(ART_AMARELA, 'Frente — peito', '2222.webp'),
+          },
+        ],
       },
     ],
   },

@@ -309,6 +309,73 @@
   min-width: 8rem;
 }
 
+.pers-art-tally {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pers-art-tally__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(94, 23, 235, 0.16);
+  border-radius: 12px;
+  background: #fff;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.pers-art-tally__img {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #f6f3fb;
+}
+
+.pers-art-tally__img--empty {
+  display: block;
+}
+
+.pers-art-tally__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.05rem;
+}
+
+.pers-art-tally__count {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #5e17eb;
+}
+
+.pers-art-tally__place {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b6280;
+}
+
+.pers-art-tally__label {
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.pers-art-tally__model {
+  font-size: 0.75rem;
+  color: #6b6280;
+}
+
 .pers-summary__orders {
   font-size: 0.8125rem;
   color: var(--color-text-muted, #6b6280);
@@ -938,7 +1005,8 @@
 }
 
 .pers-card__number-art--bolsonaro,
-.pers-card__number-art--neymar {
+.pers-card__number-art--neymar,
+.pers-card__number-art--patriota {
   max-height: 7rem;
   border-radius: 8px;
   border: 1px solid #e5e1ef;
@@ -1721,6 +1789,15 @@ body.pers-hide-extras-text .pers-card__alert-text {
     display: block !important;
   }
 
+  .pers-art-tally {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pers-art-tally__img {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
   .pers-grid {
     display: grid !important;
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -1824,7 +1901,8 @@ body.pers-hide-extras-text .pers-card__alert-text {
   }
 
   .pers-card__number-art--bolsonaro,
-  .pers-card__number-art--neymar {
+  .pers-card__number-art--neymar,
+  .pers-card__number-art--patriota {
     max-height: 34mm !important;
   }
 
@@ -1931,7 +2009,8 @@ body.pers-hide-extras-text .pers-card__alert-text {
   }
 
   body.pers-print-format-a4 .pers-card__number-art--bolsonaro,
-  body.pers-print-format-a4 .pers-card__number-art--neymar {
+  body.pers-print-format-a4 .pers-card__number-art--neymar,
+  body.pers-print-format-a4 .pers-card__number-art--patriota {
     max-height: 20mm !important;
   }
 
@@ -2040,7 +2119,8 @@ body.pers-hide-extras-text .pers-card__alert-text {
   }
 
   body.pers-print-format-thermal .pers-card__number-art--bolsonaro,
-  body.pers-print-format-thermal .pers-card__number-art--neymar {
+  body.pers-print-format-thermal .pers-card__number-art--neymar,
+  body.pers-print-format-thermal .pers-card__number-art--patriota {
     max-height: 40mm !important;
   }
 

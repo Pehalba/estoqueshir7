@@ -251,6 +251,25 @@ function resolveNumberDisplay(item) {
   }
 
   const extras = Array.isArray(item.extras) ? item.extras : [];
+  const fold = (value) => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  const patrioticaCostas = extras.find((extra) => {
+    const label = fold(extra.label);
+    const place = fold(extra.place);
+    return extra.image && place.includes('costas') && label.includes('patriot');
+  });
+  if (patrioticaCostas) {
+    return {
+      type: 'art',
+      src: patrioticaCostas.image,
+      label: patrioticaCostas.label,
+      kind: 'patriota',
+      hideName: true,
+    };
+  }
+
   const costasArt = extras.find((extra) => {
     const label = String(extra.label || '');
     const place = String(extra.place || '');
@@ -331,6 +350,10 @@ function buildOrderUnitCounts(items) {
 /** Pedido mais antigo → mais novo; depois peça (-2); depois desabilitados. */
 function sortItemsForDisplay(items) {
   return [...items].sort((a, b) => {
+    const firstA = a.first ? 0 : 1;
+    const firstB = b.first ? 0 : 1;
+    if (firstA !== firstB) return firstA - firstB;
+
     const orderA = parseOrderSortKey(a.orderId);
     const orderB = parseOrderSortKey(b.orderId);
     if (orderA.n !== orderB.n) return orderA.n - orderB.n;
@@ -584,13 +607,116 @@ function renderSummaryDetails(groups) {
   `;
 }
 
+const ART_PLACE_ORDER = [
+  'Costas',
+  'Frente — peito',
+  'Frente — cintura',
+  'Manga direita',
+  'Manga esquerda',
+  'Manga',
+];
+
+function artPlaceRank(place) {
+  const idx = ART_PLACE_ORDER.findIndex(
+    (name) => name.toLowerCase() === String(place || '').trim().toLowerCase(),
+  );
+  return idx === -1 ? ART_PLACE_ORDER.length : idx;
+}
+
+function collectArtTallies(items) {
+  const map = new Map();
+  const productIds = new Set();
+
+  for (const item of items) {
+    if (item.placeholder) continue;
+    productIds.add(item.productId);
+    const extras = Array.isArray(item.extras) ? item.extras : [];
+    const seenImages = new Set();
+
+    for (const extra of extras) {
+      const label = String(extra.label || '').trim();
+      const place = String(extra.place || '').trim() || 'Arte';
+      const image = extra.image || '';
+      if (!label && !image) continue;
+      if (image) seenImages.add(image);
+      const key = [item.productId, place, label, image].join('|');
+      if (!map.has(key)) {
+        map.set(key, {
+          count: 0,
+          place,
+          label: label || 'Arte',
+          image,
+          productLabel: item.productLabel || '',
+        });
+      }
+      map.get(key).count += 1;
+    }
+
+    if (item.numberArt && !seenImages.has(item.numberArt)) {
+      const label = /neymar/i.test(item.numberArt)
+        ? 'Neymar'
+        : /bolsonaro/i.test(item.numberArt)
+          ? 'Bolsonaro'
+          : `Número ${item.number || ''}`.trim();
+      const key = [item.productId, 'Costas', label, item.numberArt].join('|');
+      if (!map.has(key)) {
+        map.set(key, {
+          count: 0,
+          place: 'Costas',
+          label,
+          image: item.numberArt,
+          productLabel: item.productLabel || '',
+        });
+      }
+      map.get(key).count += 1;
+    }
+  }
+
+  const showModel = productIds.size > 1;
+  return [...map.values()]
+    .map((art) => ({ ...art, showModel }))
+    .sort((a, b) => {
+      const placeDiff = artPlaceRank(a.place) - artPlaceRank(b.place);
+      if (placeDiff) return placeDiff;
+      if (b.count !== a.count) return b.count - a.count;
+      return a.label.localeCompare(b.label, 'pt');
+    });
+}
+
+function renderArtTally(items) {
+  const arts = collectArtTallies(items);
+  if (!arts.length) return '';
+
+  const cards = arts.map((art) => `
+    <li class="pers-art-tally__item">
+      ${art.image
+        ? `<img class="pers-art-tally__img" src="${escapeHtml(art.image)}" alt="${escapeHtml(`${art.place} ${art.label}`)}" loading="lazy">`
+        : '<span class="pers-art-tally__img pers-art-tally__img--empty" aria-hidden="true"></span>'}
+      <div class="pers-art-tally__body">
+        <span class="pers-art-tally__count">${art.count}</span>
+        <span class="pers-art-tally__place">${escapeHtml(art.place)}</span>
+        <strong class="pers-art-tally__label">${escapeHtml(art.label)}</strong>
+        ${art.showModel ? `<span class="pers-art-tally__model">${escapeHtml(art.productLabel)}</span>` : ''}
+      </div>
+    </li>
+  `).join('');
+
+  return `
+    <section class="pers-summary__section">
+      <h2 class="pers-summary__heading">Artes do lote</h2>
+      <ul class="pers-art-tally">${cards}</ul>
+    </section>
+  `;
+}
+
 function renderSummary() {
   const el = document.getElementById('pers-summary');
   if (!el) return;
 
   const groups = buildSummaryByProduct();
   const sizes = getSummarySizes(groups);
-  el.innerHTML = renderSummaryMatrix(groups, sizes) + renderSummaryDetails(groups);
+  const items = getProductionItems();
+  el.innerHTML = renderSummaryMatrix(groups, sizes) + renderArtTally(items) + renderSummaryDetails(groups);
 }
 
 function setActiveTab(tab) {
@@ -676,8 +802,8 @@ function kitTypeLabel(kitType) {
 }
 
 function renderCard(item) {
-  const name = displayName(item.name);
   const numberDisplay = resolveNumberDisplay(item);
+  const name = numberDisplay.hideName ? '' : (numberDisplay.replaceName || displayName(item.name));
   const key = itemKey(item);
   const done = isDone(item);
   const review = isReview(item);
@@ -788,7 +914,7 @@ function renderCard(item) {
         <div class="pers-card__pers">
           ${statusBadge}${dateBadge}${review ? '<span class="pers-card__badge pers-card__badge--review">Revisão</span>' : ''}${naGrafica ? '<span class="pers-card__badge pers-card__badge--grafica">Na gráfica</span>' : ''}
           ${sidesNote}
-          <span class="pers-card__name">${escapeHtml(name)}</span>
+          ${name ? `<span class="pers-card__name">${escapeHtml(name)}</span>` : ''}
           ${numberBlock}
         </div>
       </div>
