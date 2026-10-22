@@ -180,6 +180,7 @@ const ART_AMARELA = '../src/assets/images/personalization/artes/Camisa Jogador S
 const ART_AZUL = '../src/assets/images/personalization/artes/Camisa Azul Jogador - Torcedor — Seleção Brasileira';
 const ART_VERMELHA = '../src/assets/images/personalization/artes/Camisa Vermelha Brasil 26-27 — Masculina e Feminina';
 const ART_PRETA = '../src/assets/images/personalization/artes/Camisa Preta Jordan — Seleção Brasileira';
+const ART_RETRO_02 = '../src/assets/images/personalization/artes/Camisa Retro 02 Seleção Brasileira';
 
 /** @param {string} base @param {string} place @param {string} file */
 function art(base, place, file) {
@@ -2733,7 +2734,7 @@ export const QUEUES = [
         ],
       },
 
-      // #2082 — M Retro 02 · nome/número · Todo Brasil (Jordan sem pers. ignorada)
+      // #2082 — M Retro 02 · nome/número costas + 22 peito · Todo Brasil
       {
         orderId: '#2082',
         size: 'M',
@@ -2741,6 +2742,13 @@ export const QUEUES = [
         name: 'Aercio',
         number: '22',
         productId: 'br-retro-2002',
+        extras: [
+          {
+            place: 'Frente — peito',
+            label: '22',
+            image: art(ART_RETRO_02, 'Frente — peito', '22.png'),
+          },
+        ],
       },
 
       // #2083 — G · Patriótica costas + peito + manga · Curitiba

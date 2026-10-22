@@ -279,6 +279,10 @@ function resolveNumberDisplay(item) {
       kind: 'number',
     };
   }
+  // Retro 02: número só em texto (sem imagem de fonte)
+  if (item.productId === 'br-retro-2002') {
+    return { type: 'text', value: displayNumber(item.number) };
+  }
   if (num && NUMBER_FONT_ARTS[num]) {
     return {
       type: 'art',
