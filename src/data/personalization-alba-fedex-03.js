@@ -163,6 +163,12 @@ const SHIPPING_BY_ORDER = {
   '#2090': 'curitiba',
   '#2094': 'sedex',
   '#2095': 'curitiba',
+  '#2097': 'curitiba',
+  '#2099': 'sedex',
+  '#2100': 'curitiba',
+  '#2101': 'curitiba',
+  '#2102': 'brasil',
+  '#2103': 'curitiba',
 };
 
 /** @param {string} orderId */
@@ -2655,34 +2661,6 @@ export const QUEUES = [
     date: '2026-10-22',
     title: 'Personalização — 22/10/2026',
     items: [
-      // #2083 — G · Patriótica costas + peito + manga · Curitiba
-      {
-        orderId: '#2083',
-        size: 'G',
-        sizeLabel: 'G (L)',
-        name: '',
-        number: '',
-        productId: 'br-home-amarela',
-        first: true,
-        extras: [
-          {
-            place: 'Costas',
-            label: 'Patriótica - arte 1',
-            image: art(ART_AMARELA, 'Costas', 'Patriótica - arte 1.webp'),
-          },
-          {
-            place: 'Frente — peito',
-            label: 'Bolsonaro - arte 1',
-            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
-          },
-          {
-            place: 'Manga direita',
-            label: 'Bolsonaro - arte 1',
-            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
-          },
-        ],
-      },
-
       // #2076 — M · arte 3 + Patriótica + Caveira + manga · Curitiba
       {
         orderId: '#2076',
@@ -2893,13 +2871,188 @@ export const QUEUES = [
       },
     ],
   },
+  {
+    id: 'pers-2026-10-22-2',
+    date: '2026-10-22-2',
+    title: 'Personalização — 22/10/2026 (2)',
+    items: [
+      // #2083 — G · Patriótica costas + peito + manga · Curitiba
+      {
+        orderId: '#2083',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: '',
+        number: '',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2097 — G · Patriótica costas · Curitiba
+      {
+        orderId: '#2097',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: '',
+        number: '',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Patriótica - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2099 — G · arte 1 + Patriótica + peito · Sedex
+      {
+        orderId: '#2099',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'JG',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2100 — M · Nikolas Ferreira 22 · Curitiba
+      {
+        orderId: '#2100',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'LF Carrera',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Nikolas Ferreira 22',
+            image: art(ART_AMARELA, 'Costas', 'Nikolas Ferreira 22.webp'),
+          },
+        ],
+      },
+
+      // #2101 — 2× G · arte 1 · Curitiba (sem as peças sem personalização)
+      {
+        orderId: '#2101',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'Vicenzo',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+      {
+        orderId: '#2101-2',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'Bernardo',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2102 — P · nome e número · Todo Brasil
+      {
+        orderId: '#2102',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'GUSTAVO',
+        number: '22',
+        productId: 'br-home-amarela',
+      },
+
+      // #2103 — XG · arte 3 + Patriótica + peito + mangas · Curitiba
+      {
+        orderId: '#2103',
+        size: 'XG',
+        sizeLabel: 'XGG (XG / 2XL / XXL)',
+        name: 'Vinicius',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 3',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 3.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Patriótica - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Patriótica - arte 1.webp'),
+          },
+          {
+            place: 'Frente — peito',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — peito', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga direita',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Manga direita', 'Bolsonaro - arte 1.webp'),
+          },
+          {
+            place: 'Manga esquerda',
+            label: 'God Loves Brazil',
+            image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
+          },
+        ],
+      },
+    ],
+  },
 ];
 
-/** Formata YYYY-MM-DD → DD/MM/YYYY */
+/** Formata YYYY-MM-DD ou YYYY-MM-DD-2 → DD/MM/YYYY ou DD/MM/YYYY (2). */
 export function formatBatchDate(isoDate) {
-  const [y, m, d] = String(isoDate || '').split('-');
-  if (!y || !m || !d) return isoDate || '';
-  return `${d}/${m}/${y}`;
+  const match = String(isoDate || '').match(/^(\d{4})-(\d{2})-(\d{2})(?:-(\d+))?$/);
+  if (!match) return isoDate || '';
+  const [, y, m, d, part] = match;
+  const label = `${d}/${m}/${y}`;
+  return part ? `${label} (${part})` : label;
 }
 
 /** Datas de cadastro disponíveis (mais recente primeiro). */
