@@ -169,6 +169,8 @@ const SHIPPING_BY_ORDER = {
   '#2101': 'curitiba',
   '#2102': 'brasil',
   '#2103': 'curitiba',
+  '#2107': 'curitiba',
+  '#2108': 'curitiba',
 };
 
 /** @param {string} orderId */
@@ -3041,6 +3043,39 @@ export const QUEUES = [
             image: art(ART_AMARELA, 'Manga esquerda', 'God Loves Brazil.webp'),
           },
         ],
+      },
+    ],
+  },
+  {
+    id: 'pers-2026-10-23',
+    date: '2026-10-23',
+    title: 'Personalização — 23/10/2026',
+    items: [
+      // #2107 — GG · arte 1 · Curitiba
+      {
+        orderId: '#2107',
+        size: 'GG',
+        sizeLabel: 'GG (XL)',
+        name: 'F Bolsonaro',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 1',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2108 — P · nome e número · Curitiba
+      {
+        orderId: '#2108',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'JV',
+        number: '22',
+        productId: 'br-home-amarela',
       },
     ],
   },
