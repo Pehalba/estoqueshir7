@@ -171,6 +171,7 @@ const SHIPPING_BY_ORDER = {
   '#2103': 'curitiba',
   '#2107': 'curitiba',
   '#2108': 'curitiba',
+  '#2110': 'curitiba',
 };
 
 /** @param {string} orderId */
@@ -3076,6 +3077,34 @@ export const QUEUES = [
         name: 'JV',
         number: '22',
         productId: 'br-home-amarela',
+      },
+    ],
+  },
+  {
+    id: 'pers-2026-10-24',
+    date: '2026-10-24',
+    title: 'Personalização — 24/10/2026',
+    items: [
+      // #2110 — M · arte 2 + cintura · Curitiba
+      {
+        orderId: '#2110',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'Montak',
+        number: '22',
+        productId: 'br-home-amarela',
+        extras: [
+          {
+            place: 'Costas',
+            label: 'Bolsonaro 22 arte 2',
+            image: art(ART_AMARELA, 'Costas', 'Bolsonaro 22 arte 2.webp'),
+          },
+          {
+            place: 'Frente — cintura',
+            label: 'Bolsonaro - arte 1',
+            image: art(ART_AMARELA, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
+          },
+        ],
       },
     ],
   },
