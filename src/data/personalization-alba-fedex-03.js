@@ -172,6 +172,7 @@ const SHIPPING_BY_ORDER = {
   '#2107': 'curitiba',
   '#2108': 'curitiba',
   '#2110': 'curitiba',
+  '#2111': 'brasil',
 };
 
 /** @param {string} orderId */
@@ -3105,6 +3106,22 @@ export const QUEUES = [
             image: art(ART_AMARELA, 'Frente — cintura', 'Bolsonaro - arte 1.webp'),
           },
         ],
+      },
+    ],
+  },
+  {
+    id: 'pers-2026-10-27',
+    date: '2026-10-27',
+    title: 'Personalização — 27/10/2026',
+    items: [
+      // #2111 — M vermelha torcedor · nome/número · Todo Brasil
+      {
+        orderId: '#2111',
+        size: 'M',
+        sizeLabel: 'M (M)',
+        name: 'BOCHNIA',
+        number: '13',
+        productId: 'br-tor-vermelha',
       },
     ],
   },
