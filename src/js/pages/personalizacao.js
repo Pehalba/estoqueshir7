@@ -13,7 +13,17 @@ const GRAFICA_ITEM_KEY = 'shir7-pers-grafica-items';
 const SENT_DESCHAPADO_KEY = 'shir7-pers-sent-deschapado';
 const SENT_GRAFICA_KEY = 'shir7-pers-sent-grafica';
 /** Datas que já começam em “Pedidos despachados” (fora da fila ativa). */
-const DEFAULT_DESPACHADO_DATES = ['2026-10-09'];
+const DEFAULT_DESPACHADO_DATES = [
+  '2026-10-09',
+  '2026-10-11',
+  '2026-10-15',
+  '2026-10-17',
+  '2026-10-18',
+  '2026-10-19',
+  '2026-10-21',
+  '2026-10-22',
+  '2026-10-22-2',
+];
 const BATCH_DATES = listBatchDates();
 const PRODUCT_FILTERS = [
   { id: 'all', label: 'Todos' },

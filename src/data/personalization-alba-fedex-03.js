@@ -173,6 +173,8 @@ const SHIPPING_BY_ORDER = {
   '#2108': 'curitiba',
   '#2110': 'curitiba',
   '#2111': 'brasil',
+  '#2112': 'brasil',
+  '#2113': 'brasil',
 };
 
 /** @param {string} orderId */
@@ -3120,6 +3122,39 @@ export const QUEUES = [
         size: 'M',
         sizeLabel: 'M (M)',
         name: 'BOCHNIA',
+        number: '13',
+        productId: 'br-tor-vermelha',
+      },
+    ],
+  },
+  {
+    id: 'pers-2026-10-29',
+    date: '2026-10-29',
+    title: 'Personalização — 29/10/2026',
+    items: [
+      // #2112 — P vermelha · DUDA 04 + Estrela manga · Todo Brasil
+      {
+        orderId: '#2112',
+        size: 'P',
+        sizeLabel: 'P (S)',
+        name: 'DUDA',
+        number: '04',
+        productId: 'br-tor-vermelha',
+        extras: [
+          {
+            place: 'Manga esquerda',
+            label: 'Estrela - arte 1',
+            image: art(ART_VERMELHA, 'Manga esquerda', 'Estrela - arte 1.webp'),
+          },
+        ],
+      },
+
+      // #2113 — G vermelha · nome/número · Todo Brasil
+      {
+        orderId: '#2113',
+        size: 'G',
+        sizeLabel: 'G (L)',
+        name: 'SILVA',
         number: '13',
         productId: 'br-tor-vermelha',
       },
